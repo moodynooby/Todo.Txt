@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A simple Kanban board to manage your tasks">
+    <meta name="keywords" content="kanban,board,tasks,management" />
+    <meta name="application-name" content="Simple Kanban" />
+    <meta name="theme-color" content="#ccff00">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/kanban.css">
+    <title>Simple Kanban</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="flex-navbar">
+            <span class="navbar-brand generic-flex">
+                <a href="/" class="brand-title">Todo.txt / </a>
+                <span> Simple Kanban</span>
+            </span>
+            <div class="generic-flex header-right">
+                <a href="javascript:void(0);" id="download-tasks" title="Download Kanban as CSV">
+                    <img src="/img/navbar/download_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg"> </a>
+                <a href="javascript:void(0);" id="fullScreenButton" title="Toggle Full Screen">
+                    <img src="../img/navbar/open_in_full_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg" id="arrowPointsOut"
+                        alt="Toggle Full Screen" />
+                    <img src="../img/navbar/close_fullscreen_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg"
+                        id="arrowPointsIn" alt="Toggle Full Screen" style="display:none" />
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="kanban-board">
+        <div class="column" id="todo">
+            <h2>To Do</h2>
+            <div class="task-list">
+                <div class="placeholder">Start adding tasks</div>
+            </div>
+            <input type="text" placeholder="Add a task" id="todo-input">
+            <button class="btn btn-primary d-block d-md-none mt-2" onclick="addTask('todo')">Add Task</button>
+        </div>
+        <div class="column" id="in-progress">
+            <h2>In Progress</h2>
+            <div class="task-list">
+                <div class="placeholder">Start adding tasks</div>
+            </div>
+            <input type="text" placeholder="Add a task" id="in-progress-input">
+            <button class="btn btn-primary d-block d-md-none mt-2" onclick="addTask('in-progress')">Add Task</button>
+        </div>
+        <div class="column" id="done">
+            <h2>Done</h2>
+            <div class="task-list">
+                <div class="placeholder">Start adding tasks</div>
+            </div>
+            <input type="text" placeholder="Add a task" id="done-input">
+            <button class="btn btn-primary d-block d-md-none mt-2" onclick="addTask('done')">Add Task</button>
+        </div>
+    </div>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/Sortable.min.js"></script>
+    <script src="js/kanban.js"></script>
+</body>
+
+</html>
