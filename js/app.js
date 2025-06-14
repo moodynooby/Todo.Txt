@@ -1,8 +1,6 @@
 $(document).ready(function () {
 
-    const welcomeText = `Welcome! 
-
-** Delete this text and start writing your notes **`;
+    const welcomeText = ``;
 
     const darkmodeText = "Enable dark mode [Ctrl/Cmd + M]";
     const lightmodeText = "Enable light mode [Ctrl/Cmd + M]";

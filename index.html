@@ -27,12 +27,7 @@
 	<script src="/js/selector.js"></script>
 	<script src="/js/app.js"></script>
 	<script src="/js/timer.js"></script>
-	<script src="/js/libraries/tiny-mde.min.js"></script>
-	<link
-	  rel="stylesheet"
-	  type="text/css"
-	  href="/css/tiny-mde.min.css"
-	/>
+	<!-- tiny mde possible for md -->
 </head>
 
 <body>
@@ -154,7 +149,7 @@
 
 		<div class="container" id="textareaContainer">
 			<div class="starter-template form-floating">
-				<textarea id="note-area"
+				<textarea id="note"
 					placeholder="Type your notes here and when you come back all your notes will be right here..."
 					spellcheck="true" autofocus oninput="Editor()" class="form-control"></textarea>
 			</div>
@@ -478,9 +473,8 @@
 				data.style.display = "none";
 			}
 		}
-		var tinyMDE3 = new TinyMDE.Editor({textarea: 'note-area'});
 	</script>
-<script type="module">
+	<script type="module">
 	</script>
 	<script>
 		if (localStorage.getItem('mode')) {
