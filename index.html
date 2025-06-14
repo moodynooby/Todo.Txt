@@ -112,7 +112,7 @@
 
 		<div class="overlay"></div>
 	</nav>
-	<div class="recorder-container mt-5 pt-4" style="display: none;" id="recorderContainer">
+	<div class="recorder-container" style="display: none;" id="recorderContainer">
 		<h1>Voice Notes</h1>
 		<div class="recorder-controls">
 			<button id="recordButton" class="btn record-btn">
@@ -463,7 +463,7 @@
 	</div>
 
 	<div id="toast"></div>
-	<script type="module">
+	<script>
 
 		function showShit(data) {
 			if (data.style.display === "none") {
@@ -473,8 +473,6 @@
 				data.style.display = "none";
 			}
 		}
-	</script>
-	<script type="module">
 	</script>
 	<script>
 		if (localStorage.getItem('mode')) {

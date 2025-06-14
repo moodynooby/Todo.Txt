@@ -298,9 +298,14 @@ class VoiceRecorder {
         
         const notesContainer = document.createElement('div');
         notesContainer.className = 'notes-container';
+        notesContainer.className = 'input-group ';
+
         
-        const notesArea = document.createElement('textarea');
+        const notesArea = document.createElement('input');
         notesArea.className = 'recording-notes';
+        notesArea.className = 'form-control';
+        notesArea.type = 'text';
+
         notesArea.placeholder = 'Add notes about this recording...';
         notesArea.value = notes;
         
