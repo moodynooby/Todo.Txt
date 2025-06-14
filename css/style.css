@@ -245,10 +245,9 @@ body {
 textarea {
   width: 100%;
   font-size: 18px;
-  outline: none;
-  box-shadow: var(--bs-secondary-color) 0.5px;
-  outline: 0px !important;
+  outline: 1px !important;
   -webkit-appearance: none;
+  box-shadow: var(--bs-secondary-color) 0.5px;
   resize: none;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
@@ -258,9 +257,21 @@ textarea {
   background-color: var(--bs-body-bg);
   color: var(--bs-body-color);
   border-radius: 20px;
-  margin-top: 5px;
+  margin-top: 15px;
 }
 
+textarea:hover {
+  animation: pulse 1s ease-in-out 1 forwards;
+}
+
+@keyframes pulse {
+  to {
+    padding: 10px;
+  }
+  from {
+padding:5px;
+  }
+}
 kbd {
   display: inline-block;
   padding: 3px 10px;
