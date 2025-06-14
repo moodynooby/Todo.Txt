@@ -262,9 +262,6 @@ textarea {
   scale: 0.95;
 }
 
-textarea:hover {
-  animation: pulse 0.9s ease-in-out 0.7 forwards;
-}
 kbd {
   display: inline-block;
   padding: 3px 10px;
@@ -526,8 +523,8 @@ table tr td {
   position: absolute;
   display: inline-block;
   background: #e2dcd8;
-  bottom: 1.4em;
-  right: 1.4em;
+  bottom: 3.3em;
+  right: 3.3em;
   margin-left: auto;
   padding: 6px 14px;
   border-radius: 20px;
