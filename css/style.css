@@ -258,19 +258,12 @@ textarea {
   color: var(--bs-body-color);
   border-radius: 20px;
   margin-top: 15px;
+  padding: 5px;
+  scale: 0.95;
 }
 
 textarea:hover {
-  animation: pulse 1s ease-in-out 1 forwards;
-}
-
-@keyframes pulse {
-  to {
-    padding: 10px;
-  }
-  from {
-padding:5px;
-  }
+  animation: pulse 0.9s ease-in-out 0.7 forwards;
 }
 kbd {
   display: inline-block;
