@@ -8,7 +8,7 @@ Rsbuild + eslint + jsx + tailwind + react
 Install the dependencies:
 
 ```bash
-pnpm install
+bun install
 ```
 
 ## Get started
@@ -16,17 +16,17 @@ pnpm install
 Start the dev server:
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 Build the app for production:
 
 ```bash
-pnpm build
+bun build
 ```
 
 Preview the production build locally:
 
 ```bash
-pnpm preview
+bun preview
 ```

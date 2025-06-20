@@ -5,6 +5,7 @@ import Markdown from 'react-markdown'
 import { useState } from "react";
 
 const App = () => {
+  
   const [md, setMD] = useState("");
     return (
     <div className="unified-editor markdown-body">
@@ -13,6 +14,7 @@ const App = () => {
         placeholder="Start Writing"
         value={md}
         onChange={(e) => setMD(e.target.value)}
+        autoFocus
       ></textarea>
       <Markdown>{md}</Markdown>
     </div>
