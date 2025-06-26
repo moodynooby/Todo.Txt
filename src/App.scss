@@ -1,12 +1,12 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-
   themes: corporate --default, sunset --prefersdark;
 }
 body {
   margin: 0;
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  background-color: var(--color-neutral);
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
 .unified-editor {
@@ -26,7 +26,7 @@ body {
   border: 0;
   outline: 0;
   padding: 1rem;
-  opacity: 0;
+  opacity: 0.1;
   height: 100%;
 }
 Markdown {
@@ -40,15 +40,6 @@ Markdown {
   opacity: 0;
   position: absolute;
   top: 0;
-}
-.markdown-body::after {
-  content: "";
-  width: 5px;
-  height: 20px;
-  background: var(--color-neutral-content);
-  display: inline-block;
-  animation: cursor-blink 1.5s steps(2) infinite;
-  border-radius: 5px;
 }
 
 ul {
