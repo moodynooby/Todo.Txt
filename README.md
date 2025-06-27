@@ -1,3 +1,10 @@
+# Todo
+- pip
+- fullscrn
+- sw
+- timer
+- dragging sticky notes
+
 # Super basic tech stack
 Rsbuild + eslint + jsx + tailwind + react
 
