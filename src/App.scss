@@ -18,6 +18,8 @@ body {
   border: 1px solid var(--neutral-content);
   border-radius: 20px;
   padding: 5px;
+  background: var(--color-base-200);
+  color: var(--color-base-content);
 }
 .textarea {
   width: 100%;
@@ -26,7 +28,7 @@ body {
   border: 0;
   outline: 0;
   padding: 1rem;
-  opacity: 0.1;
+  opacity: 0.3;
   height: 100%;
 }
 Markdown {

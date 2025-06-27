@@ -12,6 +12,7 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.10",
     "github-markdown-css": "^5.8.1",
+    "lucide-react": "^0.523.0",
     "postcss": "^8.5.6",
     "postcss-loader": "^8.1.1",
     "react": "^19.1.0",
