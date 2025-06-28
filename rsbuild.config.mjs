@@ -8,12 +8,6 @@ export default defineConfig({
   plugins: [pluginReact(), pluginSass(), pluginNodePolyfill()],
   module: { rules: [{ test: /\.css$/, use: ["postcss-loader"], type: "css" }] },
   html: {
-    meta: {
-      viewport: {
-        width: 'device-width',
-        initialScale: 1,
-      },
-    },
     title: "T0do.TxT",
     favicon: "./src/assets/todotxt2.svg",
     appIcon: {
