@@ -10,7 +10,10 @@
     "preview": "rsbuild preview"
   },
   "dependencies": {
+    "@rsbuild/plugin-node-polyfill": "^1.3.0",
     "@tailwindcss/postcss": "^4.1.10",
+    "buffer": "^6.0.3",
+    "file-saver": "^2.0.5",
     "github-markdown-css": "^5.8.1",
     "lucide-react": "^0.523.0",
     "postcss": "^8.5.6",
@@ -21,8 +24,18 @@
     "react-markdown": "^10.1.0",
     "react-share": "^5.2.2",
     "rehype-raw": "^7.0.0",
+    "remark-breaks": "^4.0.0",
+    "remark-collapse": "^0.1.2",
+    "remark-docx": "^0.1.6",
+    "remark-emoji": "^5.0.1",
+    "remark-fediverse-user": "^0.2.1",
+    "remark-flexible-code-titles": "^1.3.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
     "tailwindcss": "^4.1.10",
-    "theme-change": "^2.5.0"
+    "theme-change": "^2.5.0",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.8",

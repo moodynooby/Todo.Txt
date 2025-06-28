@@ -3,6 +3,12 @@ import React from "react";
 import "github-markdown-css/github-markdown.css";
 import Markdown from "react-markdown";
 import { useState, useEffect } from "react";
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import fediverseUser from 'remark-fediverse-user';
+import emoji from 'remark-emoji';
+import remarkCodeTitles from "remark-flexible-code-titles";
+
 
 const App = ({ viewMode }) => {
   const [md, setMD] = useState(() => {
@@ -17,9 +23,17 @@ const App = ({ viewMode }) => {
   const handleMDChange = (e) => {
     setMD(e.target.value);
   };
-
+const MarkdownComponent = () => {
+  return (
+    <div>
+      <Markdown remarkPlugins={[remarkGfm ,remarkBreaks ,fediverseUser , emoji, remarkCodeTitles]}>{md}</Markdown>
+    </div>
+  );
+};
   return (
     <div className="unified-editor markdown-body">
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+      </div>
       {(viewMode === "text" ) ? (
         <textarea
           className="textarea"
@@ -43,12 +57,12 @@ const App = ({ viewMode }) => {
         ></textarea>
         </div>
         <div className="unified-md">           <h2>Markdown </h2>
-           <Markdown>{md}</Markdown>
+<MarkdownComponent/>
 </div>
 </>
       ) : null}
       {viewMode === "markdown"  ? (
-        <div className="md">                <Markdown>{md}</Markdown>
+        <div className="md">             <MarkdownComponent />
 </div>
       ) : null}
     </div>
