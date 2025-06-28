@@ -20,6 +20,7 @@ export default defineConfig({
       name: "T0do.TxT",
       short_name: "T0do",
       orientation: "portrait",
+      display: "standalone",
       background_color: "#2EC6FE",
       theme_color: "#605dff",
       icons: [
