@@ -17,18 +17,18 @@ const RspackManifestPlugin = () => ({
         orientation: "portrait",
         icons: [
           {
-            src: "/assets/icon512_maskable.png",
+            src: "./assets/icon512_maskable.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
           },
           {
-            src: "/assets/icon512_rounded.png",
+            src: "./assets/icon512_rounded.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "/assets/icon192.png",
+            src: "./assets/icon192.png",
             sizes: "192x192",
             type: "image/png",
           },
