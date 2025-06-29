@@ -4,7 +4,6 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkDocx from 'remark-docx';
 import { saveAs } from 'file-saver';
-import { FileDown } from "lucide-react";
 
 const DocxExport = ({ markdownContent, fileName }) => {
   const handleExport = async () => {
@@ -20,7 +19,7 @@ const DocxExport = ({ markdownContent, fileName }) => {
   };
 
   return (
-    <a onClick={handleExport}>            <FileDown size={20} />
+    <a onClick={handleExport}>        Download As DocX
 </a>
 
   );

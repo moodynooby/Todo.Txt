@@ -1,13 +1,11 @@
-import {Info} from "lucide-react";
-import { useState } from "react";
 
-const HelpToast = ({ show, onClose }) => {
-  if (!show) return null;
+const HelpModal = () => {
 
   return (
-    <div className="toast toast-top toast-center">
-      <div className="alert alert-info">
-        <table>
+    <>
+          <dialog className="modal" id="my_modal_1">
+      <div className="modal-box rounded-box border border-base-content/5 ">
+        <table className="table">
           <thead>
             <tr>
               <th>Syntax</th>
@@ -95,27 +93,15 @@ const HelpToast = ({ show, onClose }) => {
             </tr>
           </tbody>
         </table>
+    <div className="modal-action">
+  <form method="dialog" >        {/* if there is a button in form, it will close the modal */}
+        <button className="btn btn-error">Close</button>
+      </form>
+    </div>
       </div>
-    </div >
-  );
-};
-
-const HelpButton = () => {
-  const [showToast, setShowToast] = useState(false);
-
-  const handleClick = () => {
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 5000); // Hide toast after 5 seconds
-  };
-
-  return (
-    <>
-      <a onClick={handleClick} >
-        <Info size={20} />
-      </a>
-      <HelpToast show={showToast} onClose={() => setShowToast(false)} />
+    </dialog >
     </>
   );
 };
 
-export default HelpButton;
+export default HelpModal;

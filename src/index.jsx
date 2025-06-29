@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import Header from './Header';
+import HelpModal from './Help';
+
 import { useState, useEffect } from "react";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -34,6 +36,8 @@ function RootComponent() {
   return (
     <>
       <Header viewMode={viewMode} setViewMode={setViewMode} />
+                        <HelpModal/>
+
       <App viewMode={viewMode} />
     </>
   );

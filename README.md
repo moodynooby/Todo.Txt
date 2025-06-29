@@ -1,9 +1,3 @@
-# Todo
-
-- pip
-- sw
-- timer
-- dragging sticky notes
 
 # Super basic tech stack
 

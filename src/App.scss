@@ -2,6 +2,14 @@
 @plugin "daisyui" {
   themes: corporate --default, sunset --prefersdark;
 }
+.modal {
+min-width: fit-content;
+min-height: fit-content;
+color: var(--color-base-content);
+background-color: var(--color-base-base-300);
+z-index: 1000;
+
+}
 html {
   margin: 0;
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
