@@ -1,15 +1,34 @@
 @import "tailwindcss";
+
 @plugin "daisyui" {
   themes: corporate --default, sunset --prefersdark;
 }
-.modal {
-min-width: fit-content;
-min-height: fit-content;
-color: var(--color-base-content);
-background-color: var(--color-base-base-300);
-z-index: 1000;
-
+@property --_w {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 100vw; 
 }
+@property --_h {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 100vh; 
+}
+:root {
+  --w: tan(atan2(var(--_w),1px)); /* screen width */
+  --h: tan(atan2(var(--_h),1px)); /* screen height*/
+  /* The result is an integer without unit  */
+}
+
+.modal {
+  min-width: fit-content;
+  min-height: fit-content;
+  color: var(--color-base-content);
+  background-color: var(--color-base-base-300);
+  z-index: 1000;
+ max-width: var(--w);
+ max-height: var(--h);
+}
+
 html {
   margin: 0;
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
@@ -29,6 +48,7 @@ html {
   background: var(--color-base-200);
   color: var(--color-base-content);
 }
+
 .textarea {
   width: 100%;
   position: absolute;
@@ -37,11 +57,15 @@ html {
   outline: 0;
   padding: 1rem;
   height: 100%;
-}
-.unified-txt {
-    opacity: 0.3;
+  text-transform: capitalize;
 
 }
+
+.unified-txt {
+  opacity: 0.3;
+
+}
+
 .md {
   width: 100%;
   height: 100%;
@@ -51,25 +75,30 @@ html {
   outline: 0;
   padding: 1rem;
 }
- @media only screen and (min-width: 768px) {
+
+@media only screen and (min-width: 768px) {
   .unified-md {
     width: 50%;
-      height: 100%;
-  position: absolute;
-border-left: 1px solid var(--color-primary);
+    height: 100%;
+    position: absolute;
+    border-left: 1px solid var(--color-primary);
     right: 0;
-      padding: 1rem;
-
+    padding: 1rem;
+    font-size: 1.2rem;
   }
+
   .unified-txt {
     width: 50%;
-      height: 100%;
-  position: absolute;
+    height: 100%;
+    position: absolute;
     left: 0;
-      padding: 1rem;
-      opacity: 1;
+    padding: 1rem;
+    opacity: 1;
+    font-size: 1.2rem;
+
   }
 }
+
 ul {
   list-style-type: circle;
 }

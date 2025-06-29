@@ -11,6 +11,33 @@ import remarkCodeTitles from "remark-flexible-code-titles";
 
 
 const App = ({ viewMode }) => {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        console.log('[SW] Registered:', reg);
+
+        // reg.onupdatefound = () => {
+        //   const newWorker = reg.installing;
+        //   newWorker.onstatechange = () => {
+        //     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+        //       alert('🆕 New version available! Refresh to update.');
+        //     }
+        //   };
+        // };
+      }).catch((err) => {
+        console.error('[SW] Registration failed:', err);
+      });
+    });
+  }
+  Notification.requestPermission().then((permission) => {
+    if (permission === "granted") {
+      // new Notification("📌 Reminder!", {
+      //   body: "Don't forget to finish your T0do.TxT!",
+      //   icon: "/assets/icon192.png",
+      // });
+    }
+  });
+
   const [md, setMD] = useState(() => {
     const savedMD = localStorage.getItem("markdownContent");
     return savedMD !== null ? savedMD : "Start Writing";
@@ -23,18 +50,18 @@ const App = ({ viewMode }) => {
   const handleMDChange = (e) => {
     setMD(e.target.value);
   };
-const MarkdownComponent = () => {
-  return (
-    <div>
-      <Markdown remarkPlugins={[remarkGfm ,remarkBreaks ,fediverseUser , emoji, remarkCodeTitles]}>{md}</Markdown>
-    </div>
-  );
-};
+  const MarkdownComponent = () => {
+    return (
+      <div>
+        <Markdown remarkPlugins={[remarkGfm, remarkBreaks, fediverseUser, emoji, remarkCodeTitles]}>{md}</Markdown>
+      </div>
+    );
+  };
   return (
     <div className="unified-editor markdown-body">
       <div style={{ position: 'relative', display: 'inline-block' }}>
       </div>
-      {(viewMode === "text" ) ? (
+      {(viewMode === "text") ? (
         <textarea
           className="textarea"
           placeholder="Start Writing"
@@ -44,26 +71,26 @@ const MarkdownComponent = () => {
         ></textarea>
       ) : null}
 
-  {(viewMode === "both") ? (
-      <>
-        <div className="unified-txt">
-      <h2>Text </h2>
-      <textarea
-          className="textarea unified-txt"
-          placeholder="Start Writing"
-          value={md}
-          onChange={handleMDChange}
-          autoFocus
-        ></textarea>
-        </div>
-        <div className="unified-md">           <h2>Markdown </h2>
-<MarkdownComponent/>
-</div>
-</>
+      {(viewMode === "both") ? (
+        <>
+          <div className="unified-txt">
+            <h2>Text </h2>
+            <textarea
+              className="textarea unified-txt"
+              placeholder="Start Writing"
+              value={md}
+              onChange={handleMDChange}
+              autoFocus
+            ></textarea>
+          </div>
+          <div className="unified-md">           <h2>Markdown </h2>
+            <MarkdownComponent />
+          </div>
+        </>
       ) : null}
-      {viewMode === "markdown"  ? (
+      {viewMode === "markdown" ? (
         <div className="md">             <MarkdownComponent />
-</div>
+        </div>
       ) : null}
     </div>
   );

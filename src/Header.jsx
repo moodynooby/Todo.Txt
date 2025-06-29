@@ -14,7 +14,7 @@ import Fullscreen from "./fullscreen";
 import DocxExport from './DocxExport';
 import { Info } from "lucide-react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 
 
@@ -24,6 +24,44 @@ const Header = ({ viewMode, setViewMode }) => {
     const savedMD = localStorage.getItem("markdownContent");
     return savedMD !== null ? savedMD : "Start Writing";
   });
+
+  const deferredPrompt = useRef(null);
+  const installButton = useRef(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      deferredPrompt.current = e;
+      if (installButton.current) {
+        installButton.current.hidden = false;
+      }
+    };
+
+    const handleAppInstalled = () => {
+      if (installButton.current) {
+        installButton.current.hidden = true;
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt.current) {
+      deferredPrompt.current.prompt();
+      const { outcome } = await deferredPrompt.current.userChoice;
+      if (outcome === 'accepted') {
+        deferredPrompt.current = null;
+      }
+    }
+  };
+
   return (
     <header>
       <div className="logo-cont">
@@ -48,7 +86,10 @@ const Header = ({ viewMode, setViewMode }) => {
           </div>
         </div>
         <div className="ctrl-cont-1">
+          <a id="install" ref={installButton} hidden className="btn tool-cont" onClick={handleInstallClick}>Install</a>
+
           <div className="tool-cont">
+
             <a href="https://todopng.netlify.app/" rel="noopener noreferrer">
               <PencilRuler size={20} />
             </a>
@@ -57,8 +98,11 @@ const Header = ({ viewMode, setViewMode }) => {
             <a tabIndex={0} role="button" >  <FileDown size={20} /></a>
             <ul tabIndex={0} className="dropdown-content menu bg-base-100 text-base-content rounded-box z-1 w-52 p-2 shadow-sm">
               <li>                        <DocxExport markdownContent={md} fileName="my-document" />
-
               </li>
+              {/* <li>Export As Text</li>
+              <li>Export As MarkDown</li>
+              <li>Export As HTML</li> */}
+
             </ul>
 
           </div>

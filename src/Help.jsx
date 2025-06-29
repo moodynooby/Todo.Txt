@@ -4,7 +4,15 @@ const HelpModal = () => {
   return (
     <>
           <dialog className="modal" id="my_modal_1">
+            
       <div className="modal-box rounded-box border border-base-content/5 ">
+      <div className="modal-action">
+  <form method="dialog" >        {/* if there is a button in form, it will close the modal */}
+        <button className="btn btn-error">Close</button>
+      </form>
+    </div>
+
+      
         <table className="table">
           <thead>
             <tr>
@@ -93,11 +101,6 @@ const HelpModal = () => {
             </tr>
           </tbody>
         </table>
-    <div className="modal-action">
-  <form method="dialog" >        {/* if there is a button in form, it will close the modal */}
-        <button className="btn btn-error">Close</button>
-      </form>
-    </div>
       </div>
     </dialog >
     </>
