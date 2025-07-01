@@ -67,15 +67,10 @@ export default defineConfig({
         content: "#2EC6FE",
       },
     ],
-    tags: [
-      {
-        tag: "link",
-        attrs: {
-          rel: "manifest",
-          href: "/manifest.webmanifest",
-        },
-      },
-    ],
+    icons: [
+      { src: "./src/assets/icon192.svg", size: 192 },
+      { src: "./src/assets/icon512_rounded.svg", size: 512 },
+    ]
   },
   tools: {
     rspack: {
