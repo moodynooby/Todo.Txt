@@ -26,8 +26,10 @@ self.addEventListener('install', () => {
     self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
-    clients.claim();
+self.addEventListener('activate', () => {
+    if (typeof clients !== 'undefined') {
+        clients.claim();
+    }
 });
 
 // Optional: Sample notification trigger

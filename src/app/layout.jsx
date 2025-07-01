@@ -1,44 +1,14 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import Header from './Header';
-import HelpModal from './Help';
+import './globals.css';
 
-import { useState, useEffect } from "react";
+export const metadata = {
+  title: 'Todo.TxT',
+  description: 'A simple todo.txt app',
+};
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-
-root.render(
-  <React.StrictMode>
-    <RootComponent />
-  </React.StrictMode>,
-);
-
-function RootComponent() {
-  const [viewMode, setViewMode] = useState(() => {
-    try {
-      const savedMode = localStorage.getItem("viewMode");
-      return savedMode ? savedMode : "both";
-    } catch (error) {
-      console.error("Error loading view mode from local storage:", error);
-      return "both";
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("viewMode", viewMode);
-    } catch (error) {
-      console.error("Error saving view mode to local storage:", error);
-    }
-  }, [viewMode]);
-
+export default function RootLayout({ children }) {
   return (
-    <>
-      <Header viewMode={viewMode} setViewMode={setViewMode} />
-                        <HelpModal/>
-
-      <App viewMode={viewMode} />
-    </>
+    <html lang="en">
+      <body>{children}</body>
+    </html>
   );
 }

@@ -1,5 +1,5 @@
-import "./App.scss";
-import "./Header.scss";
+
+
 import {
   PencilRuler,
   Sun,
@@ -18,55 +18,29 @@ import { useState, useEffect, useRef } from "react";
 
 
 
+import Link from 'next/link';
+
 const Header = ({ viewMode, setViewMode }) => {
   const [isdark, setIsdark] = IsDark();
-  const [md, setMD] = useState(() => {
-    const savedMD = localStorage.getItem("markdownContent");
-    return savedMD !== null ? savedMD : "Start Writing";
-  });
-
-  const deferredPrompt = useRef(null);
-  const installButton = useRef(null);
+  const [md, setMD] = useState('Start Writing');
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      deferredPrompt.current = e;
-      if (installButton.current) {
-        installButton.current.hidden = false;
+    try {
+      const savedMD = localStorage.getItem('markdownContent');
+      if (savedMD) {
+        setMD(savedMD);
       }
-    };
-
-    const handleAppInstalled = () => {
-      if (installButton.current) {
-        installButton.current.hidden = true;
-      }
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt.current) {
-      deferredPrompt.current.prompt();
-      const { outcome } = await deferredPrompt.current.userChoice;
-      if (outcome === 'accepted') {
-        deferredPrompt.current = null;
-      }
+    } catch (error) {
+      console.error('Error loading from local storage:', error);
     }
-  };
+  }, []);
 
   return (
     <header>
       <div className="logo-cont">
-        {" "}
-        <h1>T0do.TxT</h1>
+        <Link href="/">
+          <h1>T0do.TxT</h1>
+        </Link>
       </div>
       <div className="ctrl-cont">
         <div className="ctrl-cont-2">
@@ -86,14 +60,7 @@ const Header = ({ viewMode, setViewMode }) => {
           </div>
         </div>
         <div className="ctrl-cont-1">
-          <a id="install" ref={installButton} hidden className="btn tool-cont" onClick={handleInstallClick}>Install</a>
-
-          <div className="tool-cont">
-
-            <a href="https://todopng.netlify.app/" rel="noopener noreferrer">
-              <PencilRuler size={20} />
-            </a>
-          </div>
+          
           <div className="tool-cont dropdown">
             <a tabIndex={0} role="button" >  <FileDown size={20} /></a>
             <ul tabIndex={0} className="dropdown-content menu bg-base-100 text-base-content rounded-box z-1 w-52 p-2 shadow-sm">
@@ -126,7 +93,7 @@ const Header = ({ viewMode, setViewMode }) => {
           </div>
 
           <div className="tool-cont fullscreen">
-            <Fullscreen size={20} />
+            <Fullscreen element={typeof window !== 'undefined' ? document.documentElement : null} />
           </div>
 
         </div>

@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { Maximize, Minimize } from "lucide-react";
 
-function Fullscreen({ element = document.documentElement }) {
+function Fullscreen({ element }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      element.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
-      });
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
+    if (typeof window !== 'undefined') {
+        if (!document.fullscreenElement) {
+          element.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable fullscreen: ${err.message}`);
+          });
+        } else if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
     }
   };
 
@@ -18,11 +20,12 @@ function Fullscreen({ element = document.documentElement }) {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
+    if (typeof window !== 'undefined') {
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => {
+          document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        };
+    }
   }, []);
 
   return (

@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactJsx from 'eslint-plugin-react/configs/jsx-runtime.js';
 import react from 'eslint-plugin-react/configs/recommended.js';
 import globals from 'globals';
+import next from 'eslint-config-next';
 
 export default [
   { languageOptions: { globals: globals.browser } },
@@ -25,5 +26,6 @@ export default [
       ...reactHooks.configs.recommended.rules,
     },
   },
+  next,
   { ignores: ['dist/'] },
 ];
