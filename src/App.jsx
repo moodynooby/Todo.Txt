@@ -42,11 +42,30 @@ const App = ({ viewMode }) => {
     const savedMD = localStorage.getItem("markdownContent");
     return savedMD !== null ? savedMD : "Start Writing";
   });
+  const [htmlContent, setHtmlContent] = useState(() => {
+    const myDiv = document.getElementsByClassName('.md');
+    const htmlContent = myDiv.innerHTML;
+    const fullHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>${'document'}</title>
+          </head>
+          <body>
+            ${htmlContent}
+          </body>
+        </html>
+      `;
+    return fullHtml
 
+  });
   useEffect(() => {
     localStorage.setItem("markdownContent", md);
   }, [md]);
-
+  useEffect(() => {
+    localStorage.setItem("htmlContent", htmlContent);
+  }, [htmlContent]);
   const handleMDChange = (e) => {
     setMD(e.target.value);
   };

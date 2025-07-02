@@ -5,12 +5,14 @@ header {
   padding: 1rem;
   justify-content: space-between;
 }
+
 .logo-cont {
   display: flex;
   justify-content: center;
 
 
 }
+
 .ctrl-cont {
   display: flex;
   align-items: center;
@@ -18,6 +20,7 @@ header {
   flex-wrap: wrap;
   flex-flow: row;
 }
+
 .ctrl-cont-1 {
   display: flex;
   align-items: center;
@@ -31,13 +34,15 @@ header {
     color: var(--color-base-base-300);
   }
 }
+
 .tool-cont {
-  margin: 2px ;
-  padding: 5px ;
+  margin: 2px;
+  padding: 5px;
   border-radius: var(--radius-field);
   color: var(--color-base-content);
   background-color: var(--color-base-200);
 }
+
 .ctrl-cont-2 {
   display: flex;
   align-items: center;
@@ -47,6 +52,7 @@ header {
   transition: background-color 0.3s ease;
   max-height: min-content;
 }
+
 .theme-icon {
   background-color: var(--color-base-content);
   color: var(--color-base-200);
@@ -54,6 +60,12 @@ header {
   border-radius: var(--radius-selector);
   transition: background-color 0.3s ease;
 }
+
+.dropdown-content {
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+}
+
 .theme-icon:hover {
   background-color: var(--color-base-200);
   color: var(--color-base-content);
@@ -69,6 +81,7 @@ header {
   color: var(--color-base-content);
 
 }
+
 .toggle {
   min-width: fit-content;
 }

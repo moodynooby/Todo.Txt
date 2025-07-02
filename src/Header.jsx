@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import IsDark from "./theme";
 import Fullscreen from "./fullscreen";
-import DocxExport from './DocxExport';
+import Export from './Export';
 import { Info } from "lucide-react";
 
 import { useState, useEffect, useRef } from "react";
@@ -84,6 +84,15 @@ const Header = ({ viewMode, setViewMode }) => {
               </a>
             </div>
           </div>
+          <div className="tool-cont dropdown">
+            <a tabIndex={0} role="button" >  <FileDown size={20} /></a>
+            <ul tabIndex={0} className="dropdown-content menu bg-base-100 text-base-content rounded-box z-1 w-52 p-2 shadow-sm">
+              <Export markdownContent={md} fileName="my-document" />
+
+            </ul>
+
+          </div>
+
         </div>
         <div className="ctrl-cont-1">
           <a id="install" ref={installButton} hidden className="btn tool-cont" onClick={handleInstallClick}>Install</a>
@@ -93,18 +102,6 @@ const Header = ({ viewMode, setViewMode }) => {
             <a href="https://todopng.netlify.app/" rel="noopener noreferrer">
               <PencilRuler size={20} />
             </a>
-          </div>
-          <div className="tool-cont dropdown">
-            <a tabIndex={0} role="button" >  <FileDown size={20} /></a>
-            <ul tabIndex={0} className="dropdown-content menu bg-base-100 text-base-content rounded-box z-1 w-52 p-2 shadow-sm">
-              <li>                        <DocxExport markdownContent={md} fileName="my-document" />
-              </li>
-              {/* <li>Export As Text</li>
-              <li>Export As MarkDown</li>
-              <li>Export As HTML</li> */}
-
-            </ul>
-
           </div>
           <label className="tool-cont toggle" >
             <input
