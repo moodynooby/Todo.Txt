@@ -28,6 +28,7 @@ function Fullscreen({ element = document.documentElement }) {
   return (
     <button
       onClick={toggleFullscreen}
+      className="btn btn-neutral"
     >
       {isFullscreen ? <Minimize /> : <Maximize />}
     </button>

@@ -11,7 +11,7 @@ const RspackManifestPlugin = () => ({
     compiler.hooks.thisCompilation.tap("RspackManifestPlugin", (compilation) => {
       const manifest = {
         name: "T0do.TxT",
-        short_name: "T0do",
+        short_name: "todo",
         start_url: "/index.html",
         display: "standalone",
         orientation: "portrait",
