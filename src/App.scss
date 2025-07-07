@@ -3,30 +3,25 @@
 @plugin "daisyui" {
   themes: corporate --default, sunset --prefersdark;
 }
+
 @property --_w {
   syntax: '<length>';
   inherits: true;
-  initial-value: 100vw; 
+  initial-value: 100vw;
 }
+
 @property --_h {
   syntax: '<length>';
   inherits: true;
-  initial-value: 100vh; 
-}
-:root {
-  --w: tan(atan2(var(--_w),1px)); /* screen width */
-  --h: tan(atan2(var(--_h),1px)); /* screen height*/
-  /* The result is an integer without unit  */
+  initial-value: 100vh;
 }
 
-.modal {
-  min-width: fit-content;
-  min-height: fit-content;
-  color: var(--color-base-content);
-  background-color: var(--color-base-base-300);
-  z-index: 1000;
- max-width: var(--w);
- max-height: var(--h);
+:root {
+  --w: tan(atan2(var(--_w), 1px));
+  /* screen width */
+  --h: tan(atan2(var(--_h), 1px));
+  /* screen height*/
+  /* The result is an integer without unit  */
 }
 
 html {

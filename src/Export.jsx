@@ -4,7 +4,6 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkDocx from 'remark-docx';
 import { saveAs } from 'file-saver';
-import ReactDOMServer from 'react-dom/server';
 import { useState, useEffect } from "react";
 
 
@@ -53,11 +52,11 @@ const Export = ({ markdownContent, fileName }) => {
   };
 
   return (
-    <>
-      <li><a onClick={handleDOCX}>Export As DocX</a></li>
-      <li><a onClick={handleMD}>Export As Text</a></li>
-      <li><a onClick={handleHTML}>Export As HTML</a></li>
-    </>
+    <div className='export-cont'>
+      <button onClick={handleDOCX} className='btn btn-base-300'>Export As DocX</button>
+      <button onClick={handleMD} className='btn btn-base-300'>Export As Text</button>
+      <button onClick={handleHTML} className='btn btn-base-300'>Export As HTML</button>
+    </div>
   );
 };
 
