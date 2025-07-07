@@ -1,0 +1,51 @@
+header {
+  display: flex;
+  font-weight: bolder;
+  padding: 0.1rem;
+  justify-content: space-between;
+  flex-flow: row wrap;
+
+}
+
+.logo-cont {
+  display: flex;
+  justify-content: center;
+  font-size: 2rem;
+
+
+}
+
+.help-box {
+  min-width: max-content;
+  min-height: max-content;
+  color: var(--color-base-content);
+  z-index: 1000;
+}
+
+.export-cont {
+  display: flex;
+  padding: 1rem;
+  justify-content: space-around;
+}
+
+.dropdown-content {
+  top: -2rem;
+
+}
+
+.ctrl-cont {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.dropdown-content {
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+}
+
+.fullscreen {
+  display: flex;
+  align-items: center;
+}
