@@ -6,7 +6,7 @@ function Fullscreen({ element = document.documentElement }) {
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      element.requestFullscreen().catch(err => {
+      element.requestFullscreen().catch((err) => {
         console.error(`Error attempting to enable fullscreen: ${err.message}`);
       });
     } else if (document.exitFullscreen) {
@@ -19,17 +19,14 @@ function Fullscreen({ element = document.documentElement }) {
       setIsFullscreen(!!document.fullscreenElement);
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
   return (
-    <button
-      onClick={toggleFullscreen}
-      className="btn btn-neutral"
-    >
+    <button onClick={toggleFullscreen} className="btn btn-neutral">
       {isFullscreen ? <Minimize /> : <Maximize />}
     </button>
   );

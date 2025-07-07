@@ -1,27 +1,9 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
-  themes: corporate --default, sunset --prefersdark;
-}
-
-@property --_w {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 100vw;
-}
-
-@property --_h {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 100vh;
-}
-
-:root {
-  --w: tan(atan2(var(--_w), 1px));
-  /* screen width */
-  --h: tan(atan2(var(--_h), 1px));
-  /* screen height*/
-  /* The result is an integer without unit  */
+  themes:
+    corporate --default,
+    sunset --prefersdark;
 }
 
 html {
@@ -53,12 +35,10 @@ html {
   padding: 1rem;
   height: 100%;
   text-transform: capitalize;
-
 }
 
 .unified-txt {
   opacity: 0.3;
-
 }
 
 .md {
@@ -90,7 +70,6 @@ html {
     padding: 1rem;
     opacity: 1;
     font-size: 1.2rem;
-
   }
 }
 

@@ -1,4 +1,3 @@
-
 # Super basic tech stack
 
 Rsbuild + eslint + jsx + tailwind + react

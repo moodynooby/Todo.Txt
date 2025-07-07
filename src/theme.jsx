@@ -20,7 +20,7 @@ function IsDark() {
     // Set theme based on isdark value
     document.documentElement.setAttribute(
       "data-theme",
-      isdark === "checked" ? "sunset" : "corporate"
+      isdark === "checked" ? "sunset" : "corporate",
     );
   }, [isdark]);
 

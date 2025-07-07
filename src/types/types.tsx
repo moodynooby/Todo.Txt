@@ -1,8 +1,7 @@
-
 type AppIconItem = {
   src: string;
   size: number;
-  target?: 'apple-touch-icon' | 'web-app-manifest';
+  target?: "apple-touch-icon" | "web-app-manifest";
 };
 
 type AppIcon = {
