@@ -10,36 +10,6 @@ import emoji from "remark-emoji";
 import remarkCodeTitles from "remark-flexible-code-titles";
 
 const App = ({ viewMode }) => {
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then((reg) => {
-          console.log("[SW] Registered:", reg);
-
-          // reg.onupdatefound = () => {
-          //   const newWorker = reg.installing;
-          //   newWorker.onstatechange = () => {
-          //     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          //       alert('🆕 New version available! Refresh to update.');
-          //     }
-          //   };
-          // };
-        })
-        .catch((err) => {
-          console.error("[SW] Registration failed:", err);
-        });
-    });
-  }
-  Notification.requestPermission().then((permission) => {
-    if (permission === "granted") {
-      // new Notification("📌 Reminder!", {
-      //   body: "Don't forget to finish your T0do.TxT!",
-      //   icon: "/assets/icon192.png",
-      // });
-    }
-  });
-
   const [md, setMD] = useState(() => {
     const savedMD = localStorage.getItem("markdownContent");
     return savedMD !== null ? savedMD : "Start Writing";

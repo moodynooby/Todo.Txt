@@ -1,6 +1,7 @@
 # Super basic tech stack
 
 Rsbuild + eslint + jsx + tailwind + react
+lots of tools not compatible
 
 # Rsbuild project
 

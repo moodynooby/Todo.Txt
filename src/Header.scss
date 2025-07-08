@@ -1,9 +1,14 @@
 header {
   display: flex;
+  font-size: small;
   font-weight: bolder;
   padding: 0.1rem;
   justify-content: space-between;
   flex-flow: row wrap;
+}
+
+.btn:hover {
+  color: var(--color-primary);
 }
 
 .logo-cont {
@@ -34,6 +39,12 @@ header {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.radio {
+  opacity: 0;
+  z-index: -5000;
+  position: absolute;
 }
 
 .dropdown-content {

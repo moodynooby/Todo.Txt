@@ -64,14 +64,13 @@ const Header = ({ viewMode, setViewMode }) => {
   };
 
   return (
-    <header className="overflow-x-auto">
-      <div className="logo-cont">
-        {" "}
+    <header className="overflow-x-auto shadow-primary">
+      <div className="logo-cont text-primary">
         <h1>T0do.TxT</h1>
       </div>
       <div className="ctrl-cont">
         <div className="join">
-          <label className="join-item btn">
+          <label className={`join-item btn ${viewMode === "text" ? "btn-primary" : "btn-neutral"}`}>
             <input
               type="radio"
               checked={viewMode === "text"}
@@ -82,7 +81,7 @@ const Header = ({ viewMode, setViewMode }) => {
             />
             <ALargeSmall />
           </label>
-          <label className="join-item btn">
+          <label className={`join-item btn ${viewMode === "both" ? "btn-primary" : "btn-neutral"}`}>
             <input
               type="radio"
               checked={viewMode === "both"}
@@ -93,7 +92,7 @@ const Header = ({ viewMode, setViewMode }) => {
             />
             <BookOpenText />
           </label>
-          <label className="join-item btn">
+          <label className={`join-item btn ${viewMode === "markdown" ? "btn-primary" : "btn-neutral"}`}>
             <input
               type="radio"
               checked={viewMode === "markdown"}
@@ -104,6 +103,7 @@ const Header = ({ viewMode, setViewMode }) => {
             />
             <WholeWord />
           </label>
+
         </div>
 
         <button
@@ -148,7 +148,7 @@ const Header = ({ viewMode, setViewMode }) => {
         <label className="toggle text-base-content">
           <input
             type="checkbox"
-            className="theme-controller"
+            className="theme-controller bg-primary text-primary-content rounded-selector"
             value={isdark}
             checked={isdark === "checked"}
             onChange={(e) => setIsdark(e.target.checked ? "checked" : "")}
@@ -161,7 +161,7 @@ const Header = ({ viewMode, setViewMode }) => {
         </div>
         <a
           onClick={() => document.getElementById("help_modal").showModal()}
-          className="btn"
+          className="btn btn-neutral"
         >
           <Info size={20} />
         </a>
