@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 function IsDark() {
+  var darkTheme = "dark";
+  var lightTheme = "emerald";
+
   const [isdark, setIsdark] = useState(() => {
     const savedValue = localStorage.getItem("isdark");
     if (savedValue !== null) {
@@ -20,7 +23,7 @@ function IsDark() {
     // Set theme based on isdark value
     document.documentElement.setAttribute(
       "data-theme",
-      isdark === "checked" ? "sunset" : "corporate",
+      isdark === "checked" ? lightTheme : darkTheme,
     );
   }, [isdark]);
 
