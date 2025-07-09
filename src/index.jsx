@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import Header from "./Header";
-import Sidebar from "./sidebar";
+import Sidebar from "./Sidebar.jsx";
 import { useState, useEffect } from "react";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -12,6 +12,18 @@ root.render(
     <RootComponent />
   </React.StrictMode>,
 );
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      })
+      .catch(error => {
+        console.log('ServiceWorker registration failed: ', error);
+      });
+  });
+}
 
 function RootComponent() {
   const [viewMode, setViewMode] = useState(() => {
