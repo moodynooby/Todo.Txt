@@ -1,10 +1,13 @@
 # Agent Instructions
 
+this project is built using Rspack
+
 ## Package Management
 
 Please use `bun` for all package management tasks (installing, updating, removing dependencies).
 
 For example:
+
 - `bun install` instead of `npm install` or `yarn install`
 - `bun add <package>` instead of `npm install <package>` or `yarn add <package>`
 - `bun run <script>` instead of `npm run <script>` or `yarn <script>`
@@ -12,6 +15,7 @@ For example:
 ## Building the Project
 
 The project uses Rsbuild. Common commands:
+
 - `bun run dev`: Starts the development server.
 - `bun run build`: Creates a production build.
 
