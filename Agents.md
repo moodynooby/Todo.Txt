@@ -1,12 +1,18 @@
-# Agent Instructions
+# Agent Instructions and general intro
 
-# Details
+## Details
 
-this is built using Rspack and further uses tailwind as a postCSS plugin and has a rspack-react plugin
+this is built using Rspack and further uses tailwind as a postCSS plugin and has a rspack-react plugin and uses daisyUI as css library
 
 ## Code Practicies
 
 - try to use jsx and scss only for javascript/typescript and css code
+- try to make or use reusable components like daisyUI
+
+## Structure
+
+- src contains jsx and scss project
+- src/assets contain the static icons and media
 
 ## Package Management
 
@@ -29,3 +35,9 @@ The project uses Rsbuild. Common commands:
 
 - basic manifest is located in the rsbuild.config.mjs.
 - other manifest and sw support is being added
+
+## Features not compatible smoothly (YET)
+
+| Feature | Reason                                                                                                                                                                                                                                                                                                            |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ShadCN  | Shadcn/ui's reliance on Tailwind CSS and specific project configurations can cause compatibility issues with Rspack. Ensuring Rspack correctly processes Tailwind and resolves path aliases is key for successful integration. Manual configuration may be needed to align Rspack with Shadcn/ui's build process. |
