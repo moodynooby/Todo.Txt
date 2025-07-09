@@ -10,31 +10,30 @@ This is a React-based application, formerly using Rspack and now migrated to Par
 
 ### Prerequisites
 
--   Node.js (version specified in `.nvmrc` if present, otherwise latest LTS)
--   npm (comes with Node.js)
+-   Bun (refer to official Bun installation instructions: https://bun.sh/docs/installation)
 
 ### Setup
 
 1.  Clone the repository.
-2.  Run `npm install` to install dependencies.
+2.  Run `bun install` to install dependencies. This will use the `bun.lockb` file.
 
 ### Running the Development Server
 
--   Execute `npm start`.
+-   Execute `bun run start`.
 -   This will start the Parcel development server, typically at `http://localhost:1234`.
 -   The entry point for Parcel is `src/index.html`.
 
 ### Building for Production
 
--   Execute `npm run build`.
+-   Execute `bun run build`.
 -   This command uses Parcel to build the application for production.
 -   Output files will be placed in the `dist/` directory.
 
 ### Previewing the Production Build
 
--   After running `npm run build`, you can preview the production build.
--   The `npm run preview` script is set up as `parcel build src/index.html && serve dist`.
--   This requires the `serve` package. If not installed globally, you can run `npx serve dist` directly after a build, or install it as a dev dependency: `npm install serve --save-dev`.
+-   After running `bun run build`, you can preview the production build.
+-   The `npm run preview` script (run as `bun run preview`) is set up as `parcel build src/index.html && serve dist`.
+-   This requires the `serve` package. If not installed globally, you can run `npx serve dist` directly after a build, or add it as a dev dependency: `bun add -d serve`.
 
 ## Key Technologies & Configurations
 
@@ -50,8 +49,8 @@ This is a React-based application, formerly using Rspack and now migrated to Par
     -   Service Worker: `src/sw.js` is registered in `src/index.jsx`. Parcel bundles this service worker.
     -   Web App Manifest: `src/manifest.webmanifest` is linked in `src/index.html`. Parcel includes this in the build and copies linked assets.
 -   **Linting & Formatting**:
-    -   ESLint: Configuration in `eslint.config.mjs`. Run with `npm run lint`.
-    -   Prettier: Configuration in `.prettierrc`. Run with `npm run format`.
+    -   ESLint: Configuration in `eslint.config.mjs`. Run with `bun run lint`.
+    -   Prettier: Configuration in `.prettierrc`. Run with `bun run format`.
 
 ## Working with Parcel
 
