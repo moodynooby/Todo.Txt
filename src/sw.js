@@ -15,10 +15,14 @@ cleanupOutdatedCaches();
 // Flag to ensure precacheAndRoute is called only once effectively
 let precachingInitialized = false;
 
-if (self.__WB_MANIFEST && !precachingInitialized) {
+// self.__WB_MANIFEST is injected by the Workbox build process.
+// Assign it to a variable to avoid multiple replacements by the plugin.
+const precacheEntries = self.__WB_MANIFEST || [];
+
+if (precacheEntries.length > 0 && !precachingInitialized) {
   // Create a map to ensure unique URLs, prioritizing newer revisions if available (though we set revision to null)
   const urlToEntryMap = new Map();
-  self.__WB_MANIFEST.forEach(entry => {
+  precacheEntries.forEach(entry => {
     if (entry && entry.url) {
       // If revision matters, more complex logic would be needed here.
       // For now, last one wins if urls are duplicated, or first one if you prefer.
@@ -31,14 +35,15 @@ if (self.__WB_MANIFEST && !precachingInitialized) {
   if (uniqueEntries.length > 0) {
     precacheAndRoute(uniqueEntries);
     precachingInitialized = true;
-    console.log('Service Worker: Precache and route initialized with unique entries.');
+    console.log('Service Worker: Precache and route initialized with unique entries:', uniqueEntries);
   } else {
-    console.warn('Service Worker: __WB_MANIFEST was empty or contained no valid entries. Precache and route skipped.');
+    // This case should ideally not be reached if precacheEntries.length > 0 initially
+    console.warn('Service Worker: No valid unique entries found after processing. Precache and route skipped.');
   }
 } else if (precachingInitialized) {
   console.log('Service Worker: Precache and route already initialized.');
-} else {
-  console.warn('Service Worker: __WB_MANIFEST not defined. Precache and route skipped.');
+} else if (precacheEntries.length === 0) {
+  console.warn('Service Worker: Precache manifest (__WB_MANIFEST) was empty or not defined. Precache and route skipped.');
 }
 
 // Cache API responses with network-first strategy
