@@ -8,6 +8,7 @@ import remarkBreaks from "remark-breaks";
 import fediverseUser from "remark-fediverse-user";
 import emoji from "remark-emoji";
 import remarkCodeTitles from "remark-flexible-code-titles";
+import UpdateToast from "./UpdateToast"; // Import the toast component
 
 const App = ({ viewMode }) => {
   const [md, setMD] = useState(() => {
@@ -37,6 +38,53 @@ const App = ({ viewMode }) => {
   useEffect(() => {
     localStorage.setItem("htmlContent", htmlContent);
   }, [htmlContent]);
+
+  // State for update toast visibility
+  const [showUpdateToast, setShowUpdateToast] = useState(false);
+
+  // Effect for Service Worker registration and update detection
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      const swUrl = `/sw.js`; // Path to your service worker file in the output directory
+
+      navigator.serviceWorker.register(swUrl)
+        .then(registration => {
+          console.log('Service Worker registered with scope:', registration.scope);
+
+          // Listen for a new service worker installing
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New worker is installed and a controller exists,
+                  // but it might not have taken control yet if skipWaiting wasn't called
+                  // or if this is the very first SW activation.
+                  // For a simpler "reload to update" UX after skipWaiting,
+                  // we primarily rely on 'controllerchange'.
+                  console.log('New service worker installed.');
+                }
+              });
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Service Worker registration failed:', error);
+        });
+
+      // Listen for when a new service worker has taken control
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('New Service Worker has taken control. Showing update toast.');
+        setShowUpdateToast(true);
+      });
+    }
+  }, []);
+
+  const handleUpdate = () => {
+    setShowUpdateToast(false);
+    window.location.reload();
+  };
+
   const handleMDChange = (e) => {
     setMD(e.target.value);
   };
@@ -95,6 +143,7 @@ const App = ({ viewMode }) => {
           <MarkdownComponent />
         </div>
       ) : null}
+      {showUpdateToast && <UpdateToast onUpdate={handleUpdate} />}
     </div>
   );
 };

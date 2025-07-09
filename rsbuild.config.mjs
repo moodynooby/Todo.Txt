@@ -14,15 +14,19 @@ const RspackManifestPlugin = () => ({
         const manifest = {
           name: "T0do.TxT",
           short_name: "todo",
-          start_url: "/index.html",
+          description: "A modern Todo.txt editor and viewer",
+          start_url: "/",
           display: "standalone",
           orientation: "portrait",
+          background_color: "#ffffff",
+          theme_color: "#000000",
+          categories: ["productivity", "utilities"],
           icons: [
             {
               src: "./assets/icon512_maskable.png",
               sizes: "512x512",
               type: "image/png",
-              purpose: "maskable",
+              purpose": "maskable",
             },
             {
               src: "./assets/icon512_rounded.png",

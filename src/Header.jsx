@@ -9,6 +9,7 @@ import {
   BookOpenText,
   FileDown,
   Info,
+  Download, // Added Download icon for install button
 } from "lucide-react";
 import IsDark from "./theme";
 import Fullscreen from "./fullscreen";
@@ -22,6 +23,56 @@ const Header = ({ viewMode, setViewMode }) => {
     const savedMD = localStorage.getItem("markdownContent");
     return savedMD !== null ? savedMD : "Start Writing";
   });
+
+  // State for PWA installation
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      event.preventDefault();
+      // Stash the event so it can be triggered later.
+      setInstallPromptEvent(event);
+      // Update UI to notify the user they can install the PWA
+      setShowInstallButton(true);
+      console.log("'beforeinstallprompt' event fired and stored.");
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Listen for the appinstalled event
+    const handleAppInstalled = () => {
+      console.log('PWA was installed');
+      // Hide the install button once the app is installed
+      setShowInstallButton(false);
+      setInstallPromptEvent(null);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPromptEvent) {
+      console.log("Install prompt event not available.");
+      return;
+    }
+    // Show the prompt
+    installPromptEvent.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await installPromptEvent.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    // We've used the prompt, and can't use it again, discard it
+    setInstallPromptEvent(null);
+    // Hide the install button regardless of the outcome
+    setShowInstallButton(false);
+  };
+
   return (
     <>
       <header className="overflow-x-auto shadow-primary pc-bar">
@@ -114,6 +165,15 @@ const Header = ({ viewMode, setViewMode }) => {
           <div className="fullscreen">
             <Fullscreen size={20} />
           </div>
+          {showInstallButton && (
+            <button
+              className="btn btn-neutral m-1"
+              onClick={handleInstallClick}
+              title="Install App"
+            >
+              <Download size={20} />
+            </button>
+          )}
           <a
             onClick={() => document.getElementById("help_modal").showModal()}
             className="btn btn-neutral"
