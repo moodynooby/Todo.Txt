@@ -8,6 +8,7 @@ this is built using Rspack and further uses tailwind as a postCSS plugin and has
 
 - try to use jsx and scss only for javascript/typescript and css code
 - try to make or use reusable components like daisyUI
+- never edit bun.lock files
 
 ## Structure
 
