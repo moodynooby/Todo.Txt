@@ -16,6 +16,14 @@ export default defineConfig({
       },
     ],
   },
+  output: {
+    copy: [
+      {
+        from: './public', // Source directory (contains manifest.webmanifest)
+        to: './',         // Target directory in the build output (e.g., dist/)
+      },
+    ],
+  },
   html: {
     title: "T0do.TxT",
     favicon: "./src/assets/todotxt2.svg",
@@ -28,6 +36,16 @@ export default defineConfig({
     icons: [
       { src: "./src/assets/icon192.svg", size: 192 },
       { src: "./src/assets/icon512_rounded.svg", size: 512 },
+    ],
+    tags: [
+      {
+        tag: 'link',
+        attrs: {
+          rel: 'manifest',
+          href: '/manifest.webmanifest', // Path relative to output root
+        },
+        head: true, // Inject in the <head>
+      },
     ],
   },
   tools: {
