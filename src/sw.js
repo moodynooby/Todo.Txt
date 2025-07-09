@@ -43,7 +43,7 @@ if (precacheEntries.length > 0 && !precachingInitialized) {
 } else if (precachingInitialized) {
   console.log('Service Worker: Precache and route already initialized.');
 } else if (precacheEntries.length === 0) {
-  console.warn('Service Worker: Precache manifest (__WB_MANIFEST) was empty or not defined. Precache and route skipped.');
+  console.warn('Service Worker: Precache manifest was empty or not defined. Precache and route skipped.');
 }
 
 // Cache API responses with network-first strategy
