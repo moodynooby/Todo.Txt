@@ -1,7 +1,11 @@
 // src/sw.js
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute, setCatchHandler } from "workbox-routing";
-import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
+import {
+  NetworkFirst,
+  CacheFirst,
+  StaleWhileRevalidate,
+} from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 
@@ -13,17 +17,18 @@ let manifestURLs = new Set();
 
 // Precache and route all static assets with deduplication
 const manifest = self.__WB_MANIFEST || [];
-manifest.forEach(entry => {
+manifest.forEach((entry) => {
   if (!manifestURLs.has(entry.url)) {
     manifestURLs.add(entry.url);
   }
 });
 
-precacheAndRoute([...manifestURLs].map(url => ({ url, revision: null })));
+precacheAndRoute([...manifestURLs].map((url) => ({ url, revision: null })));
 
 // Cache API responses with network-first strategy
 registerRoute(
-  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith("/api"),
+  ({ url }) =>
+    url.origin === self.location.origin && url.pathname.startsWith("/api"),
   new NetworkFirst({
     cacheName: "api-cache",
     plugins: [
@@ -35,7 +40,7 @@ registerRoute(
         maxAgeSeconds: 24 * 60 * 60, // 24 hours
       }),
     ],
-  })
+  }),
 );
 
 // Cache static assets with cache-first strategy
@@ -52,7 +57,7 @@ registerRoute(
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
-  })
+  }),
 );
 
 // Skip waiting when a new SW is ready

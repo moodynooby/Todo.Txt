@@ -4,7 +4,7 @@ trigger: always_on
 
 # Always use bun
 
-# thid is built using Rspack , tailwind and react
+# thid is built using Rspack , tailwind and react and flowbite
 
 # make sure to use lubraries as soon as possible
 

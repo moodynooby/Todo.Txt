@@ -45,15 +45,25 @@ html {
   border: 0;
   outline: 0;
   padding: 1rem;
-
 }
 
 @media only screen and (max-width: 768px) {
-  .md {
-    width: 100%;
-    height: 50%;
+  .unified-md {
+    height: 70%;
   }
 
+  .unified-txt {
+    height: 70%;
+  }
+
+  .md {
+    width: 100%;
+    height: 70%;
+  }
+
+  .textarea {
+    height: 70%;
+  }
 }
 
 @media only screen and (min-width: 768px) {
@@ -84,7 +94,6 @@ html {
 
   .textarea {
     height: 100%;
-
   }
 }
 

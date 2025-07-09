@@ -23,7 +23,7 @@ function IsDark() {
     // Set theme based on isdark value
     document.documentElement.setAttribute(
       "data-theme",
-      isdark === "checked" ? lightTheme : darkTheme,
+      isdark === "checked" ? darkTheme : lightTheme,
     );
   }, [isdark]);
 

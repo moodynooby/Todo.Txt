@@ -79,6 +79,8 @@ export default defineConfig({
         new InjectManifest({
           swSrc: path.resolve(__dirname, "src/sw.js"),
           swDest: "sw.js",
+
+          maximumFileSizeToCacheInBytes: 7 * 1024 * 1024,
         }),
         RspackManifestPlugin(), // 👈 here's the magic
       ],
