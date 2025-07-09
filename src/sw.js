@@ -12,18 +12,34 @@ import { CacheableResponsePlugin } from "workbox-cacheable-response";
 // Clean up old caches
 cleanupOutdatedCaches();
 
-// Handle watch mode duplicate registration
-let manifestURLs = new Set();
+// Flag to ensure precacheAndRoute is called only once effectively
+let precachingInitialized = false;
 
-// Precache and route all static assets with deduplication
-const manifest = self.__WB_MANIFEST || [];
-manifest.forEach((entry) => {
-  if (!manifestURLs.has(entry.url)) {
-    manifestURLs.add(entry.url);
+if (self.__WB_MANIFEST && !precachingInitialized) {
+  // Create a map to ensure unique URLs, prioritizing newer revisions if available (though we set revision to null)
+  const urlToEntryMap = new Map();
+  self.__WB_MANIFEST.forEach(entry => {
+    if (entry && entry.url) {
+      // If revision matters, more complex logic would be needed here.
+      // For now, last one wins if urls are duplicated, or first one if you prefer.
+      urlToEntryMap.set(entry.url, { url: entry.url, revision: null });
+    }
+  });
+
+  const uniqueEntries = Array.from(urlToEntryMap.values());
+
+  if (uniqueEntries.length > 0) {
+    precacheAndRoute(uniqueEntries);
+    precachingInitialized = true;
+    console.log('Service Worker: Precache and route initialized with unique entries.');
+  } else {
+    console.warn('Service Worker: __WB_MANIFEST was empty or contained no valid entries. Precache and route skipped.');
   }
-});
-
-precacheAndRoute([...manifestURLs].map((url) => ({ url, revision: null })));
+} else if (precachingInitialized) {
+  console.log('Service Worker: Precache and route already initialized.');
+} else {
+  console.warn('Service Worker: __WB_MANIFEST not defined. Precache and route skipped.');
+}
 
 // Cache API responses with network-first strategy
 registerRoute(

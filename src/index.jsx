@@ -66,7 +66,7 @@ function UpdateToast() {
                     // the new content will have been added to the cache.
                     // It's the perfect time to display a "New content is
                     // available; please refresh." message in your web app.
-                    console.log("New content is available and will be used when all tabs for this scope are closed.");
+                    console.log("New service worker installed. Update toast shown to user to activate.");
                     setShowToast(true); // Show update toast
                   } else {
                     // At this point, everything has been precached.
