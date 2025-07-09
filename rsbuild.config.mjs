@@ -26,7 +26,7 @@ const RspackManifestPlugin = () => ({
               src: "./assets/icon512_maskable.png",
               sizes: "512x512",
               type: "image/png",
-              purpose": "maskable",
+              purpose: "maskable",
             },
             {
               src: "./assets/icon512_rounded.png",
