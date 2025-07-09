@@ -42,7 +42,7 @@ export default defineConfig({
         tag: 'link',
         attrs: {
           rel: 'manifest',
-          href: '/manifest.webmanifest', // Path relative to output root
+          href: 'manifest.webmanifest', // Changed: Path relative to output root, no leading slash
         },
         head: true, // Inject in the <head>
       },
