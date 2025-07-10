@@ -21,7 +21,7 @@ const Help = () => {
       <div
         className={`modal modal-bottom sm:modal-middle ${isOpen ? "modal-open" : ""}`}
       >
-        <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto help-box">
+        <div className="modal-box overflow-y-auto help-box">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold">Help Dialog</h3>
             <button
