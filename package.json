@@ -8,6 +8,7 @@
     "start": "rsbuild dev --open",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
+    "fix": "bun install && bun lint && bun format",
     "preview": "rsbuild preview"
   },
   "dependencies": {
