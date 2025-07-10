@@ -1,68 +1,118 @@
 // Export.jsx
-import React from "react";
+import React, { useState } from "react";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkDocx from "remark-docx";
 import { saveAs } from "file-saver";
-import { useState, useEffect } from "react";
+import { FileDown, X } from "lucide-react";
 
 const Export = ({ markdownContent, fileName }) => {
-  const [htmlContent, setHtmlContent] = useState(() => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [htmlContent] = useState(() => {
     const savedMD = localStorage.getItem("htmlContent");
     return savedMD !== null ? savedMD : "Start Writing";
   });
 
-  const handleDOCX = async () => {
-    try {
-      // Get the latest markdown content
-      const currentContent = markdownContent;
-      const processor = unified()
-        .use(remarkParse)
-        .use(remarkDocx, { output: "blob" });
-      const doc = await processor.process(currentContent);
-      const blob = await doc.result;
-      saveAs(blob, `${fileName || "document"}.docx`);
-    } catch (error) {
-      console.error("Error exporting DOCX:", error);
-      alert("Failed to export DOCX. Please check the console for details.");
-    }
-  };
+  const openModal = () => setIsOpen(true);
+  const closeModal = () => setIsOpen(false);
 
-  const handleMD = async () => {
+  const handleExport = async (type) => {
     try {
-      // Get the latest markdown content and create blob
-      const currentContent = markdownContent;
-      const blob = new Blob([currentContent], { type: "text/markdown" });
-      saveAs(blob, `${fileName || "document"}.md`);
+      let blob, extension;
+
+      switch (type) {
+        case "docx":
+          const processor = unified()
+            .use(remarkParse)
+            .use(remarkDocx, { output: "blob" });
+          const doc = await processor.process(markdownContent);
+          blob = await doc.result;
+          extension = "docx";
+          break;
+
+        case "md":
+          blob = new Blob([markdownContent], { type: "text/markdown" });
+          extension = "md";
+          break;
+
+        case "html":
+          blob = new Blob([htmlContent], { type: "text/html" });
+          extension = "html";
+          break;
+
+        default:
+          return;
+      }
+
+      saveAs(blob, `${fileName || "document"}.${extension}`);
+      closeModal();
     } catch (error) {
-      console.error("Error exporting Markdown:", error);
-      alert("Failed to export Markdown. Please check the console for details.");
-    }
-  };
-  const handleHTML = async () => {
-    try {
-      // Get the latest markdown content and create blob
-      const currentContent = htmlContent;
-      const blob = new Blob([currentContent], { type: "text/html" });
-      saveAs(blob, `${fileName || "document"}.htm`);
-    } catch (error) {
-      console.error("Error exporting HTML:", error);
-      alert("Failed to export HTML. Please check the console for details.");
+      console.error(`Error exporting ${type.toUpperCase()}:`, error);
+      alert(
+        `Failed to export ${type.toUpperCase()}. Please check the console for details.`,
+      );
     }
   };
 
   return (
-    <div className="export-cont">
-      <button onClick={handleDOCX} className="btn btn-base-300">
-        Export As DocX
+    <>
+      <button
+        className="btn btn-neutral"
+        onClick={openModal}
+        aria-label="Export document"
+      >
+        <FileDown size={20} />
       </button>
-      <button onClick={handleMD} className="btn btn-base-300">
-        Export As Text
-      </button>
-      <button onClick={handleHTML} className="btn btn-base-300">
-        Export As HTML
-      </button>
-    </div>
+
+      <div
+        className={`modal modal-bottom sm:modal-middle ${isOpen ? "modal-open" : ""}`}
+      >
+        <div className="modal-box overflow-y-auto export-box">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold">Export Document</h3>
+            <button
+              className="btn btn-sm btn-circle btn-ghost"
+              onClick={closeModal}
+              aria-label="Close export dialog"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => handleExport("docx")}
+              className="btn btn-block justify-start gap-2"
+            >
+              <FileDown size={18} />
+              Export as DOCX
+            </button>
+
+            <button
+              onClick={() => handleExport("md")}
+              className="btn btn-block justify-start gap-2"
+            >
+              <FileDown size={18} />
+              Export as Markdown
+            </button>
+
+            <button
+              onClick={() => handleExport("html")}
+              className="btn btn-block justify-start gap-2"
+            >
+              <FileDown size={18} />
+              Export as HTML
+            </button>
+          </div>
+
+          <div className="modal-action">
+            <button className="btn" onClick={closeModal}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -9,6 +9,7 @@ header {
 
 .btn:hover {
   color: var(--color-primary);
+  filter: blur(0.5px);
 }
 
 .logo-cont {
@@ -27,7 +28,12 @@ header {
   min-width: max-content;
   min-height: max-content;
   color: var(--color-base-content);
-  z-index: 1000;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  filter: blur(0.5px);
 }
 
 .export-cont {
@@ -61,4 +67,41 @@ header {
 .fullscreen {
   display: flex;
   align-items: center;
+}
+
+@media only screen and (min-width: 768px) {
+  .mobile-bar {
+    display: none;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .pc-bar {
+    display: none;
+  }
+
+  .mobile-bar {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    padding: 0.5rem;
+    position: fixed;
+    bottom: 0;
+    background: var(--color-base-300);
+    color: var(--color-base-content);
+    border-radius: var(--radius-field);
+    margin: 10px 5px 10px 5px;
+    gap: 10px;
+    width: 100%;
+    z-index: 100000000011;
+    height: min-content;
+  }
+
+  .btn-neutral {
+    border: var(--color-neutral-content) 0.1px solid;
+  }
+  .help-box {
+    width: 90%;
+    height: 90%;
+  }
 }

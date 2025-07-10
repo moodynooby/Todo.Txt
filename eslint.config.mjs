@@ -1,6 +1,3 @@
-import { fixupConfigRules } from "@eslint/compat";
-import js from "@eslint/js";
-import reactHooks from "eslint-plugin-react-hooks";
 import reactJsx from "eslint-plugin-react/configs/jsx-runtime.js";
 import react from "eslint-plugin-react/configs/recommended.js";
 import globals from "globals";
@@ -23,7 +20,8 @@ export default [
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "no-undef": "off",
     },
   },
-  { ignores: ["dist/"] },
+  { ignores: ["dist/", "src/sw.js"] },
 ];

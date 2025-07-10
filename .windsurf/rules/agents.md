@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Agent Instructions and general intro
 
 ## Details
@@ -8,7 +12,7 @@ this is built using Rspack and further uses tailwind as a postCSS plugin and has
 
 - try to use jsx and scss only for javascript/typescript and css code
 - try to make or use reusable components like daisyUI
-- never edit \*.lock files
+- never edit bun.lock files
 
 ## Structure
 
@@ -36,12 +40,3 @@ The project uses Rsbuild. Common commands:
 
 - basic manifest is located in the rsbuild.config.mjs.
 - other manifest and sw support is being added
-
-## Features not compatible smoothly (YET)
-
-| Feature              | Reason                                                                                                    |
-| -------------------- | --------------------------------------------------------------------------------------------------------- |
-| ShadCN ..            | Compatibility issues with Rspack due to Tailwind CSS dependencies and path alias resolution requirements. |
-| FlowBite             | CSS build pipeline configuration issues in rspack.config.mjs.                                             |
-| PWA                  | Hacky and incomplete support                                                                              |
-| Proper Documentation | Lack of proper docs and no major forum presence and same for all plugins as well                          |

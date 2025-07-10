@@ -14,7 +14,7 @@ import IsDark from "./theme";
 import Fullscreen from "./fullscreen";
 import Export from "./Export";
 import { useState, useEffect, useRef } from "react";
-import HelpModal from "./helpModal";
+import Help from "./Help";
 
 const Header = ({ viewMode, setViewMode }) => {
   const [isdark, setIsdark] = IsDark();
@@ -28,10 +28,10 @@ const Header = ({ viewMode, setViewMode }) => {
         <div className="logo-cont text-primary">
           <h1>T0do.TxT</h1>
         </div>
-        <div className="ctrl-cont">
+        <div className="ctrl-cont ">
           <div className="join">
             <label
-              className={`join-item btn ${viewMode === "text" ? "btn-primary" : "btn-neutral"}`}
+              className={`join-item border-neutral-content btn ${viewMode === "text" ? "btn-primary" : "btn-ghost"}`}
             >
               <input
                 type="radio"
@@ -44,7 +44,7 @@ const Header = ({ viewMode, setViewMode }) => {
               <ALargeSmall />
             </label>
             <label
-              className={`join-item btn ${viewMode === "both" ? "btn-primary" : "btn-neutral"}`}
+              className={`join-item border-neutral-content btn ${viewMode === "both" ? "btn-primary" : "btn-ghost"}`}
             >
               <input
                 type="radio"
@@ -57,7 +57,7 @@ const Header = ({ viewMode, setViewMode }) => {
               <BookOpenText />
             </label>
             <label
-              className={`join-item btn ${viewMode === "markdown" ? "btn-primary" : "btn-neutral"}`}
+              className={`join-item border-neutral-content btn ${viewMode === "markdown" ? "btn-primary" : "btn-ghost"}`}
             >
               <input
                 type="radio"
@@ -70,27 +70,7 @@ const Header = ({ viewMode, setViewMode }) => {
               <WholeWord />
             </label>
           </div>
-
-          <button
-            className="btn btn-neutral m-1"
-            onClick={() => document.getElementById("export_modal").showModal()}
-          >
-            <FileDown size={20} />
-          </button>
-          <dialog
-            id="export_modal"
-            className="modal modal-bottom sm:modal-middle"
-          >
-            <div className="modal-box">
-              <h1 className="text-primary">Export Dialog</h1>
-              <Export markdownContent={md} fileName="my-document" />
-              <div className="modal-action">
-                <form method="dialog">
-                  <button className="btn btn-error">Close</button>
-                </form>
-              </div>
-            </div>
-          </dialog>
+          <Export markdownContent={md} fileName="my-document" />
           <div>
             <a
               href="https://todopng.netlify.app/"
@@ -114,13 +94,7 @@ const Header = ({ viewMode, setViewMode }) => {
           <div className="fullscreen">
             <Fullscreen size={20} />
           </div>
-          <a
-            onClick={() => document.getElementById("help_modal").showModal()}
-            className="btn btn-neutral"
-          >
-            <Info size={20} />
-          </a>
-          <HelpModal />
+          <Help />
         </div>
       </header>
     </>

@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Menu } from "lucide-react";
 import "./App.scss";
-import "./sidebar.scss";
+import "./Header.scss";
 
 import {
   PencilRuler,
@@ -18,7 +17,7 @@ import IsDark from "./theme";
 import Fullscreen from "./fullscreen";
 import Export from "./Export";
 import { useState, useEffect, useRef } from "react";
-import HelpModal from "./helpModal";
+import Help from "./Help";
 
 const Sidebar = ({ viewMode, setViewMode }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +28,7 @@ const Sidebar = ({ viewMode, setViewMode }) => {
   });
 
   return (
-    <div className="menu rounded-box menu-horizontal">
+    <div className="mobile-bar rounded-box menu-horizontal">
       <div className="join">
         <label
           className={`join-item btn ${viewMode === "text" ? "btn-primary" : "btn-neutral"}`}
@@ -72,23 +71,7 @@ const Sidebar = ({ viewMode, setViewMode }) => {
         </label>
       </div>
 
-      <button
-        className="btn btn-neutral m-1"
-        onClick={() => document.getElementById("export_modal").showModal()}
-      >
-        <FileDown size={20} />
-      </button>
-      <dialog id="export_modal" className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box">
-          <h1 className="text-primary">Export Dialog</h1>
-          <Export markdownContent={md} fileName="my-document" />
-          <div className="modal-action">
-            <form method="dialog">
-              <button className="btn btn-error">Close</button>
-            </form>
-          </div>
-        </div>
-      </dialog>
+      <Export markdownContent={md} fileName="my-document" />
       <div>
         <a
           href="https://todopng.netlify.app/"
@@ -112,13 +95,7 @@ const Sidebar = ({ viewMode, setViewMode }) => {
       <div className="fullscreen">
         <Fullscreen size={20} />
       </div>
-      <a
-        onClick={() => document.getElementById("help_modal").showModal()}
-        className="btn btn-neutral"
-      >
-        <Info size={20} />
-      </a>
-      <HelpModal />
+      <Help />
     </div>
   );
 };
