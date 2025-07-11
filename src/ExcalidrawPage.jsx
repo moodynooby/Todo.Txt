@@ -4,7 +4,7 @@ import '@excalidraw/excalidraw/index.css';
 
 const ExcalidrawPage = () => {
   return (
-    <div style={{ height: '100vh', width: '100vw' }}>
+    <div style={{ height: '95vh', width: '98vw' }}>
       <Excalidraw />
     </div>
   );
