@@ -6,6 +6,7 @@ import {
   ALargeSmall,
   WholeWord,
   BookOpenText,
+  DraftingCompass, // Added for Excalidraw
 } from "lucide-react";
 import Theme from "./theme";
 import Fullscreen from "./fullscreen";
@@ -77,6 +78,21 @@ const AppHeader = ({ viewMode, setViewMode }) => {
             className="radio"
           />
           <WholeWord size={20} />
+        </label>
+        <label
+          className={`join-item btn btn-soft ${
+            viewMode === "excalidraw" ? "btn-primary" : ""
+          }`}
+        >
+          <input
+            type="radio"
+            checked={viewMode === "excalidraw"}
+            onChange={() => setViewMode("excalidraw")}
+            aria-label="Excalidraw View"
+            name="view-options"
+            className="radio"
+          />
+          <DraftingCompass size={20} />
         </label>
       </div>
       <Export markdownContent={md} fileName="my-document" />
