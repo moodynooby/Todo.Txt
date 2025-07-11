@@ -12,6 +12,7 @@
     "preview": "rsbuild preview"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "0.18.0",
     "file-saver": "^2.0.5",
     "github-markdown-css": "^5.8.1",
     "lucide-react": "^0.525.0",

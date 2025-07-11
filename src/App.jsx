@@ -8,6 +8,7 @@ import remarkBreaks from "remark-breaks";
 import fediverseUser from "remark-fediverse-user";
 import emoji from "remark-emoji";
 import remarkCodeTitles from "remark-flexible-code-titles";
+import ExcalidrawPage from "./ExcalidrawPage"; // Import the new component
 
 const App = ({ viewMode }) => {
   const [md, setMD] = useState(() => {
@@ -95,6 +96,7 @@ const App = ({ viewMode }) => {
           <MarkdownComponent />
         </div>
       ) : null}
+      {viewMode === "excalidraw" ? <ExcalidrawPage /> : null}
     </div>
   );
 };
