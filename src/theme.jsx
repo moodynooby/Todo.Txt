@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-function IsDark() {
+import { Sun, Moon } from "lucide-react";
+const Theme = () => {
   var darkTheme = "dark";
   var lightTheme = "emerald";
 
@@ -27,7 +28,17 @@ function IsDark() {
     );
   }, [isdark]);
 
-  return [isdark, setIsdark];
-}
-
-export default IsDark;
+  return (
+    <label className="swap swap-rotate">
+      <input
+        type="checkbox"
+        value={isdark}
+        checked={isdark === "checked"}
+        onChange={(e) => setIsdark(e.target.checked ? "checked" : "")}
+      />
+      <Sun size={20} aria-label="sun" className="swap-off" />
+      <Moon size={20} aria-label="moon" className=" swap-on " />
+    </label>
+  );
+};
+export default Theme;

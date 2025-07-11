@@ -4,7 +4,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkDocx from "remark-docx";
 import { saveAs } from "file-saver";
-import { FileDown, X } from "lucide-react";
+import { Download, X, SquareCode, SquareM, SquareLibrary } from "lucide-react";
 
 const Export = ({ markdownContent, fileName }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,11 +57,11 @@ const Export = ({ markdownContent, fileName }) => {
   return (
     <>
       <button
-        className="btn btn-neutral"
+        className="btn btn-soft"
         onClick={openModal}
         aria-label="Export document"
       >
-        <FileDown size={20} />
+        <Download size={20} />
       </button>
 
       <div
@@ -84,7 +84,7 @@ const Export = ({ markdownContent, fileName }) => {
               onClick={() => handleExport("docx")}
               className="btn btn-block justify-start gap-2"
             >
-              <FileDown size={18} />
+              <SquareLibrary size={18} />
               Export as DOCX
             </button>
 
@@ -92,7 +92,7 @@ const Export = ({ markdownContent, fileName }) => {
               onClick={() => handleExport("md")}
               className="btn btn-block justify-start gap-2"
             >
-              <FileDown size={18} />
+              <SquareM size={18} />
               Export as Markdown
             </button>
 
@@ -100,7 +100,7 @@ const Export = ({ markdownContent, fileName }) => {
               onClick={() => handleExport("html")}
               className="btn btn-block justify-start gap-2"
             >
-              <FileDown size={18} />
+              <SquareCode size={18} />
               Export as HTML
             </button>
           </div>

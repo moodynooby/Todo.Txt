@@ -11,7 +11,7 @@ const Help = () => {
   return (
     <>
       <button
-        className="btn btn-neutral"
+        className="btn btn-circle btn-soft btn-info"
         onClick={openModal}
         aria-label="Open help dialog"
       >

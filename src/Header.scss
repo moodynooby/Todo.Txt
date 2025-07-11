@@ -8,7 +8,6 @@ header {
 }
 
 .btn:hover {
-  color: var(--color-primary);
   filter: blur(0.5px);
 }
 
@@ -17,7 +16,6 @@ header {
   justify-content: center;
   font-size: 2rem;
 }
-
 
 .btn-primary:hover {
   background-color: var(--color-primary);
@@ -53,21 +51,16 @@ header {
   color: var(--color-base-content);
 }
 
-.fullscreen {
-  display: flex;
-  align-items: center;
-}
-
 @media only screen and (min-width: 768px) {
   .mobile-bar {
     display: none;
   }
+
   .help-box {
     min-width: max-content;
     min-height: max-content;
     color: var(--color-base-content);
   }
-  
 }
 
 @media only screen and (max-width: 768px) {
@@ -92,4 +85,4 @@ header {
     height: min-content;
     flex-wrap: wrap;
   }
-  }
+}

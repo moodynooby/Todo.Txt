@@ -3,20 +3,17 @@ import "./App.scss";
 import "./Header.scss";
 import {
   PencilRuler,
-  Sun,
-  Moon,
   ALargeSmall,
   WholeWord,
   BookOpenText,
 } from "lucide-react";
-import IsDark from "./theme";
+import Theme from "./theme";
 import Fullscreen from "./fullscreen";
 import Export from "./Export";
 import Help from "./Help";
 
 const AppHeader = ({ viewMode, setViewMode }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [isdark, setIsdark] = IsDark();
   const [md] = useState(() => {
     const savedMD = localStorage.getItem("markdownContent");
     return savedMD !== null ? savedMD : "Start Writing";
@@ -28,8 +25,8 @@ const AppHeader = ({ viewMode, setViewMode }) => {
       setIsMobile(window.innerWidth <= 768);
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Common controls to be used in both mobile and desktop views
@@ -37,8 +34,8 @@ const AppHeader = ({ viewMode, setViewMode }) => {
     <>
       <div className="join">
         <label
-          className={`join-item border-neutral-content btn ${
-            viewMode === "text" ? "btn-primary" : "btn-ghost"
+          className={`join-item  btn btn-soft ${
+            viewMode === "text" ? "btn-primary " : ""
           }`}
         >
           <input
@@ -49,11 +46,11 @@ const AppHeader = ({ viewMode, setViewMode }) => {
             name="view-options"
             className="radio"
           />
-          <ALargeSmall />
+          <ALargeSmall size={20} />
         </label>
         <label
-          className={`join-item border-neutral-content btn ${
-            viewMode === "both" ? "btn-primary" : "btn-ghost"
+          className={`join-item  btn btn-soft  ${
+            viewMode === "both" ? "btn-primary" : ""
           }`}
         >
           <input
@@ -64,11 +61,11 @@ const AppHeader = ({ viewMode, setViewMode }) => {
             name="view-options"
             className="radio"
           />
-          <BookOpenText />
+          <BookOpenText size={20} />
         </label>
         <label
-          className={`join-item border-neutral-content btn ${
-            viewMode === "markdown" ? "btn-primary" : "btn-ghost"
+          className={`join-item  btn btn-soft ${
+            viewMode === "markdown" ? "btn-primary " : ""
           }`}
         >
           <input
@@ -79,7 +76,7 @@ const AppHeader = ({ viewMode, setViewMode }) => {
             name="view-options"
             className="radio"
           />
-          <WholeWord />
+          <WholeWord size={20} />
         </label>
       </div>
       <Export markdownContent={md} fileName="my-document" />
@@ -87,25 +84,14 @@ const AppHeader = ({ viewMode, setViewMode }) => {
         <a
           href="https://todopng.netlify.app/"
           rel="noopener noreferrer"
-          className="btn btn-neutral"
+          className="btn btn-soft btn btn-soft-neutral"
         >
           <PencilRuler size={20} />
+          Todo.Png
         </a>
       </div>
-      <label className="toggle text-base-content">
-        <input
-          type="checkbox"
-          className="theme-controller bg-primary text-primary-content rounded-selector"
-          value={isdark}
-          checked={isdark === "checked"}
-          onChange={(e) => setIsdark(e.target.checked ? "checked" : "")}
-        />
-        <Sun size={20} aria-label="sun" className="theme-icon" />
-        <Moon size={20} aria-label="moon" className="theme-icon" />
-      </label>
-      <div className="fullscreen">
-        <Fullscreen size={20} />
-      </div>
+      <Theme />
+      <Fullscreen />
       <Help />
     </>
   );
@@ -121,9 +107,7 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <div className="logo-cont text-primary">
             <h1>T0do.TxT</h1>
           </div>
-          <div className="ctrl-cont">
-            {renderControls()}
-          </div>
+          <div className="ctrl-cont">{renderControls()}</div>
         </header>
       )}
     </>

@@ -7,8 +7,12 @@ this is built using Rspack and further uses tailwind as a postCSS plugin and has
 ## Code Practicies
 
 - try to use jsx and scss only for javascript/typescript and css code
-- try to make or use reusable components like daisyUI
+- never make rigid components always make reusable and reusable components
+- try to make or use reusable and responsive components like daisyUI
 - never edit \*.lock files
+- always try to create the handling and trigger in a same reusable and responsive component
+- never create components that only return value
+- always try to make the component as self sufficient as possible
 
 ## Structure
 
