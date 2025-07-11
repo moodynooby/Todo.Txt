@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import "./App.scss";
 import "./Header.scss";
 import {
-  PencilRuler,
   ALargeSmall,
   WholeWord,
   BookOpenText,
-  DraftingCompass, // Added for Excalidraw
+  DraftingCompass,
 } from "lucide-react";
 import Theme from "./theme";
 import Fullscreen from "./fullscreen";
@@ -35,9 +34,8 @@ const AppHeader = ({ viewMode, setViewMode }) => {
     <>
       <div className="join">
         <label
-          className={`join-item  btn btn-soft ${
-            viewMode === "text" ? "btn-primary " : ""
-          }`}
+          className={`join-item  btn btn-soft ${viewMode === "text" ? "btn-primary " : ""
+            }`}
         >
           <input
             type="radio"
@@ -50,9 +48,8 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <ALargeSmall size={20} />
         </label>
         <label
-          className={`join-item  btn btn-soft  ${
-            viewMode === "both" ? "btn-primary" : ""
-          }`}
+          className={`join-item  btn btn-soft  ${viewMode === "both" ? "btn-primary" : ""
+            }`}
         >
           <input
             type="radio"
@@ -65,9 +62,8 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <BookOpenText size={20} />
         </label>
         <label
-          className={`join-item  btn btn-soft ${
-            viewMode === "markdown" ? "btn-primary " : ""
-          }`}
+          className={`join-item  btn btn-soft ${viewMode === "markdown" ? "btn-primary " : ""
+            }`}
         >
           <input
             type="radio"
@@ -80,9 +76,8 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <WholeWord size={20} />
         </label>
         <label
-          className={`join-item btn btn-soft ${
-            viewMode === "excalidraw" ? "btn-primary" : ""
-          }`}
+          className={`join-item btn btn-soft ${viewMode === "excalidraw" ? "btn-primary" : ""
+            }`}
         >
           <input
             type="radio"
@@ -96,16 +91,6 @@ const AppHeader = ({ viewMode, setViewMode }) => {
         </label>
       </div>
       <Export markdownContent={md} fileName="my-document" />
-      <div>
-        <a
-          href="https://todopng.netlify.app/"
-          rel="noopener noreferrer"
-          className="btn btn-soft btn btn-soft-neutral"
-        >
-          <PencilRuler size={20} />
-          Todo.Png
-        </a>
-      </div>
       <Theme />
       <Fullscreen />
       <Help />
