@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
+import "./ExcD.scss";
 import "@excalidraw/excalidraw/index.css";
 
 const ExcalidrawPage = () => {
@@ -42,7 +43,7 @@ const ExcalidrawPage = () => {
   }, []);
 
   return (
-    <div style={{ height: "90vh", width: "99vw" }}>
+    <div style={{ height: "90vh", width: "99vw" }} className="ExcD-embed">
       <Excalidraw theme={excalidrawTheme} UIOptions={UIOptions} >
         <MainMenu>
           <MainMenu.DefaultItems.LoadScene />

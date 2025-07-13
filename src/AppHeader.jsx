@@ -76,7 +76,7 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <WholeWord size={20} />
         </label>
         <label
-          className={`join-item btn btn-soft ${viewMode === "excalidraw" ? "btn-primary" : ""
+          className={`join-item btn btn-soft ${viewMode === "excalidraw" ? "btn-accent" : ""
             }`}
         >
           <input
@@ -105,7 +105,7 @@ const AppHeader = ({ viewMode, setViewMode }) => {
         </div>
       ) : (
         <header className="overflow-x-auto shadow-primary pc-bar">
-          <div className="logo-cont text-primary">
+          <div className={`logo-cont ${viewMode === 'excalidraw' ? 'text-accent' : 'text-primary'}`}>
             <h1>T0do.TxT</h1>
           </div>
           <div className="ctrl-cont">{renderControls()}</div>

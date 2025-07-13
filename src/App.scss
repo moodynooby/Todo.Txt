@@ -22,6 +22,22 @@ html {
   padding: 5px;
   background: var(--color-base-200);
   color: var(--color-base-content);
+
+  &.excalidraw-transparent-bg {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+
+    .ExcD-embed {
+        border-radius: var(--radius-box);
+        overflow: hidden;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        margin: auto;
+        display: block;
+        max-width: 100%;
+      }
+  }
 }
 
 .btn-circle {
@@ -50,6 +66,17 @@ html {
   outline: 0;
   padding: 1rem;
   max-width: 98vw;
+}
+
+.excalidraw-transparent-bg {
+  .md {
+    background: transparent;
+  }
+
+  .textarea {
+    background: transparent;
+  }
+
 }
 
 @media only screen and (max-width: 768px) {
