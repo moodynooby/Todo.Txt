@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 
 const ExcalidrawPage = () => {
   const [excalidrawTheme, setExcalidrawTheme] = useState("light");
+  const UIOptions = {
+    canvasActions: {
+      export: false,
+      toggleTheme: false,
+    },
+    welcomeScreen: false,
 
+  };
   useEffect(() => {
     const getAppTheme = () => {
       const currentDataTheme =
@@ -35,8 +42,16 @@ const ExcalidrawPage = () => {
   }, []);
 
   return (
-    <div style={{ height: "100vh", width: "100vw" }}>
-      <Excalidraw theme={excalidrawTheme} />
+    <div style={{ height: "90vh", width: "99vw" }}>
+      <Excalidraw theme={excalidrawTheme} UIOptions={UIOptions} >
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.SearchMenu />
+          <MainMenu.DefaultItems.ClearCanvas />
+          <MainMenu.DefaultItems.SaveAsImage />
+
+        </MainMenu>
+      </Excalidraw>
     </div>
   );
 };
