@@ -37,7 +37,7 @@ For example:
 
 The project uses Rsbuild. Common commands:
 
-- `bun run dev`: Starts the development server.
+- `bun run start`: Starts the development server.
 - `bun run build`: Creates a production build.
 
 ## PWA & Service Worker
