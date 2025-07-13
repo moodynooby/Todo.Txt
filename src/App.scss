@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "./excalidraw.scss";
 
 @plugin "daisyui" {
   themes:
@@ -105,6 +104,30 @@ html {
 
 ul {
   list-style-type: circle;
+}
+
+.excalidraw {
+  --color-primary: hsl(var(--p));
+  --color-primary-darker: hsl(var(--pf));
+  --color-primary-darkest: hsl(var(--pf));
+  --color-primary-light: hsl(var(--pc));
+  --color-surface-lowest: hsl(var(--b1));
+  --color-surface-low: hsl(var(--b2));
+  --color-surface-mid: hsl(var(--b3));
+  --color-surface-high: hsl(var(--b3));
+  --color-on-surface: hsl(var(--bc));
+}
+
+.theme--dark .excalidraw {
+  --color-primary: hsl(var(--p));
+  --color-primary-darker: hsl(var(--pf));
+  --color-primary-darkest: hsl(var(--pf));
+  --color-primary-light: hsl(var(--pc));
+  --color-surface-lowest: hsl(var(--b1));
+  --color-surface-low: hsl(var(--b2));
+  --color-surface-mid: hsl(var(--b3));
+  --color-surface-high: hsl(var(--b3));
+  --color-on-surface: hsl(var(--bc));
 }
 
 @keyframes cursor-blink {
