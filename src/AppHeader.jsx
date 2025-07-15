@@ -34,8 +34,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
     <>
       <div className="join">
         <label
-          className={`join-item  btn btn-soft ${viewMode === "text" ? "btn-primary " : ""
-            }`}
+          className={`join-item  btn btn-soft ${
+            viewMode === "text" ? "btn-primary " : ""
+          }`}
         >
           <input
             type="radio"
@@ -48,8 +49,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <ALargeSmall size={20} />
         </label>
         <label
-          className={`join-item  btn btn-soft  ${viewMode === "both" ? "btn-primary" : ""
-            }`}
+          className={`join-item  btn btn-soft  ${
+            viewMode === "both" ? "btn-primary" : ""
+          }`}
         >
           <input
             type="radio"
@@ -62,8 +64,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <BookOpenText size={20} />
         </label>
         <label
-          className={`join-item  btn btn-soft ${viewMode === "markdown" ? "btn-primary " : ""
-            }`}
+          className={`join-item  btn btn-soft ${
+            viewMode === "markdown" ? "btn-primary " : ""
+          }`}
         >
           <input
             type="radio"
@@ -76,8 +79,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <WholeWord size={20} />
         </label>
         <label
-          className={`join-item btn btn-soft ${viewMode === "excalidraw" ? "btn-accent" : ""
-            }`}
+          className={`join-item btn btn-soft ${
+            viewMode === "excalidraw" ? "btn-accent" : ""
+          }`}
         >
           <input
             type="radio"
@@ -105,7 +109,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
         </div>
       ) : (
         <header className="overflow-x-auto shadow-primary pc-bar">
-          <div className={`logo-cont ${viewMode === 'excalidraw' ? 'text-accent' : 'text-primary'}`}>
+          <div
+            className={`logo-cont ${viewMode === "excalidraw" ? "text-accent" : "text-primary"}`}
+          >
             <h1>T0do.TxT</h1>
           </div>
           <div className="ctrl-cont">{renderControls()}</div>

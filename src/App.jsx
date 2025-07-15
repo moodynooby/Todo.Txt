@@ -59,7 +59,9 @@ const App = ({ viewMode }) => {
     );
   };
   return (
-    <div className={`unified-editor markdown-body ${viewMode === "excalidraw" ? "excalidraw-transparent-bg" : ""}`}>
+    <div
+      className={`unified-editor markdown-body ${viewMode === "excalidraw" ? "excalidraw-transparent-bg" : ""}`}
+    >
       <div style={{ position: "relative", display: "inline-block" }}></div>
       {viewMode === "text" ? (
         <textarea

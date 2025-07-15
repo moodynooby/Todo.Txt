@@ -30,13 +30,13 @@ html {
     margin: 0;
 
     .ExcD-embed {
-        border-radius: var(--radius-box);
-        overflow: hidden;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        margin: auto;
-        display: block;
-        max-width: 100%;
-      }
+      border-radius: var(--radius-box);
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin: auto;
+      display: block;
+      max-width: 100%;
+    }
   }
 }
 
@@ -76,7 +76,6 @@ html {
   .textarea {
     background: transparent;
   }
-
 }
 
 @media only screen and (max-width: 768px) {

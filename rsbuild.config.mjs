@@ -3,14 +3,8 @@ import { pluginReact } from "@rsbuild/plugin-react";
 import { pluginSass } from "@rsbuild/plugin-sass";
 import { pluginNodePolyfill } from "@rsbuild/plugin-node-polyfill";
 
-const isProduction = process.env.NODE_ENV === "production";
-
 export default defineConfig({
-  plugins: [
-    pluginReact(),
-    pluginSass(),
-    pluginNodePolyfill(),
-  ],
+  plugins: [pluginReact(), pluginSass(), pluginNodePolyfill()],
   module: {
     rules: [
       {

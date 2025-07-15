@@ -13,7 +13,6 @@ const ExcalidrawPage = () => {
       toggleTheme: false,
     },
     welcomeScreen: false,
-
   };
   useEffect(() => {
     const getAppTheme = () => {
@@ -59,7 +58,9 @@ const ExcalidrawPage = () => {
             parsedData.appState.collaborators = [];
           } else if (!Array.isArray(parsedData.appState.collaborators)) {
             // If collaborators exists but is not an array, convert it to an array
-            parsedData.appState.collaborators = Object.values(parsedData.appState.collaborators);
+            parsedData.appState.collaborators = Object.values(
+              parsedData.appState.collaborators,
+            );
           }
         } else {
           // If appState itself is missing, initialize it with an empty collaborators array
