@@ -1,7 +1,3 @@
----
-trigger: always_on
----
-
 # Agent Instructions and general intro
 
 ## Details
@@ -21,7 +17,8 @@ this is built using Rspack and further uses tailwind as a postCSS plugin and has
 ## Structure
 
 - src contains jsx and scss project
-- src/assets contain the static icons and media
+- entry point of my app is via "./src/index.jsx
+- public contain the static icons and media
 
 ## Package Management
 
@@ -39,8 +36,3 @@ The project uses Rsbuild. Common commands:
 
 - `bun run start`: Starts the development server.
 - `bun run build`: Creates a production build.
-
-## PWA & Service Worker
-
-- basic manifest is located in the rsbuild.config.mjs.
-- other manifest and sw support is being added

@@ -16,7 +16,7 @@ export default defineConfig({
   },
   html: {
     title: "T0do.TxT",
-    favicon: "./public/todotxt2.svg",
+    favicon: "public/todotxt2.svg",
     meta: [
       {
         name: "theme-color",
@@ -29,30 +29,24 @@ export default defineConfig({
       },
       { name: "apple-mobile-web-app-title", content: "T0do.TxT" },
     ],
-    icons: [
-      { src: "./public/icon192.png", size: 192 },
-      { src: "./public/icon512_rounded.png", size: 512 },
+
+    tags: [
+      {
+        tag: "link",
+        attrs: { rel: "manifest", href: "/manifest.json" },
+      },
     ],
   },
-  output: {
-    assetPrefix: "/",
-    distPath: {
-      root: "dist",
-      html: "./",
-    },
-  },
   source: {
+    assetsInclude: /\.(png|svg)$/,
+
     entry: {
       index: "./src/index.jsx",
     },
   },
-  server: {
-    publicDir: {
-      name: "public",
+  output: {
+    distPath: {
+      media: "public",
     },
-  },
-  dev: {
-    assetPrefix: "/",
-    cache: false,
   },
 });
