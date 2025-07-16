@@ -5,6 +5,7 @@ header {
   padding: 0.1rem;
   justify-content: space-between;
   flex-flow: row wrap;
+  overflow: auto;
 }
 
 .btn:hover {
@@ -84,6 +85,6 @@ header {
     width: 100%;
     z-index: 100000000011;
     height: min-content;
-    flex-wrap: wrap;
+    overflow: auto;
   }
 }

@@ -43,5 +43,11 @@ The project uses Rsbuild. Common commands:
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | ShadCN ..            | Compatibility issues with Rspack due to Tailwind CSS dependencies and path alias resolution requirements. |
 | FlowBite             | CSS build pipeline configuration issues in rspack.config.mjs.                                             |
-| PWA                  | Hacky and incomplete support                                                                              |
+| PWA                  | Hacky and incomplete docks                                                                              |
 | Proper Documentation | Lack of proper docs and no major forum presence and same for all plugins as well                          |
+
+
+## TODO
+
+
+[Cache](https://stackoverflow.com/questions/1922910/force-browser-to-clear-cache)

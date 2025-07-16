@@ -1,19 +1,50 @@
 @import "tailwindcss";
 
-@plugin "daisyui" {
-  themes:
-    emerald --default,
-    dark --prefersdark;
-}
+//general components style
 
+.textarea {
+  background: transparent;
+  border: 0;
+  outline: 0;
+  text-transform: capitalize;
+}
 html {
   margin: 0;
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
 }
 
+.btn-circle {
+  border-radius: 100%;
+}
+
+// single view styles
+.only-textarea {
+  width: 98vw;
+  position: absolute;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 1rem;
+  text-transform: capitalize;
+  @media only screen and (max-width: 768px) {
+    height: 89vh;
+  }
+}
+
+.md {
+  position: absolute;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 1rem;
+  max-width: 98vw;
+  text-transform: capitalize;
+}
+
+// UNIFIED components style
+
 .unified-editor {
-  height: 95vh;
-  line-height: 1.1;
+  min-height: 90vh;
   flex-direction: column;
   justify-content: center;
   margin: 5px 5px 5px 5px;
@@ -22,6 +53,7 @@ html {
   padding: 5px;
   background: var(--color-base-200);
   color: var(--color-base-content);
+  overflow: auto;
 
   &.excalidraw-transparent-bg {
     background: transparent;
@@ -39,35 +71,47 @@ html {
     }
   }
 }
+// mobile
+@media only screen and (max-width: 768px) {
+  .unified-md {
+    width: 98vw;
+    height: 40vh;
+    border-top: 1px solid var(--color-primary);
+  }
 
-.btn-circle {
-  border-radius: 100%;
+  .unified-textarea {
+    height: 40vh;
+    width: 98vw;
+  }
+}
+// PC
+@media only screen and (min-width: 768px) {
+  .unified-md {
+    width: 50vw;
+    height: 75vh;
+    position: absolute;
+    border-left: 1px solid var(--color-primary);
+    right: 0;
+    padding: 1rem;
+    text-transform: capitalize;
+  }
+
+  .unified-txt {
+    width: 50vw;
+    height: 79vh;
+    position: absolute;
+    padding: 1rem;
+  }
+  .unified-textarea {
+    width: 50vw;
+    height: 79vh;
+    position: absolute;
+    left: 0;
+    padding: 1rem;
+  }
 }
 
-.textarea {
-  width: 98vw;
-  position: absolute;
-  background: transparent;
-  border: 0;
-  outline: 0;
-  padding: 1rem;
-  max-height: 95vh;
-  text-transform: capitalize;
-}
-
-.unified-txt {
-  opacity: 0.3;
-}
-
-.md {
-  position: absolute;
-  background: transparent;
-  border: 0;
-  outline: 0;
-  padding: 1rem;
-  max-width: 98vw;
-}
-
+//misc styles
 .excalidraw-transparent-bg {
   .md {
     background: transparent;
@@ -78,62 +122,6 @@ html {
   }
 }
 
-@media only screen and (max-width: 768px) {
-  .unified-md {
-    height: 50%;
-  }
-
-  .unified-txt {
-    height: 50%;
-  }
-
-  .md {
-    width: 98vw;
-    height: 50%;
-  }
-
-  .textarea {
-    height: 50%;
-  }
-}
-
-@media only screen and (min-width: 768px) {
-  .unified-md {
-    width: 50vw;
-    height: 100vh;
-    position: absolute;
-    border-left: 1px solid var(--color-primary);
-    right: 0;
-    padding: 1rem;
-    font-size: 1.2rem;
-  }
-
-  .unified-txt {
-    width: 50vw;
-    height: 100vh;
-    position: absolute;
-    left: 0;
-    padding: 1rem;
-    opacity: 1;
-    font-size: 1.2rem;
-  }
-
-  .md {
-    width: 100vw;
-    height: 100vh;
-  }
-
-  .textarea {
-    height: 100vh;
-  }
-}
-
 ul {
   list-style-type: circle;
-}
-
-@keyframes cursor-blink {
-  0% {
-    opacity: 0;
-  }
 }

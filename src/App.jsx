@@ -65,7 +65,7 @@ const App = ({ viewMode }) => {
       <div style={{ position: "relative", display: "inline-block" }}></div>
       {viewMode === "text" ? (
         <textarea
-          className="textarea"
+          className="textarea only-textarea"
           placeholder="Start Writing"
           value={md}
           onChange={handleMDChange}
@@ -78,7 +78,7 @@ const App = ({ viewMode }) => {
           <div className="unified-txt">
             <h2>Text </h2>
             <textarea
-              className="textarea unified-txt"
+              className="textarea unified-textarea"
               placeholder="Start Writing"
               value={md}
               onChange={handleMDChange}
@@ -86,7 +86,6 @@ const App = ({ viewMode }) => {
             ></textarea>
           </div>
           <div className="unified-md">
-            {" "}
             <h2>Markdown </h2>
             <MarkdownComponent />
           </div>
