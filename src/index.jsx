@@ -12,6 +12,26 @@ root.render(
   </React.StrictMode>,
 );
 
+// Register service worker
+if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        
+        // Check for updates when the page loads
+        registration.update().then(() => {
+          console.log('ServiceWorker update check completed');
+        }).catch(error => {
+          console.error('ServiceWorker update check failed:', error);
+        });
+      })
+      .catch(error => {
+        console.error('ServiceWorker registration failed: ', error);
+      });
+  });
+}
+
 function RootComponent() {
   const [viewMode, setViewMode] = useState(() => {
     try {
