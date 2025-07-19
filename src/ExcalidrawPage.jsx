@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import "./ExcD.scss";
 import "@excalidraw/excalidraw/index.css";
+import Fullscreen from "./fullscreen";
 
 const STORAGE_KEY = "excalidraw-data";
 
@@ -80,13 +81,18 @@ const ExcalidrawPage = () => {
         theme={excalidrawTheme}
         UIOptions={UIOptions}
         onChange={onSave}
-        initialData={onLoad()}
+        initialData={{
+          ...onLoad(),
+          appState: { zenModeEnabled: true },
+          scrollToContent: true,
+        }}
       >
         <MainMenu>
           <MainMenu.DefaultItems.LoadScene />
           <MainMenu.DefaultItems.SearchMenu />
           <MainMenu.DefaultItems.ClearCanvas />
           <MainMenu.DefaultItems.SaveAsImage />
+          <Fullscreen />
         </MainMenu>
       </Excalidraw>
     </div>

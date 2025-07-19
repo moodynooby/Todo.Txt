@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { Maximize, Minimize } from "lucide-react";
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 
 function Fullscreen({ element = document.documentElement }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const savedMode = localStorage.getItem("viewMode");
+  const [viewMode, setViewMode] = useState(savedMode);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -26,9 +29,10 @@ function Fullscreen({ element = document.documentElement }) {
   }, []);
 
   return (
-    <button onClick={toggleFullscreen} className="btn btn-sm btn-ghost">
+    <MainMenu.Item onClick={toggleFullscreen} className="btn btn-sm btn-ghost">
       {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-    </button>
+      {viewMode === "excalidraw" ? "Fullscreen" : ""}
+    </MainMenu.Item>
   );
 }
 
