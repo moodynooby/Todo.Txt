@@ -55,22 +55,15 @@ html {
   background: var(--color-base-200);
   color: var(--color-base-content);
   overflow: auto;
+}
 
-  &.excalidraw-transparent-bg {
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-
-    .ExcD-embed {
-      border-radius: var(--radius-box);
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      margin: auto;
-      display: block;
-      max-width: 100%;
-    }
-  }
+.ExcalidrawPage {
+  border-radius: var(--radius-box);
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin: auto;
+  display: block;
+  max-width: 100%;
 }
 
 // mobile

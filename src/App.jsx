@@ -1,5 +1,4 @@
 import "./App.scss";
-import React from "react";
 import "github-markdown-css/github-markdown.css";
 import Markdown from "react-markdown";
 import { useState, useEffect } from "react";
@@ -59,46 +58,48 @@ const App = ({ viewMode }) => {
     );
   };
   return (
-    <div
-      className={`unified-editor markdown-body ${viewMode === "excalidraw" ? "excalidraw-transparent-bg" : ""}`}
-    >
-      <div style={{ position: "relative", display: "inline-block" }}></div>
-      {viewMode === "text" ? (
-        <textarea
-          className="textarea only-textarea"
-          placeholder="Start Writing"
-          value={md}
-          onChange={handleMDChange}
-          autoFocus
-        ></textarea>
-      ) : null}
+    <>
+      <div
+        className={`unified-editor markdown-body ${viewMode === "excalidraw" ? "hidden" : ""}`}
+      >
+        <div style={{ position: "relative", display: "inline-block" }}></div>
+        {viewMode === "text" ? (
+          <textarea
+            className="textarea only-textarea"
+            placeholder="Start Writing"
+            value={md}
+            onChange={handleMDChange}
+            autoFocus
+          ></textarea>
+        ) : null}
 
-      {viewMode === "both" ? (
-        <>
-          <div className="unified-txt">
-            <h2>Text </h2>
-            <textarea
-              className="textarea unified-textarea"
-              placeholder="Start Writing"
-              value={md}
-              onChange={handleMDChange}
-              autoFocus
-            ></textarea>
-          </div>
-          <div className="unified-md">
-            <h2>Markdown </h2>
+        {viewMode === "both" ? (
+          <>
+            <div className="unified-txt">
+              <h2>Text </h2>
+              <textarea
+                className="textarea unified-textarea"
+                placeholder="Start Writing"
+                value={md}
+                onChange={handleMDChange}
+                autoFocus
+              ></textarea>
+            </div>
+            <div className="unified-md">
+              <h2>Markdown </h2>
+              <MarkdownComponent />
+            </div>
+          </>
+        ) : null}
+        {viewMode === "markdown" ? (
+          <div className="md">
             <MarkdownComponent />
           </div>
-        </>
-      ) : null}
-      {viewMode === "markdown" ? (
-        <div className="md">
-          {" "}
-          <MarkdownComponent />
-        </div>
-      ) : null}
+        ) : null}
+      </div>
       {viewMode === "excalidraw" ? <ExcalidrawPage /> : null}
-    </div>
+
+    </>
   );
 };
 

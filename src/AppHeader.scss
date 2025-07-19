@@ -6,10 +6,30 @@ header {
   justify-content: space-between;
   flex-flow: row wrap;
   overflow: auto;
+  margin: 1px 1px 1px 1px
 }
 
 .btn:hover {
   filter: blur(0.5px);
+}
+
+.excalidraw-header {
+  display: flex;
+  flex-flow: row nowrap;
+  text-align: center;
+  align-content: center;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 1px;
+
+  .ctrl-cont {
+    margin: 3px 3px 3px 3px;
+  }
+
+  .logo-cont {
+    font-size: 1.3rem;
+    margin: 0 3px;
+  }
 }
 
 .logo-cont {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./App.scss";
-import "./Header.scss";
+import "./AppHeader.scss";
 import {
   ALargeSmall,
   WholeWord,
@@ -8,7 +8,7 @@ import {
   DraftingCompass,
 } from "lucide-react";
 import Theme from "./theme";
-import Fullscreen from "./fullscreen";
+import FullscreenIcon, { toggleFullscreen } from "./fullscreen";
 import Export from "./Export";
 import Help from "./Help";
 
@@ -93,14 +93,12 @@ const AppHeader = ({ viewMode, setViewMode }) => {
       {viewMode !== "excalidraw" && (
         <>
           <Export markdownContent={md} fileName="my-document" />
-        </>
-      )}
-      <Theme />
+          <Theme />
 
-      {viewMode !== "excalidraw" && (
-        <>
-          <Fullscreen />
+          <button onClick={toggleFullscreen} className="btn btn-sm btn-ghost">
 
+            <FullscreenIcon />
+          </button>
           <Help />
         </>
       )}
@@ -109,19 +107,26 @@ const AppHeader = ({ viewMode, setViewMode }) => {
 
   return (
     <>
-      {isMobile ? (
-        <div className="mobile-bar rounded-box menu-horizontal">
-          {renderControls()}
-        </div>
-      ) : (
-        <header className="overflow-x-auto shadow-primary pc-bar">
-          <div
-            className={`logo-cont ${viewMode === "excalidraw" ? "text-accent" : "text-primary"}`}
-          >
-            <h1>T0do.TxT</h1>
+      {viewMode === "excalidraw" ? (
+        <div className="excalidraw-header">
+          <div className="logo-cont text-accent">
+            <h1>T0do.PnG</h1>
           </div>
           <div className="ctrl-cont">{renderControls()}</div>
-        </header>
+        </div>
+      ) : (
+        isMobile ? (
+          <div className="mobile-bar rounded-box menu-horizontal">
+            {renderControls()}
+          </div>
+        ) : (
+          <header className="overflow-x-auto shadow-primary pc-bar">
+            <div className="logo-cont text-primary">
+              <h1>T0do.TxT</h1>
+            </div>
+            <div className="ctrl-cont">{renderControls()}</div>
+          </header>
+        )
       )}
     </>
   );

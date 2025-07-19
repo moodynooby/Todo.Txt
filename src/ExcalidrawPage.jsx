@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
-import "./ExcD.scss";
+import "./ExcalidrawPage.scss";
 import "@excalidraw/excalidraw/index.css";
-import Fullscreen from "./fullscreen";
-
+import FullscreenIcon, { toggleFullscreen } from "./fullscreen";
+import Theme from "./theme";
 const STORAGE_KEY = "excalidraw-data";
 
 const ExcalidrawPage = () => {
@@ -75,8 +75,9 @@ const ExcalidrawPage = () => {
     return null;
   }, []);
 
+
   return (
-    <div style={{ height: "90vh", width: "99vw" }} className="ExcD-embed">
+    <div style={{ height: "95vh", width: "99vw" }} className="ExcalidrawPage">
       <Excalidraw
         theme={excalidrawTheme}
         UIOptions={UIOptions}
@@ -86,13 +87,21 @@ const ExcalidrawPage = () => {
           appState: { zenModeEnabled: true },
           scrollToContent: true,
         }}
+        renderTopRightUI={() => (
+          <>
+            <Theme />
+          </>
+        )}
       >
         <MainMenu>
           <MainMenu.DefaultItems.LoadScene />
           <MainMenu.DefaultItems.SearchMenu />
           <MainMenu.DefaultItems.ClearCanvas />
           <MainMenu.DefaultItems.SaveAsImage />
-          <Fullscreen />
+          <MainMenu.Item onClick={toggleFullscreen}>
+            <FullscreenIcon />
+            Fullscreen
+          </MainMenu.Item>
         </MainMenu>
       </Excalidraw>
     </div>

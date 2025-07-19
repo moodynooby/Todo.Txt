@@ -18,7 +18,7 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
     navigator.serviceWorker.register('/service-worker.js')
       .then(registration => {
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        
+
         // Check for updates when the page loads
         registration.update().then(() => {
           console.log('ServiceWorker update check completed');
