@@ -1,13 +1,13 @@
-@import "tailwindcss";
+@use "tailwindcss";
 
 @font-face {
   font-family: WinkySans;
-  src: url(../public/WinkySans-Regular.ttf);
+  src: url(/WinkySans-Regular.ttf);
 }
 
 @font-face {
   font-family: ZillaSlab;
-  src: url(../public/ZillaSlab-Regular.ttf);
+  src: url(/ZillaSlab-Regular.ttf);
 }
 //general components style
 
