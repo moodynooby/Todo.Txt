@@ -75,7 +75,6 @@ const ExcalidrawPage = () => {
     return null;
   }, []);
 
-
   return (
     <div style={{ height: "95vh", width: "99vw" }} className="ExcalidrawPage">
       <Excalidraw

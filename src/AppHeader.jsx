@@ -35,8 +35,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
     <>
       <div className="join">
         <label
-          className={`join-item  btn btn-soft ${viewMode === "text" ? "btn-primary " : ""
-            }`}
+          className={`join-item  btn btn-soft ${
+            viewMode === "text" ? "btn-primary " : ""
+          }`}
         >
           <input
             type="radio"
@@ -49,8 +50,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <ALargeSmall size={20} />
         </label>
         <label
-          className={`join-item  btn btn-soft  ${viewMode === "both" ? "btn-primary" : ""
-            }`}
+          className={`join-item  btn btn-soft  ${
+            viewMode === "both" ? "btn-primary" : ""
+          }`}
         >
           <input
             type="radio"
@@ -63,8 +65,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <BookOpenText size={20} />
         </label>
         <label
-          className={`join-item  btn btn-soft ${viewMode === "markdown" ? "btn-primary " : ""
-            }`}
+          className={`join-item  btn btn-soft ${
+            viewMode === "markdown" ? "btn-primary " : ""
+          }`}
         >
           <input
             type="radio"
@@ -77,8 +80,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <WholeWord size={20} />
         </label>
         <label
-          className={`join-item btn btn-soft ${viewMode === "excalidraw" ? "btn-accent" : ""
-            }`}
+          className={`join-item btn btn-soft ${
+            viewMode === "excalidraw" ? "btn-accent" : ""
+          }`}
         >
           <input
             type="radio"
@@ -91,8 +95,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <DraftingCompass size={20} />
         </label>
         <label
-          className={`join-item btn btn-soft ${viewMode === "rte" ? "btn-primary" : ""
-            }`}
+          className={`join-item btn btn-soft ${
+            viewMode === "rte" ? "btn-primary" : ""
+          }`}
         >
           <input
             type="radio"
@@ -104,15 +109,13 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           />
           <SquarePen size={20} />
         </label>
-
-            </div>
+      </div>
       {viewMode !== "excalidraw" && viewMode !== "rte" && (
         <>
           <Export markdownContent={md} fileName="my-document" />
           <Theme />
 
           <button onClick={toggleFullscreen} className="btn btn-sm btn-ghost">
-
             <FullscreenIcon />
           </button>
           <Help />
@@ -130,19 +133,17 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           </div>
           <div className="ctrl-cont">{renderControls()}</div>
         </div>
+      ) : isMobile ? (
+        <div className="mobile-bar rounded-box menu-horizontal">
+          {renderControls()}
+        </div>
       ) : (
-        isMobile ? (
-          <div className="mobile-bar rounded-box menu-horizontal">
-            {renderControls()}
+        <header className="overflow-x-auto shadow-primary pc-bar">
+          <div className="logo-cont text-primary">
+            <h1>T0do.TxT</h1>
           </div>
-        ) : (
-          <header className="overflow-x-auto shadow-primary pc-bar">
-            <div className="logo-cont text-primary">
-              <h1>T0do.TxT</h1>
-            </div>
-            <div className="ctrl-cont">{renderControls()}</div>
-          </header>
-        )
+          <div className="ctrl-cont">{renderControls()}</div>
+        </header>
       )}
     </>
   );

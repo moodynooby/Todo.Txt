@@ -26,5 +26,5 @@ export default [
       "no-undef": "off",
     },
   },
-  { ignores: ["dist/", "src/sw.js"] },
+  { ignores: ["dist/", "public/"] },
 ];

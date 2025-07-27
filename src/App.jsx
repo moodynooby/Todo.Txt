@@ -1,7 +1,7 @@
 import "./App.scss";
 import "github-markdown-css/github-markdown.css";
 import Markdown from "react-markdown";
-import { useState, useEffect , useRef} from "react";
+import { useState, useEffect, useRef } from "react";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import fediverseUser from "remark-fediverse-user";
@@ -99,7 +99,6 @@ const App = ({ viewMode }) => {
       </div>
       {viewMode === "excalidraw" ? <ExcalidrawPage /> : null}
       {viewMode === "rte" ? <RTE /> : null}
-
     </>
   );
 };

@@ -23,12 +23,7 @@ function FullscreenIcon() {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
-  return (
-    <>
-      {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />
-      }
-    </>
-  );
+  return <>{isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}</>;
 }
 export default FullscreenIcon;
 export { toggleFullscreen };
