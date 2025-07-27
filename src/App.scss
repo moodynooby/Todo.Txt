@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: WinkySans;
+  src: url(../public/WinkySans-Regular.ttf);
+}
+
+@font-face {
+  font-family: ZillaSlab;
+  src: url(../public/ZillaSlab-Regular.ttf);
+}
 //general components style
 
 .textarea {
@@ -7,11 +16,12 @@
   border: 0;
   outline: 0;
   text-transform: capitalize;
+
 }
 
 html {
   margin: 0;
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-family: WinkySans, Avenir, Helvetica, Arial, sans-serif;
 }
 
 .btn-circle {
@@ -55,6 +65,7 @@ html {
   background: var(--color-base-200);
   color: var(--color-base-content);
   overflow: auto;
+  font-family: ZillaSlab, Avenir, Helvetica, Arial, sans-serif;
 }
 
 .ExcalidrawPage {

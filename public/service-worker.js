@@ -1,6 +1,6 @@
 // Service Worker for versioned cache management
 const CACHE_PREFIX = 'todo-txt-v';
-const CACHE_VERSION = '1.0.0'; // This will be replaced during build
+const CACHE_VERSION = '1.0.1'; // This will be replaced during build
 const CURRENT_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 // Files to cache

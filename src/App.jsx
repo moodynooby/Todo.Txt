@@ -1,14 +1,14 @@
 import "./App.scss";
 import "github-markdown-css/github-markdown.css";
 import Markdown from "react-markdown";
-import { useState, useEffect } from "react";
+import { useState, useEffect , useRef} from "react";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import fediverseUser from "remark-fediverse-user";
 import emoji from "remark-emoji";
 import remarkCodeTitles from "remark-flexible-code-titles";
 import ExcalidrawPage from "./ExcalidrawPage";
-
+import RTE from "./RTE";
 const App = ({ viewMode }) => {
   const [md, setMD] = useState(() => {
     const savedMD = localStorage.getItem("markdownContent");
@@ -60,7 +60,7 @@ const App = ({ viewMode }) => {
   return (
     <>
       <div
-        className={`unified-editor markdown-body ${viewMode === "excalidraw" ? "hidden" : ""}`}
+        className={`unified-editor markdown-body ${viewMode === "excalidraw" || viewMode === "rte" ? "hidden" : ""}`}
       >
         <div style={{ position: "relative", display: "inline-block" }}></div>
         {viewMode === "text" ? (
@@ -98,9 +98,9 @@ const App = ({ viewMode }) => {
         ) : null}
       </div>
       {viewMode === "excalidraw" ? <ExcalidrawPage /> : null}
+      {viewMode === "rte" ? <RTE /> : null}
 
     </>
   );
 };
-
 export default App;

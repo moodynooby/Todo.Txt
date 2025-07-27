@@ -6,6 +6,7 @@ import {
   WholeWord,
   BookOpenText,
   DraftingCompass,
+  SquarePen,
 } from "lucide-react";
 import Theme from "./theme";
 import FullscreenIcon, { toggleFullscreen } from "./fullscreen";
@@ -89,8 +90,23 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           />
           <DraftingCompass size={20} />
         </label>
-      </div>
-      {viewMode !== "excalidraw" && (
+        <label
+          className={`join-item btn btn-soft ${viewMode === "rte" ? "btn-primary" : ""
+            }`}
+        >
+          <input
+            type="radio"
+            checked={viewMode === "rte"}
+            onChange={() => setViewMode("rte")}
+            aria-label="rte View"
+            name="view-options"
+            className="radio"
+          />
+          <SquarePen size={20} />
+        </label>
+
+            </div>
+      {viewMode !== "excalidraw" && viewMode !== "rte" && (
         <>
           <Export markdownContent={md} fileName="my-document" />
           <Theme />
