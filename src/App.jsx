@@ -1,105 +1,86 @@
-import "./App.scss";
-import "github-markdown-css/github-markdown.css";
-import Markdown from "react-markdown";
+import "./App.css";
 import { useState, useEffect, useRef } from "react";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
-import fediverseUser from "remark-fediverse-user";
-import emoji from "remark-emoji";
-import remarkCodeTitles from "remark-flexible-code-titles";
 import ExcalidrawPage from "./ExcalidrawPage";
-import RTE from "./RTE";
+import Quill from "quill";
+import "quill/dist/quill.snow.css";
+import QuillMarkdown from "quilljs-markdown";
+import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
+
 const App = ({ viewMode }) => {
-  const [md, setMD] = useState(() => {
-    const savedMD = localStorage.getItem("markdownContent");
-    return savedMD !== null ? savedMD : "Start Writing";
+  const quillContainerRef = useRef(null);
+  const toolbarRef = useRef(null);
+  const quillInstanceRef = useRef(null);
+
+  // RTE (Quill) state
+  const [rteContent, setRteContent] = useState(() => {
+    const savedRTE = localStorage.getItem("rteContent");
+    return savedRTE !== null ? savedRTE : "";
   });
-  const [htmlContent, setHtmlContent] = useState(() => {
-    const myDiv = document.getElementsByClassName(".md");
-    const htmlContent = myDiv.innerHTML;
-    const fullHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>${"document"}</title>
-          </head>
-          <body>
-            ${htmlContent}
-          </body>
-        </html>
-      `;
-    return fullHtml;
-  });
+
+  // Sync RTE to localStorage
   useEffect(() => {
-    localStorage.setItem("markdownContent", md);
-  }, [md]);
+    localStorage.setItem("rteContent", rteContent);
+  }, [rteContent]);
+
+  // Initialize Quill RTE with full toolbar
   useEffect(() => {
-    localStorage.setItem("htmlContent", htmlContent);
-  }, [htmlContent]);
-  const handleMDChange = (e) => {
-    setMD(e.target.value);
-  };
-  const MarkdownComponent = () => {
-    return (
-      <div>
-        <Markdown
-          remarkPlugins={[
-            remarkGfm,
-            remarkBreaks,
-            fediverseUser,
-            emoji,
-            remarkCodeTitles,
-          ]}
-        >
-          {md}
-        </Markdown>
-      </div>
-    );
-  };
+    if (
+      quillContainerRef.current &&
+      !quillInstanceRef.current &&
+      viewMode === "text"
+    ) {
+      const toolbarOptions = [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["blockquote", "code-block"],
+        [{ script: "sub" }, { script: "super" }],
+        [{ indent: "-1" }, { indent: "+1" }],
+        [{ direction: "rtl" }],
+        [{ color: [] }, { background: [] }],
+        [{ font: [] }],
+        [{ align: [] }],
+        ["link", "image", "video"],
+        ["clean"],
+      ];
+      const quill = new Quill(quillContainerRef.current, {
+        modules: {
+          toolbar: toolbarOptions,
+        },
+        theme: "snow",
+        placeholder: "Start writing...",
+      });
+      quillInstanceRef.current = quill;
+      new QuillMarkdown(quill, {});
+      // Set initial content
+      if (rteContent) {
+        quill.clipboard.dangerouslyPasteHTML(rteContent);
+      }
+      quill.on("text-change", () => {
+        setRteContent(quill.root.innerHTML);
+      });
+    }
+    // Cleanup: destroy Quill instance and clear container when leaving text mode
+    return () => {
+      if (quillInstanceRef.current && viewMode !== "text") {
+        quillInstanceRef.current = null;
+        if (quillContainerRef.current) {
+          quillContainerRef.current.innerHTML = "";
+        }
+      }
+    };
+  }, [viewMode]);
+
   return (
     <>
-      <div
-        className={`unified-editor markdown-body ${viewMode === "excalidraw" || viewMode === "rte" ? "hidden" : ""}`}
-      >
-        <div style={{ position: "relative", display: "inline-block" }}></div>
-        {viewMode === "text" ? (
-          <textarea
-            className="textarea only-textarea"
-            placeholder="Start Writing"
-            value={md}
-            onChange={handleMDChange}
-            autoFocus
-          ></textarea>
-        ) : null}
-
-        {viewMode === "both" ? (
-          <>
-            <div className="unified-txt">
-              <h2>Text </h2>
-              <textarea
-                className="textarea unified-textarea"
-                placeholder="Start Writing"
-                value={md}
-                onChange={handleMDChange}
-                autoFocus
-              ></textarea>
-            </div>
-            <div className="unified-md">
-              <h2>Markdown </h2>
-              <MarkdownComponent />
-            </div>
-          </>
-        ) : null}
-        {viewMode === "markdown" ? (
-          <div className="md">
-            <MarkdownComponent />
-          </div>
-        ) : null}
-      </div>
       {viewMode === "excalidraw" ? <ExcalidrawPage /> : null}
-      {viewMode === "rte" ? <RTE /> : null}
+      {viewMode === "text" ? (
+        <div className="rte-editor-container">
+          <div ref={quillContainerRef} style={{ minHeight: 300 }} />
+        </div>
+      ) : null}
     </>
   );
 };
+
 export default App;

@@ -1,13 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
-import basicSsl from "@vitejs/plugin-basic-ssl";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [react(), svgr(), basicSsl()],
-  css: {
-    postcss: "./postcss.config.mjs",
-  },
+  plugins: [react(), svgr(), tailwindcss()],
   publicDir: "public",
   server: {
     open: true,

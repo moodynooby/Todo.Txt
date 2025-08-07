@@ -43,10 +43,10 @@ function RootComponent() {
   const [viewMode, setViewMode] = useState(() => {
     try {
       const savedMode = localStorage.getItem("viewMode");
-      return savedMode ? savedMode : "both";
+      return savedMode ? savedMode : "text";
     } catch (error) {
       console.error("Error loading view mode from local storage:", error);
-      return "both";
+      return "text";
     }
   });
 

@@ -1,4 +1,5 @@
-@use "tailwindcss";
+@import "tailwindcss";
+@plugin "daisyui";
 
 @font-face {
   font-family: WinkySans;
@@ -9,7 +10,7 @@
   font-family: ZillaSlab;
   src: url(/ZillaSlab-Regular.ttf);
 }
-//general components style
+/* general components style */
 
 .textarea {
   background: transparent;
@@ -27,7 +28,7 @@ html {
   border-radius: 100%;
 }
 
-// single view styles
+/* single view styles */
 .only-textarea {
   width: 98vw;
   position: absolute;
@@ -50,9 +51,7 @@ html {
   text-transform: capitalize;
 }
 
-// UNIFIED components style
-
-.unified-editor {
+UNIFIED components style .unified-editor {
   min-height: 90vh;
   flex-direction: column;
   justify-content: center;
@@ -75,7 +74,7 @@ html {
   max-width: 100%;
 }
 
-// mobile
+/* mobile */
 @media only screen and (max-width: 768px) {
   .unified-md {
     width: 98vw;
@@ -89,7 +88,7 @@ html {
   }
 }
 
-// PC
+/* PC */
 @media only screen and (min-width: 768px) {
   .unified-md {
     width: 50vw;
@@ -117,7 +116,7 @@ html {
   }
 }
 
-//misc styles
+/* misc styles */
 .excalidraw-transparent-bg {
   .md {
     background: transparent;
@@ -130,4 +129,18 @@ html {
 
 ul {
   list-style-type: circle;
+}
+
+.ql-toolbar {
+  background: var(--color-info) !important;
+  border: 0 !important;
+  color: var(--color-info-content) !important;
+}
+.ql-editor {
+  background: var(--color-base-100) !important;
+  color: var(--color-base-content) !important;
+  border: 0 !important;
+}
+.ql-container {
+  border: 0 !important;
 }

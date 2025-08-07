@@ -17,7 +17,7 @@ this is built using Vite and uses daisyUI as css library
 
 ## Code Practicies
 
-- try to use jsx and scss only for javascript/typescript and css code
+- try to use jsx and css only for javascript/typescript and css code
 - never make rigid components always make reusable and reusable components
 - try to make or use reusable and responsive components like daisyUI
 - never edit \*.lock files
@@ -27,7 +27,7 @@ this is built using Vite and uses daisyUI as css library
 
 ## Structure
 
-- src contains jsx and scss project
+- src contains jsx and css project
 - public contain the static icons and media and static libraries
 
 ## Package Management

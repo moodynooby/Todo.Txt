@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
-import "./ExcalidrawPage.scss";
+import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
 import FullscreenIcon, { toggleFullscreen } from "./fullscreen";
 import Theme from "./theme";

@@ -1,16 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import "./App.scss";
-import "./AppHeader.scss";
-import {
-  ALargeSmall,
-  WholeWord,
-  BookOpenText,
-  DraftingCompass,
-  SquarePen,
-} from "lucide-react";
+import "./App.css";
+import "./AppHeader.css";
+import { DraftingCompass, SquarePen } from "lucide-react";
 import Theme from "./theme";
 import FullscreenIcon, { toggleFullscreen } from "./fullscreen";
-import Export from "./Export";
 import Help from "./Help";
 
 const AppHeader = ({ viewMode, setViewMode }) => {
@@ -47,37 +40,7 @@ const AppHeader = ({ viewMode, setViewMode }) => {
             name="view-options"
             className="radio"
           />
-          <ALargeSmall size={20} />
-        </label>
-        <label
-          className={`join-item  btn btn-soft  ${
-            viewMode === "both" ? "btn-primary" : ""
-          }`}
-        >
-          <input
-            type="radio"
-            checked={viewMode === "both"}
-            onChange={() => setViewMode("both")}
-            aria-label="Split View"
-            name="view-options"
-            className="radio"
-          />
-          <BookOpenText size={20} />
-        </label>
-        <label
-          className={`join-item  btn btn-soft ${
-            viewMode === "markdown" ? "btn-primary " : ""
-          }`}
-        >
-          <input
-            type="radio"
-            checked={viewMode === "markdown"}
-            onChange={() => setViewMode("markdown")}
-            aria-label="Markdown View"
-            name="view-options"
-            className="radio"
-          />
-          <WholeWord size={20} />
+          <SquarePen size={20} />
         </label>
         <label
           className={`join-item btn btn-soft ${
@@ -94,25 +57,9 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           />
           <DraftingCompass size={20} />
         </label>
-        <label
-          className={`join-item btn btn-soft ${
-            viewMode === "rte" ? "btn-primary" : ""
-          }`}
-        >
-          <input
-            type="radio"
-            checked={viewMode === "rte"}
-            onChange={() => setViewMode("rte")}
-            aria-label="rte View"
-            name="view-options"
-            className="radio"
-          />
-          <SquarePen size={20} />
-        </label>
       </div>
-      {viewMode !== "excalidraw" && viewMode !== "rte" && (
+      {viewMode !== "excalidraw" && (
         <>
-          <Export markdownContent={md} fileName="my-document" />
           <Theme />
 
           <button onClick={toggleFullscreen} className="btn btn-sm btn-ghost">
