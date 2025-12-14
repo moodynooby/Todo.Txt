@@ -1,41 +1,45 @@
-A simple todo app that is not a one
-[based on the philosphy](https://github.com/todotxt/todo.txt)
+# Todo.Txt
 
-## OverView
+A simple todo app based on the philosophy of [todo.txt](https://github.com/todotxt/todo.txt). It is a plain text, software and operating system agnostic, searchable, portable, lightweight, and easily manipulated todo application.
 
-Plain text is software and operating system agnostic. It's searchable, portable, lightweight, and easily manipulated. It's unstructured. It works when someone else's web server is down or your Outlook .PST file is corrupt. There's no exporting and importing, no databases or tags or flags or stars or prioritizing or insert company name here-induced rules on what you can and can't do with it.
+## Links
 
-## Format Rules
+- [Todo.txt](https://github.com/todotxt/todo.txt)
+- [Website](https://todotxt.netlify.app/)
 
-[Check out the repo ](https://github.com/todotxt/todo.txt?tab=readme-ov-file#todotxt-format-rules)
+## Features
 
-# Agent Instructions and Technical intro
+- Simple and lightweight
+- Based on the todo.txt philosophy
+- Plain text based
+- Searchable and portable
+- Built with Vite, React, and DaisyUI
+- Includes Excalidraw for drawing
 
-## Details
+## Demo / Screenshots
 
-this is built using Vite and uses daisyUI as css library
+*This is a visual project, but screenshots are not available at this time.*
 
-## Code Practicies
+## Setup
 
-- try to use jsx and css only for javascript/typescript and css code
-- never make rigid components always make reusable and reusable components
-- try to make or use reusable and responsive components like daisyUI
-- never edit \*.lock files
-- always try to create the handling and trigger in a same reusable and responsive component
-- never create components that only return value
-- always try to make the component as self sufficient as possible
+1.  Clone the repository.
+2.  Install dependencies:
+    ```bash
+    bun install
+    ```
+3.  Run the development server:
+    ```bash
+    bun run dev
+    ```
+4.  Build for production:
+    ```bash
+    bun run build
+    ```
 
-## Structure
+## Release Notes
 
-- src contains jsx and css project
-- public contain the static icons and media and static libraries
+*No release notes available at this time.*
 
-## Package Management
+## License
 
-Please use `bun` for all package management tasks (installing, updating, removing dependencies).
-
-For example:
-
-- `bun install` instead of `npm install` or `yarn install`
-- `bun add <package>` instead of `npm install <package>` or `yarn add <package>`
-- `bun run <script>` instead of `npm run <script>` or `yarn <script>`
+*No license specified.*
