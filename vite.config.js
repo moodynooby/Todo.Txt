@@ -7,19 +7,34 @@ export default defineConfig({
   plugins: [react(), svgr(), tailwindcss()],
   publicDir: "public",
   server: {
-    open: true,
     port: 5173,
-    strictPort: true,
-    middlewareMode: false,
+    strictPort: false,
   },
   build: {
     outDir: "dist",
     assetsDir: "assets",
     emptyOutDir: true,
     sourcemap: false,
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor": ["react", "react-dom"],
+          "editor": ["quill", "quilljs-markdown"],
+          "excalidraw": ["@excalidraw/excalidraw"],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+    cssCodeSplit: true,
   },
   preview: {
     port: 4173,
-    strictPort: true,
+    strictPort: false,
   },
 });
