@@ -32,14 +32,9 @@
     var(--color-primary) 90%,
     black
   ) !important;
-  --color-brand-active: color-mix(
-    in srgb,
-    var(--color-primary) 80%,
-    black
-  ) !important;
+  --color-brand-active: var(--color-accent) !important;
   --island-bg-color: var(--color-base-200) !important;
   --color-slider-track: var(--color-primary) !important;
-  --color-brand-active: var(--color-accent) !important;
   --color-border-outline: var(--color-accent) !important;
   --color-border-outline-variant: var(--color-accent) !important;
 }

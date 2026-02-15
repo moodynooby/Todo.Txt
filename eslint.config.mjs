@@ -24,6 +24,8 @@ export default [
     rules: {
       ...reactHooks.configs.recommended.rules,
       "no-undef": "off",
+      "no-unused-vars": "warn",
+      "no-console": ["warn", { allow: ["error", "warn"] }],
     },
   },
   { ignores: ["dist/", "public/"] },

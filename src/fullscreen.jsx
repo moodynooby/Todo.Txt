@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Maximize, Minimize } from "lucide-react";
+
 const toggleFullscreen = ({ element = document.documentElement }) => {
   if (!document.fullscreenElement) {
     element.requestFullscreen().catch((err) => {
@@ -9,10 +10,9 @@ const toggleFullscreen = ({ element = document.documentElement }) => {
     document.exitFullscreen();
   }
 };
+
 function FullscreenIcon() {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const savedMode = localStorage.getItem("viewMode");
-  const [viewMode, setViewMode] = useState(savedMode);
 
   useEffect(() => {
     const handleFullscreenChange = () => {

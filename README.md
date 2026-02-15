@@ -18,7 +18,7 @@ A simple todo app based on the philosophy of [todo.txt](https://github.com/todot
 
 ## Demo / Screenshots
 
-*This is a visual project, but screenshots are not available at this time.*
+_This is a visual project, but screenshots are not available at this time._
 
 ## Setup
 
@@ -38,8 +38,8 @@ A simple todo app based on the philosophy of [todo.txt](https://github.com/todot
 
 ## Release Notes
 
-*No release notes available at this time.*
+_No release notes available at this time._
 
 ## License
 
-*No license specified.*
+_No license specified._

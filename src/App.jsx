@@ -8,18 +8,24 @@ import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
 
 const App = ({ viewMode }) => {
   const quillContainerRef = useRef(null);
-  const toolbarRef = useRef(null);
   const quillInstanceRef = useRef(null);
 
   // RTE (Quill) state
   const [rteContent, setRteContent] = useState(() => {
-    const savedRTE = localStorage.getItem("rteContent");
-    return savedRTE !== null ? savedRTE : "";
+    try {
+      return localStorage.getItem("rteContent") || "";
+    } catch {
+      return "";
+    }
   });
 
   // Sync RTE to localStorage
   useEffect(() => {
-    localStorage.setItem("rteContent", rteContent);
+    try {
+      localStorage.setItem("rteContent", rteContent);
+    } catch {
+      // Silent fail
+    }
   }, [rteContent]);
 
   // Initialize Quill RTE with full toolbar
@@ -48,7 +54,7 @@ const App = ({ viewMode }) => {
           toolbar: toolbarOptions,
         },
         theme: "snow",
-        placeholder: "Start writing...",
+        placeholder: "❤️❤️❤️",
       });
       quillInstanceRef.current = quill;
       new QuillMarkdown(quill, {});
@@ -73,12 +79,12 @@ const App = ({ viewMode }) => {
 
   return (
     <>
-      {viewMode === "excalidraw" ? <ExcalidrawPage /> : null}
-      {viewMode === "text" ? (
-        <div className="rte-editor-container">
-          <div ref={quillContainerRef} style={{ minHeight: 300 }} />
+      {viewMode === "excalidraw" && <ExcalidrawPage />}
+      {viewMode === "text" && (
+        <div className="rte-editor-container" style={{ marginTop: 80 }}>
+          <div ref={quillContainerRef} style={{ minHeight: "80vh" }} />
         </div>
-      ) : null}
+      )}
     </>
   );
 };

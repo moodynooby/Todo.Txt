@@ -1,35 +1,22 @@
-import { useState, useEffect, useRef } from "react";
-import "./App.css";
 import "./AppHeader.css";
-import { DraftingCompass, SquarePen } from "lucide-react";
+import {
+  DraftingCompass,
+  SquarePen,
+  Maximize2,
+  Timer as TimerIcon,
+  Plus,
+} from "lucide-react";
 import Theme from "./theme";
 import FullscreenIcon, { toggleFullscreen } from "./fullscreen";
 import Help from "./Help";
 
-const AppHeader = ({ viewMode, setViewMode }) => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [md] = useState(() => {
-    const savedMD = localStorage.getItem("markdownContent");
-    return savedMD !== null ? savedMD : "Start Writing";
-  });
-
-  // Handle window resize to toggle between mobile and desktop views
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Common controls to be used in both mobile and desktop views
+const AppHeader = ({ viewMode, setViewMode, onAddTimer }) => {
   const renderControls = () => (
     <>
       <div className="join">
         <label
-          className={`join-item  btn btn-soft ${
-            viewMode === "text" ? "btn-primary " : ""
+          className={`join-item btn btn-ghost btn-sm ${
+            viewMode === "text" ? "text-primary" : "opacity-50"
           }`}
         >
           <input
@@ -43,8 +30,8 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <SquarePen size={20} />
         </label>
         <label
-          className={`join-item btn btn-soft ${
-            viewMode === "excalidraw" ? "btn-accent" : ""
+          className={`join-item btn btn-ghost btn-sm ${
+            viewMode === "excalidraw" ? "text-primary" : "opacity-50"
           }`}
         >
           <input
@@ -58,41 +45,33 @@ const AppHeader = ({ viewMode, setViewMode }) => {
           <DraftingCompass size={20} />
         </label>
       </div>
-      {viewMode !== "excalidraw" && (
-        <>
-          <Theme />
-
-          <button onClick={toggleFullscreen} className="btn btn-sm btn-ghost">
-            <FullscreenIcon />
-          </button>
-          <Help />
-        </>
-      )}
+      <div className="flex items-center gap-1 sm:gap-2">
+        <button
+          onClick={onAddTimer}
+          className="btn btn-sm btn-ghost p-1 text-primary"
+          title="Add Timer"
+        >
+          <TimerIcon size={20} />
+          <Plus size={10} className="-ml-1" />
+        </button>
+        <Theme />
+        <button onClick={toggleFullscreen} className="btn btn-sm btn-ghost p-1">
+          <FullscreenIcon />
+        </button>
+        <Help />
+      </div>
     </>
   );
 
   return (
-    <>
-      {viewMode === "excalidraw" ? (
-        <div className="excalidraw-header">
-          <div className="logo-cont text-accent">
-            <h1>T0do.PnG</h1>
-          </div>
-          <div className="ctrl-cont">{renderControls()}</div>
+    <header>
+      <div className="header-inner">
+        <div className="logo-cont">
+          <h1>T0do.Txt</h1>
         </div>
-      ) : isMobile ? (
-        <div className="mobile-bar rounded-box menu-horizontal">
-          {renderControls()}
-        </div>
-      ) : (
-        <header className="overflow-x-auto shadow-primary pc-bar">
-          <div className="logo-cont text-primary">
-            <h1>T0do.TxT</h1>
-          </div>
-          <div className="ctrl-cont">{renderControls()}</div>
-        </header>
-      )}
-    </>
+        <div className="ctrl-cont">{renderControls()}</div>
+      </div>
+    </header>
   );
 };
 

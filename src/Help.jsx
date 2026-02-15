@@ -1,7 +1,5 @@
 import { X, Info } from "lucide-react";
 import { useState } from "react";
-import "./App.css";
-import "./AppHeader.css";
 
 const Help = () => {
   const [isOpen, setIsOpen] = useState(false);

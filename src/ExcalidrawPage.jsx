@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
@@ -69,14 +69,17 @@ const ExcalidrawPage = () => {
         }
         return parsedData;
       }
-    } catch (e) {
-      console.error("Failed to load Excalidraw data from local storage", e);
+    } catch {
+      // Silent fail - use default empty canvas
     }
     return null;
   }, []);
 
   return (
-    <div style={{ height: "95vh", width: "99vw" }} className="ExcalidrawPage">
+    <div
+      style={{ height: "calc(100vh - 80px)", width: "90vw", marginTop: "70px" }}
+      className="ExcalidrawPage"
+    >
       <Excalidraw
         theme={excalidrawTheme}
         UIOptions={UIOptions}
@@ -86,11 +89,6 @@ const ExcalidrawPage = () => {
           appState: { zenModeEnabled: true },
           scrollToContent: true,
         }}
-        renderTopRightUI={() => (
-          <>
-            <Theme />
-          </>
-        )}
       >
         <MainMenu>
           <MainMenu.DefaultItems.LoadScene />

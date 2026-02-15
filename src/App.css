@@ -10,137 +10,172 @@
   font-family: ZillaSlab;
   src: url(/ZillaSlab-Regular.ttf);
 }
-/* general components style */
-
-.textarea {
-  background: transparent;
-  border: 0;
-  outline: 0;
-  text-transform: capitalize;
-}
-
 html {
   margin: 0;
-  font-family: WinkySans, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Architects Daughter", cursive;
 }
 
-.btn-circle {
-  border-radius: 100%;
-}
-
-/* single view styles */
-.only-textarea {
-  width: 98vw;
-  position: absolute;
-  background: transparent;
-  border: 0;
-  outline: 0;
-  padding: 1rem;
-  text-transform: capitalize;
-
-  height: 89vh;
-}
-
-.md {
-  position: absolute;
-  background: transparent;
-  border: 0;
-  outline: 0;
-  padding: 1rem;
-  max-width: 98vw;
-  text-transform: capitalize;
-}
-
-UNIFIED components style .unified-editor {
-  min-height: 90vh;
-  flex-direction: column;
-  justify-content: center;
-  margin: 5px 5px 5px 5px;
-  border: 1px solid var(--neutral-content);
-  border-radius: var(--radius-box);
-  padding: 5px;
-  background: var(--color-base-200);
+body {
+  font-family: "Architects Daughter", cursive;
+  background-color: var(--color-base-100);
   color: var(--color-base-content);
-  overflow: auto;
-  font-family: ZillaSlab, Avenir, Helvetica, Arial, sans-serif;
+}
+
+/* Make the grid subtle by adjusting the dot opacity */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="dark"] body::before {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.1) 1px,
+    transparent 1px
+  );
 }
 
 .ExcalidrawPage {
-  border-radius: var(--radius-box);
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   margin: auto;
   display: block;
   max-width: 100%;
-}
-
-/* mobile */
-@media only screen and (max-width: 768px) {
-  .unified-md {
-    width: 98vw;
-    height: 40vh;
-    border-top: 1px solid var(--color-primary);
-  }
-
-  .unified-textarea {
-    height: 40vh;
-    width: 98vw;
-  }
-}
-
-/* PC */
-@media only screen and (min-width: 768px) {
-  .unified-md {
-    width: 50vw;
-    height: 75vh;
-    position: absolute;
-    border-left: 1px solid var(--color-primary);
-    right: 0;
-    padding: 1rem;
-    text-transform: capitalize;
-  }
-
-  .unified-txt {
-    width: 50vw;
-    height: 79vh;
-    position: absolute;
-    padding: 1rem;
-  }
-
-  .unified-textarea {
-    width: 50vw;
-    height: 79vh;
-    position: absolute;
-    left: 0;
-    padding: 1rem;
-  }
-}
-
-/* misc styles */
-.excalidraw-transparent-bg {
-  .md {
-    background: transparent;
-  }
-
-  .textarea {
-    background: transparent;
-  }
 }
 
 ul {
   list-style-type: circle;
 }
 
-.ql-toolbar {
-  background: var(--color-info) !important;
-  border: 0 !important;
-  color: var(--color-info-content) !important;
+/* Quill Styling to match Excalidraw */
+.ql-toolbar.ql-snow {
+  background: var(--color-base-200) !important;
+  border: 2px solid var(--color-base-300) !important;
+  border-bottom: none !important;
+  border-radius: 12px 12px 0 0 !important;
+  font-family: "Architects Daughter", cursive !important;
+  padding: 8px !important;
 }
+
+.ql-snow .ql-stroke {
+  stroke: var(--color-base-content) !important;
+}
+
+.ql-snow .ql-fill {
+  fill: var(--color-base-content) !important;
+}
+
+.ql-snow .ql-picker {
+  color: var(--color-base-content) !important;
+}
+
+.ql-snow.ql-toolbar button:hover .ql-stroke {
+  stroke: var(--color-primary) !important;
+}
+
+.ql-snow.ql-toolbar button:hover .ql-fill {
+  fill: var(--color-primary) !important;
+}
+
+.ql-snow.ql-toolbar button.ql-active .ql-stroke {
+  stroke: var(--color-primary) !important;
+}
+
+.ql-container.ql-snow {
+  border: 2px solid var(--color-base-300) !important;
+  border-radius: 0 0 12px 12px !important;
+  font-family: "Architects Daughter", cursive !important;
+  font-size: 1.1rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.ql-snow .ql-picker-options {
+  background-color: var(--color-base-100) !important;
+  border: 2px solid var(--color-base-300) !important;
+  border-radius: 8px !important;
+  color: var(--color-base-content) !important;
+  font-family: "Architects Daughter", cursive !important;
+}
+
+.ql-snow .ql-picker-item {
+  color: var(--color-base-content) !important;
+}
+
+.ql-snow .ql-picker-item:hover {
+  color: var(--color-primary) !important;
+}
+
+/* Ensure Lucide icons inherit theme colors */
+svg.lucide {
+  color: inherit;
+  stroke: currentColor;
+}
+
+.ctrl-cont .lucide {
+  color: var(--color-base-content);
+}
+
+.ctrl-cont .text-primary .lucide {
+  color: var(--color-primary);
+}
+
 .ql-editor {
   background: var(--color-base-100) !important;
   color: var(--color-base-content) !important;
-  border: 0 !important;
+  min-height: 70vh;
 }
-.ql-container {
-  border: 0 !important;
+
+.ql-editor.ql-blank::before {
+  font-family: "Architects Daughter", cursive !important;
+  color: var(--color-base-content);
+  opacity: 0.5;
+}
+
+.rte-editor-container {
+  padding: 1rem;
+  max-width: 80vw;
+  margin: 10px auto;
+}
+
+/* Floating Timer Styles */
+.floating-timer {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background: var(--color-base-100);
+  border: 2px solid var(--color-primary);
+  padding: 10px 15px;
+  border-radius: 12px;
+  box-shadow: 4px 4px 0px var(--color-primary);
+  z-index: 1000;
+  cursor: move;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  user-select: none;
+  min-width: 120px;
+  max-width: 500px;
+  resize: horizontal;
+  overflow: hidden;
+}
+
+.timer-display {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 5px;
 }

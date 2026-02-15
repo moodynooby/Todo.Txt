@@ -10,11 +10,13 @@ export default defineConfig({
     open: true,
     port: 5173,
     strictPort: true,
+    middlewareMode: false,
   },
   build: {
     outDir: "dist",
     assetsDir: "assets",
     emptyOutDir: true,
+    sourcemap: false,
   },
   preview: {
     port: 4173,

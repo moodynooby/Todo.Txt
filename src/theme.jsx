@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 const Theme = () => {
-  var darkTheme = "dark";
-  var lightTheme = "emerald";
 
   const [isdark, setIsdark] = useState(() => {
     const savedValue = localStorage.getItem("isdark");
@@ -20,11 +18,14 @@ const Theme = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem("isdark", JSON.stringify(isdark));
-    // Set theme based on isdark value
+    try {
+      localStorage.setItem("isdark", JSON.stringify(isdark));
+    } catch {
+      // Silent fail
+    }
     document.documentElement.setAttribute(
       "data-theme",
-      isdark === "checked" ? darkTheme : lightTheme,
+      isdark === "checked" ? "dark" : "light",
     );
   }, [isdark]);
 
