@@ -1,40 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Play, Pause, RotateCcw, X, Timer as TimerIcon } from "lucide-react";
-import { formatTime } from "../../utils/timeFormat";
+
+// Timer positioning
+const TIMER_BASE_X = 20;
+const TIMER_BASE_Y = 100;
+const TIMER_X_OFFSET = 20;
+const TIMER_Y_OFFSET = 30;
+
+const formatTime = (totalSeconds) => {
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+  return `${hrs > 0 ? hrs.toString().padStart(2, "0") + ":" : ""}${mins
+    .toString()
+    .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+};
 
 const Timer = ({ id, onRemove }) => {
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [position, setPosition] = useState({
-    x: 20 + (id % 5) * 20,
-    y: 100 + (id % 10) * 30,
+    x: TIMER_BASE_X + (id % 5) * TIMER_X_OFFSET,
+    y: TIMER_BASE_Y + (id % 10) * TIMER_Y_OFFSET,
   });
   const [isDragging, setIsDragging] = useState(false);
-
-  useEffect(() => {
-    let interval = null;
-    if (isActive) {
-      interval = setInterval(() => {
-        setSeconds((s) => s + 1);
-      }, 1000);
-    } else {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isActive]);
+  const offsetRef = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = (e) => {
-    // Don't drag if clicking buttons
     if (e.target.closest("button")) return;
-
     setIsDragging(true);
-    const startX = e.clientX - position.x;
-    const startY = e.clientY - position.y;
+    offsetRef.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    };
 
-    const handleMouseMove = (moveEvent) => {
+    const handleMouseMove = (e) => {
       setPosition({
-        x: moveEvent.clientX - startX,
-        y: moveEvent.clientY - startY,
+        x: e.clientX - offsetRef.current.x,
+        y: e.clientY - offsetRef.current.y,
       });
     };
 
@@ -47,6 +50,16 @@ const Timer = ({ id, onRemove }) => {
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
   };
+
+  useEffect(() => {
+    let interval = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        setSeconds((s) => s + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isActive]);
 
   return (
     <div

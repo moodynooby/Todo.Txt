@@ -1,18 +1,19 @@
 import "./AppHeader.css";
+import PropTypes from 'prop-types';
 import {
   DraftingCompass,
   SquarePen,
   Timer as TimerIcon,
   Plus,
   FolderOpen,
-  Save,
   Sparkles,
 } from "lucide-react";
 import Theme from "../../utils/theme.jsx";
 import FullscreenIcon, { toggleFullscreen } from "../../utils/fullscreen.jsx";
 import Help from "../Help/Help";
+import SaveMenu from "../SaveMenu/SaveMenu";
 
-const AppHeader = ({ viewMode, setViewMode, onAddTimer, onOpenRepo, onSaveAsMd, onSaveAsTxt, onSaveAsHtml, onAiTools }) => {
+const AppHeader = ({ viewMode, setViewMode, onAddTimer, onOpenRepo, onSave, onAiTools }) => {
   return (
     <header>
       <div className="header-inner">
@@ -30,16 +31,9 @@ const AppHeader = ({ viewMode, setViewMode, onAddTimer, onOpenRepo, onSaveAsMd, 
             >
               <FolderOpen size={18} />
             </button>
-            <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" className="btn btn-sm btn-ghost p-1 m-1" title="Save">
-                <Save size={18} />
-              </div>
-              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-32 ">
-                <li><button type="button" onClick={onSaveAsMd}>Save as Markdown (.md)</button></li>
-                <li><button type="button" onClick={onSaveAsTxt}>Save as Plain Text (.txt)</button></li>
-                <li><button type="button" onClick={onSaveAsHtml}>Save as HTML (.html)</button></li>
-              </ul>
-            </div>
+            <SaveMenu
+              onSave={onSave}
+            />
           </div>
 
           <div className="toolbar-divider" />
@@ -117,6 +111,15 @@ const AppHeader = ({ viewMode, setViewMode, onAddTimer, onOpenRepo, onSaveAsMd, 
       </div>
     </header>
   );
+};
+
+AppHeader.propTypes = {
+  viewMode: PropTypes.string.isRequired,
+  setViewMode: PropTypes.func.isRequired,
+  onAddTimer: PropTypes.func.isRequired,
+  onOpenRepo: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  onAiTools: PropTypes.func.isRequired,
 };
 
 export default AppHeader;

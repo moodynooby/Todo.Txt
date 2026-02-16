@@ -4,13 +4,11 @@ import { useState } from "react";
 const Help = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const openModal = () => setIsOpen(true);
-  const closeModal = () => setIsOpen(false);
   return (
     <>
       <button
         className="btn btn-circle btn-soft btn-info"
-        onClick={openModal}
+        onClick={() => setIsOpen(true)}
         aria-label="Open help dialog"
       >
         <Info size={20} />
@@ -24,7 +22,7 @@ const Help = () => {
             <h3 className="text-lg font-bold">Help Dialog</h3>
             <button
               className="btn btn-sm btn-circle btn-ghost"
-              onClick={closeModal}
+              onClick={() => setIsOpen(false)}
               aria-label="Close help dialog"
             >
               <X size={20} />
@@ -182,7 +180,7 @@ const Help = () => {
             </tbody>
           </table>
         </div>
-        <div className="modal-backdrop" onClick={closeModal}></div>
+        <div className="modal-backdrop" onClick={() => setIsOpen(false)}></div>
       </div>
     </>
   );

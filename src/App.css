@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui";
+@import "./styles/variables.css";
 
 @font-face {
   font-family: WinkySans;
@@ -43,9 +44,9 @@ body::before {
 }
 
 .ExcalidrawPage {
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-lg);
   margin: 1rem;
   display: block;
   max-width: calc(100% - 2rem);
@@ -57,54 +58,45 @@ ul {
 
 .ql-toolbar.ql-snow {
   background: var(--color-base-200) !important;
-  border: 1px solid #404040 !important;
+  border: 1px solid var(--color-border-dark) !important;
   border-bottom: none !important;
-  border-radius: 8px 8px 0 0 !important;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
   font-family: "Architects Daughter", cursive !important;
   padding: 8px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
 }
 
-.ql-snow .ql-stroke {
-  stroke: var(--color-base-content) !important;
-}
-
-.ql-snow .ql-fill {
-  fill: var(--color-base-content) !important;
-}
-
+.ql-snow .ql-stroke,
+.ql-snow .ql-fill,
 .ql-snow .ql-picker {
+  stroke: var(--color-base-content) !important;
+  fill: var(--color-base-content) !important;
   color: var(--color-base-content) !important;
 }
 
-.ql-snow.ql-toolbar button:hover .ql-stroke {
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke {
   stroke: var(--color-primary) !important;
-}
-
-.ql-snow.ql-toolbar button:hover .ql-fill {
   fill: var(--color-primary) !important;
 }
 
-.ql-snow.ql-toolbar button.ql-active .ql-stroke {
-  stroke: var(--color-primary) !important;
-}
-
 .ql-container.ql-snow {
-  border: 1px solid #404040 !important;
-  border-radius: 0 0 8px 8px !important;
+  border: 1px solid var(--color-border-dark) !important;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
   font-family: "Architects Daughter", cursive !important;
   font-size: 1.1rem !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
   background-color: var(--color-base-100);
 }
 
 .ql-snow .ql-picker-options {
   background-color: var(--color-base-200) !important;
-  border: 1px solid #404040 !important;
-  border-radius: 8px !important;
+  border: 1px solid var(--color-border-dark) !important;
+  border-radius: var(--radius-lg) !important;
   color: var(--color-base-content) !important;
   font-family: "Architects Daughter", cursive !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-lg);
 }
 
 .ql-snow .ql-picker-item {
@@ -140,11 +132,11 @@ svg.lucide {
 }
 
 .quill-theme-light .ql-editor.ql-blank::before {
-  color: #404040; /* Darker color for light theme placeholder */
+  color: var(--color-placeholder-light);
 }
 
 .quill-theme-dark .ql-editor.ql-blank::before {
-  color: #e8e8e8; /* Lighter color for dark theme placeholder */
+  color: var(--color-placeholder-dark);
 }
 
 .rte-editor-container {
@@ -157,10 +149,10 @@ svg.lucide {
   top: 64px;
   right: 20px;
   background: var(--color-base-200);
-  border: 1px solid #404040;
+  border: 1px solid var(--color-border-dark);
   padding: 10px 15px;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   z-index: 1000;
   cursor: move;
   display: flex;
@@ -182,14 +174,6 @@ svg.lucide {
 .timer-controls {
   display: flex;
   gap: 5px;
-}
-
-.sidebar-item:hover {
-  background-color: var(--color-base-100) !important;
-}
-
-.file-item:hover {
-  background-color: var(--color-base-100);
 }
 
 @media (max-width: 768px) {

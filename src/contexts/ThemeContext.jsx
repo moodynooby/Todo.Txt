@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const ThemeContext = createContext();
 
@@ -11,28 +12,17 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(() => {
-    const savedValue = localStorage.getItem("isdark");
-    if (savedValue !== null) {
-      try {
-        return JSON.parse(savedValue);
-      } catch {
-        return true;
-      }
-    } else {
-      return (
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches
-      );
-    }
-  });
+  // Get system preference for dark mode
+  const getSystemTheme = () => {
+    return (
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    );
+  };
+
+  const [isDark, setIsDark] = useLocalStorage("isdark", getSystemTheme);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("isdark", JSON.stringify(isDark));
-    } catch {
-      // Silent fail for localStorage unavailability
-    }
     document.documentElement.setAttribute(
       "data-theme",
       isDark ? "dark" : "light"

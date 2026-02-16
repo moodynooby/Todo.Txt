@@ -4,9 +4,25 @@ import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
 import FullscreenIcon, { toggleFullscreen } from "../../utils/fullscreen.jsx";
 import { useTheme } from "../../contexts/ThemeContext";
-import debounce from "lodash.debounce";
 
 const STORAGE_KEY = "excalidraw-data";
+
+function debounce(func, delay) {
+  let timeoutId;
+  
+  function debounced(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  }
+
+  debounced.cancel = function() {
+    clearTimeout(timeoutId);
+  };
+
+  return debounced;
+}
 
 const ExcalidrawPage = () => {
   const { isDark } = useTheme();

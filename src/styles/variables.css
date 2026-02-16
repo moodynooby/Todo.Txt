@@ -1,0 +1,26 @@
+/* Centralized CSS Variables */
+
+:root {
+  /* Colors - Hardcoded values */
+  --color-border-dark: #404040;
+  --color-border-light: #333;
+  --color-placeholder-light: #404040;
+  --color-placeholder-dark: #e8e8e8;
+  --color-divider: #404040;
+  --color-context: #4ade80;
+  --color-focus-shadow: rgba(169, 165, 255, 0.3);
+  --color-input-focus-ring: rgba(169, 165, 255, 0.2);
+  --color-placeholder-text: #888;
+
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-sidebar: 4px 0 12px rgba(0, 0, 0, 0.2);
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}

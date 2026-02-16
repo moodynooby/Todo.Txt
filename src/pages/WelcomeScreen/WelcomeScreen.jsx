@@ -113,23 +113,23 @@ priority:A @Work`;
               gap: "1rem",
               padding: "1.25rem",
               backgroundColor: "var(--color-base-200)",
-              border: "1px solid #333",
-              borderRadius: "12px",
+              border: "1px solid var(--color-border-light)",
+              borderRadius: "var(--radius-xl)",
               cursor: "pointer",
               textAlign: "left",
               transition: "all 0.2s ease",
               transform: hoveredAction === action.id ? "translateY(-2px)" : "none",
               boxShadow:
                 hoveredAction === action.id
-                  ? `0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px ${action.color}40`
-                  : "0 4px 12px rgba(0, 0, 0, 0.1)",
+                  ? `var(--shadow-lg), 0 0 0 1px ${action.color}40`
+                  : "var(--shadow-sm)",
             }}
           >
             <div
               style={{
                 width: "40px",
                 height: "40px",
-                borderRadius: "10px",
+                borderRadius: "var(--radius-lg)",
                 backgroundColor: `${action.color}20`,
                 display: "flex",
                 alignItems: "center",
@@ -171,12 +171,12 @@ priority:A @Work`;
       <div
         style={{
           backgroundColor: "var(--color-base-200)",
-          border: "1px solid #333",
-          borderRadius: "12px",
+          border: "1px solid var(--color-border-light)",
+          borderRadius: "var(--radius-xl)",
           padding: "1.5rem",
           maxWidth: "600px",
           width: "100%",
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+          boxShadow: "var(--shadow-md)",
         }}
       >
         <div

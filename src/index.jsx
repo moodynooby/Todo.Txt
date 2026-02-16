@@ -1,8 +1,9 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Timer from "./components/Timer/Timer";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { useLocalStorage } from "./hooks/useLocalStorage";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -27,14 +28,7 @@ if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
 }
 
 function RootComponent() {
-  const [viewMode, setViewMode] = useState(() => {
-    try {
-      return localStorage.getItem("viewMode") || "text";
-    } catch {
-      return "text";
-    }
-  });
-
+  const [viewMode, setViewMode] = useLocalStorage("viewMode", "text");
   const [timers, setTimers] = useState([]);
 
   const addTimer = () => {
@@ -44,14 +38,6 @@ function RootComponent() {
   const removeTimer = (id) => {
     setTimers(timers.filter((t) => t.id !== id));
   };
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("viewMode", viewMode);
-    } catch {
-      // Silent fail for localStorage unavailability
-    }
-  }, [viewMode]);
 
   return (
     <ThemeProvider>
