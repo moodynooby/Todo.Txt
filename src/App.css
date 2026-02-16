@@ -10,6 +10,7 @@
   font-family: ZillaSlab;
   src: url(/ZillaSlab-Regular.ttf);
 }
+
 html {
   margin: 0;
   font-family: "Architects Daughter", cursive;
@@ -21,7 +22,6 @@ body {
   color: var(--color-base-content);
 }
 
-/* Make the grid subtle by adjusting the dot opacity */
 body::before {
   content: "";
   position: fixed;
@@ -29,7 +29,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.2) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.15) 1px, transparent 1px);
   background-size: 20px 20px;
   pointer-events: none;
   z-index: 0;
@@ -37,7 +37,7 @@ body::before {
 
 [data-theme="dark"] body::before {
   background-image: radial-gradient(
-    rgba(255, 255, 255, 0.1) 1px,
+    rgba(255, 255, 255, 0.06) 1px,
     transparent 1px
   );
 }
@@ -45,26 +45,24 @@ body::before {
 .ExcalidrawPage {
   border-radius: 12px;
   overflow: hidden;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  margin: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  margin: 1rem;
   display: block;
-  max-width: 100%;
+  max-width: calc(100% - 2rem);
 }
 
 ul {
   list-style-type: circle;
 }
 
-/* Quill Styling to match Excalidraw */
 .ql-toolbar.ql-snow {
   background: var(--color-base-200) !important;
-  border: 2px solid var(--color-base-300) !important;
+  border: 1px solid #404040 !important;
   border-bottom: none !important;
-  border-radius: 12px 12px 0 0 !important;
+  border-radius: 8px 8px 0 0 !important;
   font-family: "Architects Daughter", cursive !important;
   padding: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .ql-snow .ql-stroke {
@@ -92,19 +90,21 @@ ul {
 }
 
 .ql-container.ql-snow {
-  border: 2px solid var(--color-base-300) !important;
-  border-radius: 0 0 12px 12px !important;
+  border: 1px solid #404040 !important;
+  border-radius: 0 0 8px 8px !important;
   font-family: "Architects Daughter", cursive !important;
   font-size: 1.1rem !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  background-color: var(--color-base-100);
 }
 
 .ql-snow .ql-picker-options {
-  background-color: var(--color-base-100) !important;
-  border: 2px solid var(--color-base-300) !important;
+  background-color: var(--color-base-200) !important;
+  border: 1px solid #404040 !important;
   border-radius: 8px !important;
   color: var(--color-base-content) !important;
   font-family: "Architects Daughter", cursive !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .ql-snow .ql-picker-item {
@@ -115,7 +115,6 @@ ul {
   color: var(--color-primary) !important;
 }
 
-/* Ensure Lucide icons inherit theme colors */
 svg.lucide {
   color: inherit;
   stroke: currentColor;
@@ -137,26 +136,31 @@ svg.lucide {
 
 .ql-editor.ql-blank::before {
   font-family: "Architects Daughter", cursive !important;
-  color: var(--color-base-content);
   opacity: 0.5;
 }
 
-.rte-editor-container {
-  padding: 1rem;
-  max-width: 80vw;
-  margin: 10px auto;
+.quill-theme-light .ql-editor.ql-blank::before {
+  color: #404040; /* Darker color for light theme placeholder */
 }
 
-/* Floating Timer Styles */
+.quill-theme-dark .ql-editor.ql-blank::before {
+  color: #e8e8e8; /* Lighter color for dark theme placeholder */
+}
+
+.rte-editor-container {
+  padding: 1.5rem;
+  max-width: 100%;
+}
+
 .floating-timer {
   position: fixed;
-  top: 80px;
+  top: 64px;
   right: 20px;
-  background: var(--color-base-100);
-  border: 2px solid var(--color-primary);
+  background: var(--color-base-200);
+  border: 1px solid #404040;
   padding: 10px 15px;
-  border-radius: 12px;
-  box-shadow: 4px 4px 0px var(--color-primary);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   cursor: move;
   display: flex;
@@ -178,4 +182,18 @@ svg.lucide {
 .timer-controls {
   display: flex;
   gap: 5px;
+}
+
+.sidebar-item:hover {
+  background-color: var(--color-base-100) !important;
+}
+
+.file-item:hover {
+  background-color: var(--color-base-100);
+}
+
+@media (max-width: 768px) {
+  .rte-editor-container {
+    padding: 1rem;
+  }
 }

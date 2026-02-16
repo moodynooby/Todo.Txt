@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Play, Pause, RotateCcw, X, Timer as TimerIcon } from "lucide-react";
-import { formatTime } from "./utils/timeFormat";
+import { formatTime } from "../../utils/timeFormat";
 
 const Timer = ({ id, onRemove }) => {
   const [seconds, setSeconds] = useState(0);

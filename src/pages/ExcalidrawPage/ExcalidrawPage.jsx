@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
-import FullscreenIcon, { toggleFullscreen } from "./fullscreen";
-import Theme from "./theme";
+import FullscreenIcon, { toggleFullscreen } from "../../utils/fullscreen.jsx";
+import { useTheme } from "../../contexts/ThemeContext";
+import debounce from "lodash.debounce";
+
 const STORAGE_KEY = "excalidraw-data";
 
 const ExcalidrawPage = () => {
+  const { isDark } = useTheme();
   const [excalidrawTheme, setExcalidrawTheme] = useState("light");
   const UIOptions = {
     canvasActions: {
@@ -16,63 +19,49 @@ const ExcalidrawPage = () => {
     welcomeScreen: false,
   };
   useEffect(() => {
-    const getAppTheme = () => {
-      const currentDataTheme =
-        document.documentElement.getAttribute("data-theme");
-      // As per theme.jsx: darkTheme = "dark", lightTheme = "emerald"
-      // Excalidraw expects 'light' or 'dark'
-      return currentDataTheme === "dark" ? "dark" : "light";
-    };
+    setExcalidrawTheme(isDark ? "dark" : "light");
+  }, [isDark]);
 
-    setExcalidrawTheme(getAppTheme()); // Set initial theme
+  const onSave = useMemo(
+    () =>
+      debounce((elements, appState) => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ elements, appState }));
+      }, 1000),
+    [],
+  );
 
-    const observer = new MutationObserver((mutationsList) => {
-      for (const mutation of mutationsList) {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName === "data-theme"
-        ) {
-          setExcalidrawTheme(getAppTheme());
-        }
-      }
-    });
-
-    observer.observe(document.documentElement, { attributes: true });
-
+  useEffect(() => {
     return () => {
-      observer.disconnect();
+      onSave.cancel();
     };
-  }, []);
+  }, [onSave]);
 
-  const onSave = useCallback((elements, appState) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ elements, appState }));
-  }, []);
-
-  const onLoad = useCallback(() => {
+  const initialData = useMemo(() => {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         const parsedData = JSON.parse(data);
-        // Ensure appState.collaborators is an array to prevent forEach error
         if (parsedData.appState) {
           if (!parsedData.appState.collaborators) {
             parsedData.appState.collaborators = [];
           } else if (!Array.isArray(parsedData.appState.collaborators)) {
-            // If collaborators exists but is not an array, convert it to an array
             parsedData.appState.collaborators = Object.values(
               parsedData.appState.collaborators,
             );
           }
         } else {
-          // If appState itself is missing, initialize it with an empty collaborators array
           parsedData.appState = { collaborators: [] };
         }
-        return parsedData;
+        return {
+          ...parsedData,
+          appState: { ...parsedData.appState, zenModeEnabled: true },
+          scrollToContent: true,
+        };
       }
     } catch {
       // Silent fail - use default empty canvas
     }
-    return null;
+    return { appState: { zenModeEnabled: true }, scrollToContent: true };
   }, []);
 
   return (
@@ -84,11 +73,7 @@ const ExcalidrawPage = () => {
         theme={excalidrawTheme}
         UIOptions={UIOptions}
         onChange={onSave}
-        initialData={{
-          ...onLoad(),
-          appState: { zenModeEnabled: true },
-          scrollToContent: true,
-        }}
+        initialData={initialData}
       >
         <MainMenu>
           <MainMenu.DefaultItems.LoadScene />

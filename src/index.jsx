@@ -1,8 +1,8 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import AppHeader from "./AppHeader";
 import { useState, useEffect } from "react";
-import Timer from "./Timer";
+import Timer from "./components/Timer/Timer";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -54,12 +54,11 @@ function RootComponent() {
   }, [viewMode]);
 
   return (
-    <>
-      <AppHeader viewMode={viewMode} setViewMode={setViewMode} onAddTimer={addTimer} />
-      <App viewMode={viewMode} />
+    <ThemeProvider>
+      <App viewMode={viewMode} setViewMode={setViewMode} onAddTimer={addTimer} />
       {timers.map((timer) => (
         <Timer key={timer.id} id={timer.id} onRemove={removeTimer} />
       ))}
-    </>
+    </ThemeProvider>
   );
 }
