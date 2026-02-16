@@ -14,11 +14,11 @@
 
 html {
   margin: 0;
-  font-family: "Architects Daughter", cursive;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-  font-family: "Architects Daughter", cursive;
+  font-family: WinkySans,system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--color-base-100);
   color: var(--color-base-content);
 }
@@ -61,7 +61,7 @@ ul {
   border: 1px solid var(--color-border-dark) !important;
   border-bottom: none !important;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-  font-family: "Architects Daughter", cursive !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   padding: 8px !important;
   box-shadow: var(--shadow-sm);
 }
@@ -72,6 +72,41 @@ ul {
   stroke: var(--color-base-content) !important;
   fill: var(--color-base-content) !important;
   color: var(--color-base-content) !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Ensure Quill toolbar SVG icons use system font */
+.ql-toolbar.ql-snow svg {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Fix Quill toolbar button icons */
+.ql-toolbar.ql-snow button {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ql-toolbar.ql-snow button svg {
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
+}
+
+/* Ensure proper icon display */
+.ql-snow .ql-stroke {
+  stroke-width: 1.5px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  fill: none !important;
+}
+
+.ql-snow .ql-fill {
+  fill: currentColor !important;
 }
 
 .ql-snow.ql-toolbar button:hover .ql-stroke,
@@ -84,7 +119,7 @@ ul {
 .ql-container.ql-snow {
   border: 1px solid var(--color-border-dark) !important;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
-  font-family: "Architects Daughter", cursive !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 1.1rem !important;
   box-shadow: var(--shadow-md);
   background-color: var(--color-base-100);
@@ -95,12 +130,19 @@ ul {
   border: 1px solid var(--color-border-dark) !important;
   border-radius: var(--radius-lg) !important;
   color: var(--color-base-content) !important;
-  font-family: "Architects Daughter", cursive !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   box-shadow: var(--shadow-lg);
+}
+
+/* Fix picker dropdown items */
+.ql-snow .ql-picker-label {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
 .ql-snow .ql-picker-item {
   color: var(--color-base-content) !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  padding: 8px 12px !important;
 }
 
 .ql-snow .ql-picker-item:hover {
@@ -110,6 +152,7 @@ ul {
 svg.lucide {
   color: inherit;
   stroke: currentColor;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .ctrl-cont .lucide {
@@ -127,7 +170,7 @@ svg.lucide {
 }
 
 .ql-editor.ql-blank::before {
-  font-family: "Architects Daughter", cursive !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   opacity: 0.5;
 }
 

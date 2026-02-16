@@ -4,7 +4,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        handwritten: ["Architects Daughter", "cursive"],
+        handwritten: ["Zilla Slab", "cursive"],
       },
     },
   },

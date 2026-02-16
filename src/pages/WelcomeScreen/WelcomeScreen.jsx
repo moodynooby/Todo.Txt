@@ -75,7 +75,7 @@ priority:A @Work`;
       >
         <h1
           style={{
-            fontFamily: "'Architects Daughter', cursive",
+            fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
             fontSize: "2.5rem",
             marginBottom: "0.5rem",
             background: "linear-gradient(135deg, #a9a5ff 0%, #f472b6 100%)",
@@ -212,7 +212,7 @@ priority:A @Work`;
         </div>
         <pre
           style={{
-            fontFamily: "'Architects Daughter', cursive",
+            fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
             fontSize: "0.9rem",
             lineHeight: "1.6",
             margin: 0,

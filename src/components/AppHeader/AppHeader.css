@@ -12,6 +12,7 @@ header {
   right: 0;
   width: 100%;
   pointer-events: none;
+    font-family: "Zilla Slab", serif;
 }
 
 .header-inner {
@@ -29,7 +30,7 @@ header {
 }
 
 .logo-cont h1 {
-  font-family: "Architects Daughter", cursive;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 1.25rem;
   margin: 0;
   color: var(--color-primary);

@@ -26,10 +26,12 @@ const AppHeader = ({ viewMode, setViewMode, onAddTimer, onOpenRepo, onSave, onAi
           <div className="toolbar-group">
             <button
               onClick={onOpenRepo}
-              className="btn btn-sm btn-ghost p-1"
+              className="btn btn-sm btn-ghost p-4 m-2"
               title="Open Repository"
+              variant="outlined"
             >
               <FolderOpen size={18} />
+              Open
             </button>
             <SaveMenu
               onSave={onSave}
