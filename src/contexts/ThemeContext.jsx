@@ -12,7 +12,6 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-	// Get system preference for dark mode
 	const getSystemTheme = () => {
 		return (
 			window.matchMedia &&

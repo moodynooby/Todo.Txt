@@ -1,7 +1,6 @@
 import { Pause, Play, RotateCcw, Timer as TimerIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-// Timer positioning
 const TIMER_BASE_X = 20;
 const TIMER_BASE_Y = 100;
 const TIMER_X_OFFSET = 20;

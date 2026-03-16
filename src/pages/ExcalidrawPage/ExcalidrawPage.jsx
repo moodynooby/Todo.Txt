@@ -78,7 +78,6 @@ const ExcalidrawPage = () => {
 				};
 			}
 		} catch {
-			// Silent fail - use default empty canvas
 		}
 		return { appState: { zenModeEnabled: true }, scrollToContent: true };
 	}, []);

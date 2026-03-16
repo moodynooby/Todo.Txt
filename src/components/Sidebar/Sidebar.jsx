@@ -4,7 +4,6 @@ import { useState } from "react";
 import "./Sidebar.css";
 import { toggleFilter } from "../../utils/filterUtils";
 
-// Priority configuration
 const PRIORITY_CONFIG = {
 	A: { label: "High", color: "#ef4444" },
 	B: { label: "Medium", color: "#f59e0b" },

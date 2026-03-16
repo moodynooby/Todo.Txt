@@ -28,12 +28,4 @@ function FullscreenIcon() {
 export default FullscreenIcon;
 export { toggleFullscreen };
 
-// You can use it in two ways:
 
-// For the whole page (default):
-// jsx
-// <Fullscreen />
-// For a specific element:
-// jsx
-// <div ref={myRef}>Content to make fullscreen</div>
-// <Fullscreen element={myRef.current} />

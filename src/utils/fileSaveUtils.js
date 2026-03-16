@@ -1,7 +1,6 @@
 import { saveAs } from "file-saver";
 import TurndownService from "turndown";
 
-// Initialize Turndown service with custom options
 const turndownService = new TurndownService({
 	headingStyle: "atx",
 	bulletListMarker: "-",
@@ -12,7 +11,6 @@ const turndownService = new TurndownService({
 	linkStyle: "inlined",
 });
 
-// Custom rules for better conversion
 turndownService.addRule("strikethrough", {
 	filter: ["s", "del"],
 	replacement: (content) => `~~${content}~~`,
@@ -20,7 +18,7 @@ turndownService.addRule("strikethrough", {
 
 turndownService.addRule("underline", {
 	filter: ["u"],
-	replacement: (content) => content, // Remove underline as it's not standard markdown
+	replacement: (content) => content, 
 });
 
 /**

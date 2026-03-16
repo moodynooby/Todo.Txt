@@ -21,7 +21,6 @@ import { saveAsHtml, saveAsMarkdown, saveAsText } from "./utils/fileSaveUtils";
 import { applyFilter } from "./utils/filterUtils";
 import { parseTodoContent } from "./utils/todoParser";
 
-// Layout constants
 const SIDEBAR_EXPANDED_WIDTH = 280;
 const SIDEBAR_COLLAPSED_WIDTH = 60;
 const HEADER_HEIGHT = 48;
@@ -33,7 +32,6 @@ const TRANSITION_TIMING = "ease";
 const stripHtml = (html, replacement = "") =>
 	html?.replace(/<[^>]*>/g, replacement) || "";
 
-// Lazy load ExcalidrawPage for code splitting
 const ExcalidrawPage = lazy(
 	() => import("./pages/ExcalidrawPage/ExcalidrawPage"),
 );
@@ -50,7 +48,6 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 	const [rteContent, setRteContentState] = useLocalStorage("rteContent", "");
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
 
-	// Debounce saving to localStorage and parsing
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedRteContent(rteContent);
@@ -195,7 +192,6 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 		return applyFilter(taskData.tasks, activeFilter);
 	}, [activeFilter, taskData]);
 
-	// Memoized filtered view component to prevent unnecessary re-renders
 	const FilteredView = useMemo(() => {
 		return () => (
 			<div className="filtered-view p-4">
