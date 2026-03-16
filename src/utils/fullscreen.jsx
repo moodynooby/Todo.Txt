@@ -1,29 +1,29 @@
-import { useState, useEffect } from "react";
 import { Maximize, Minimize } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const toggleFullscreen = ({ element = document.documentElement }) => {
-  if (!document.fullscreenElement) {
-    element.requestFullscreen().catch((err) => {
-      console.error(`Error attempting to enable fullscreen: ${err.message}`);
-    });
-  } else if (document.exitFullscreen) {
-    document.exitFullscreen();
-  }
+	if (!document.fullscreenElement) {
+		element.requestFullscreen().catch((err) => {
+			console.error(`Error attempting to enable fullscreen: ${err.message}`);
+		});
+	} else if (document.exitFullscreen) {
+		document.exitFullscreen();
+	}
 };
 
 function FullscreenIcon() {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+	const [isFullscreen, setIsFullscreen] = useState(false);
 
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
-  return <>{isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}</>;
+	useEffect(() => {
+		const handleFullscreenChange = () => {
+			setIsFullscreen(!!document.fullscreenElement);
+		};
+		document.addEventListener("fullscreenchange", handleFullscreenChange);
+		return () => {
+			document.removeEventListener("fullscreenchange", handleFullscreenChange);
+		};
+	}, []);
+	return <>{isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}</>;
 }
 export default FullscreenIcon;
 export { toggleFullscreen };

@@ -1,26 +1,26 @@
-import { saveAs } from 'file-saver';
-import TurndownService from 'turndown';
+import { saveAs } from "file-saver";
+import TurndownService from "turndown";
 
 // Initialize Turndown service with custom options
 const turndownService = new TurndownService({
-  headingStyle: 'atx',
-  bulletListMarker: '-',
-  codeBlockStyle: 'fenced',
-  fence: '```',
-  emDelimiter: '*',
-  strongDelimiter: '**',
-  linkStyle: 'inlined'
+	headingStyle: "atx",
+	bulletListMarker: "-",
+	codeBlockStyle: "fenced",
+	fence: "```",
+	emDelimiter: "*",
+	strongDelimiter: "**",
+	linkStyle: "inlined",
 });
 
 // Custom rules for better conversion
-turndownService.addRule('strikethrough', {
-  filter: ['s', 'del'],
-  replacement: content => `~~${content}~~`
+turndownService.addRule("strikethrough", {
+	filter: ["s", "del"],
+	replacement: (content) => `~~${content}~~`,
 });
 
-turndownService.addRule('underline', {
-  filter: ['u'],
-  replacement: content => content // Remove underline as it's not standard markdown
+turndownService.addRule("underline", {
+	filter: ["u"],
+	replacement: (content) => content, // Remove underline as it's not standard markdown
 });
 
 /**
@@ -30,8 +30,8 @@ turndownService.addRule('underline', {
  * @param {string} mimeType - The MIME type of the file
  */
 export const downloadFile = (content, filename, mimeType) => {
-  const blob = new Blob([content], { type: mimeType });
-  saveAs(blob, filename);
+	const blob = new Blob([content], { type: mimeType });
+	saveAs(blob, filename);
 };
 
 /**
@@ -40,28 +40,28 @@ export const downloadFile = (content, filename, mimeType) => {
  * @returns {string} - Converted Markdown content
  */
 export const htmlToMarkdown = (htmlContent) => {
-  return turndownService.turndown(htmlContent);
+	return turndownService.turndown(htmlContent);
 };
 
 /**
  * Save format configuration
  */
 const SAVE_FORMATS = {
-  markdown: {
-    filename: 'todo.md',
-    mimeType: 'text/markdown',
-    transform: (content) => htmlToMarkdown(content)
-  },
-  text: {
-    filename: 'todo.txt',
-    mimeType: 'text/plain',
-    transform: (content) => content
-  },
-  html: {
-    filename: 'todo.html',
-    mimeType: 'text/html',
-    transform: (content) => content
-  }
+	markdown: {
+		filename: "todo.md",
+		mimeType: "text/markdown",
+		transform: (content) => htmlToMarkdown(content),
+	},
+	text: {
+		filename: "todo.txt",
+		mimeType: "text/plain",
+		transform: (content) => content,
+	},
+	html: {
+		filename: "todo.html",
+		mimeType: "text/html",
+		transform: (content) => content,
+	},
 };
 
 /**
@@ -70,16 +70,16 @@ const SAVE_FORMATS = {
  * @param {string} format - Format type ('markdown', 'text', 'html')
  * @param {string} customFilename - Optional custom filename
  */
-export const saveToFile = (content, format = 'text', customFilename = null) => {
-  const config = SAVE_FORMATS[format];
-  if (!config) {
-    console.warn(`Unknown save format: ${format}`);
-    return;
-  }
-  
-  const filename = customFilename || config.filename;
-  const transformedContent = config.transform(content);
-  downloadFile(transformedContent, filename, config.mimeType);
+export const saveToFile = (content, format = "text", customFilename = null) => {
+	const config = SAVE_FORMATS[format];
+	if (!config) {
+		console.warn(`Unknown save format: ${format}`);
+		return;
+	}
+
+	const filename = customFilename || config.filename;
+	const transformedContent = config.transform(content);
+	downloadFile(transformedContent, filename, config.mimeType);
 };
 
 /**
@@ -88,7 +88,7 @@ export const saveToFile = (content, format = 'text', customFilename = null) => {
  * @param {string} filename - Optional custom filename
  */
 export const saveAsMarkdown = (htmlContent, filename = null) => {
-  saveToFile(htmlContent, 'markdown', filename);
+	saveToFile(htmlContent, "markdown", filename);
 };
 
 /**
@@ -97,7 +97,7 @@ export const saveAsMarkdown = (htmlContent, filename = null) => {
  * @param {string} filename - Optional custom filename
  */
 export const saveAsText = (textContent, filename = null) => {
-  saveToFile(textContent, 'text', filename);
+	saveToFile(textContent, "text", filename);
 };
 
 /**
@@ -106,5 +106,5 @@ export const saveAsText = (textContent, filename = null) => {
  * @param {string} filename - Optional custom filename
  */
 export const saveAsHtml = (htmlContent, filename = null) => {
-  saveToFile(htmlContent, 'html', filename);
+	saveToFile(htmlContent, "html", filename);
 };

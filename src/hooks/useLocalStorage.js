@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from "react";
 
 /**
  * Simple custom hook for persisting state to localStorage
@@ -7,19 +7,23 @@ import { useState, useCallback } from 'react';
  * @returns {[*, (value) => void]} - [storedValue, setValue]
  */
 export function useLocalStorage(key, initialValue) {
-  const [storedValue, setStoredValue] = useState(() => {
-    try {
-      return localStorage.getItem(key) || initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
+	const [storedValue, setStoredValue] = useState(() => {
+		try {
+			return localStorage.getItem(key) || initialValue;
+		} catch {
+			return initialValue;
+		}
+	});
 
-  const setValue = useCallback((value) => {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      localStorage.setItem(key, valueToStore);
-  }, [key, storedValue]);
+	const setValue = useCallback(
+		(value) => {
+			const valueToStore =
+				value instanceof Function ? value(storedValue) : value;
+			setStoredValue(valueToStore);
+			localStorage.setItem(key, valueToStore);
+		},
+		[key, storedValue],
+	);
 
-  return [storedValue, setValue];
+	return [storedValue, setValue];
 }
