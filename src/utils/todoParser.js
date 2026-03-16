@@ -7,7 +7,7 @@ export const parseTodoContent = (content) => {
   if (!content) return { tasks: [], priorities: {}, projects: {}, contexts: {} };
   
   const text = stripHtml(content, '\n');
-  const lines = text.split('\n').filter(line => line.trim());
+  const lines = text.split('\n');
   
   const tasks = [];
   const priorities = { A: [], B: [], C: [] };
@@ -15,19 +15,31 @@ export const parseTodoContent = (content) => {
   const contexts = {};
   
   lines.forEach((line, index) => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
+    const trimmed = line.replace(/&nbsp;/g, ' ').trim();
+    if (!trimmed || trimmed === '"') return;
     
-    const task = { id: index, text: trimmed, raw: line };
+    const task = { id: index, text: trimmed, raw: line, completed: false };
     
-    const priorityMatch = trimmed.match(/^([A-Z])\s/);
+    if (trimmed.startsWith('x ')) {
+      task.completed = true;
+    }
+
+    const priorityMatch = trimmed.match(/^(\([A-Z]\)\s|x\s\([A-Z]\)\s)/);
     if (priorityMatch) {
-      task.priority = priorityMatch[1];
+      const p = priorityMatch[0].match(/\(([A-Z])\)/)[1];
+      task.priority = p;
       if (priorities[task.priority]) {
         priorities[task.priority].push(task);
       }
     }
-    
+
+    const dueMatch = trimmed.match(/due:(\d{4}-\d{2}-\d{2})/);
+    if (dueMatch) {
+      task.dueDate = dueMatch[1];
+    } else if (trimmed.includes('due:today')) {
+      task.dueDate = 'today';
+    }
+
     const projectMatches = trimmed.match(/\+[\w-]+/g);
     if (projectMatches) {
       task.projects = projectMatches.map(p => p.slice(1));

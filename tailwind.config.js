@@ -5,6 +5,18 @@ module.exports = {
     extend: {
       fontFamily: {
         handwritten: ["Zilla Slab", "cursive"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+      },
+      colors: {
+        'todo-dark': '#121212',
+        'todo-card': '#1e1e1e',
+        'todo-gray': '#333333',
+        'priority-a': '#f87171',
+        'priority-b': '#fbbf24',
+        'priority-c': '#fde047',
+        'project': '#60a5fa',
+        'context': '#a78bfa',
+        'muted': '#9ca3af',
       },
     },
   },

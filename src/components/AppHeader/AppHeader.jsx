@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {
   DraftingCompass,
   SquarePen,
+  LayoutDashboard,
   Timer as TimerIcon,
   Plus,
   FolderOpen,
@@ -41,6 +42,22 @@ const AppHeader = ({ viewMode, setViewMode, onAddTimer, onOpenRepo, onSave, onAi
           <div className="toolbar-divider" />
 
           <div className="join">
+            <label
+              className={`join-item btn btn-ghost btn-sm ${
+                viewMode === "dashboard" ? "btn-active" : "opacity-70"
+              }`}
+            >
+              <input
+                type="radio"
+                checked={viewMode === "dashboard"}
+                onChange={() => setViewMode("dashboard")}
+                aria-label="Dashboard View"
+                name="view-options"
+                className="radio"
+              />
+              <LayoutDashboard size={18} />
+              <span className="hidden sm:inline ml-1 text-xs">Dash</span>
+            </label>
             <label
               className={`join-item btn btn-ghost btn-sm ${
                 viewMode === "text" ? "btn-active" : "opacity-70"

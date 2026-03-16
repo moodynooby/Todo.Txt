@@ -7,6 +7,7 @@ import QuillMarkdown from "quilljs-markdown";
 import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
 import Sidebar from "./components/Sidebar/Sidebar";
 import WelcomeScreen from "./pages/WelcomeScreen/WelcomeScreen";
+import Dashboard from "./pages/Dashboard/Dashboard";
 import AppHeader from "./components/AppHeader/AppHeader";
 import { useTheme } from "./contexts/ThemeContext";
 import { saveAsMarkdown, saveAsText, saveAsHtml } from "./utils/fileSaveUtils";
@@ -200,16 +201,20 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
     );
   }, [filteredTasks, activeFilter]);
 
+  const isDashboard = viewMode === "dashboard";
+
   return (
     <>
-      <AppHeader 
-        viewMode={viewMode} 
-        setViewMode={setViewMode} 
-        onAddTimer={onAddTimer}
-        onOpenRepo={handleOpenRepo}
-        onSave={handleSave}
-        onAiTools={handleAiTools}
-      />
+      {!isDashboard && (
+        <AppHeader
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          onAddTimer={onAddTimer}
+          onOpenRepo={handleOpenRepo}
+          onSave={handleSave}
+          onAiTools={handleAiTools}
+        />
+      )}
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -217,26 +222,31 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
         accept=".txt"
         onChange={handleFileChange}
       />
-      <Sidebar
-        isCollapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        taskData={taskData}
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-      />
+      {!isDashboard && (
+        <Sidebar
+          isCollapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          taskData={taskData}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+        />
+      )}
       <div
         style={{
-          marginLeft: sidebarCollapsed ? `${SIDEBAR_COLLAPSED_WIDTH}px` : `${SIDEBAR_EXPANDED_WIDTH}px`,
-          marginTop: `${HEADER_HEIGHT}px`,
-          marginBottom: `${FOOTER_HEIGHT}px`,
+          marginLeft: isDashboard ? '0' : (sidebarCollapsed ? `${SIDEBAR_COLLAPSED_WIDTH}px` : `${SIDEBAR_EXPANDED_WIDTH}px`),
+          marginTop: isDashboard ? '0' : `${HEADER_HEIGHT}px`,
+          marginBottom: isDashboard ? '0' : `${FOOTER_HEIGHT}px`,
           transition: `margin-left ${TRANSITION_DURATION} ${TRANSITION_TIMING}`,
-          minHeight: `calc(100vh - ${HEADER_HEIGHT + FOOTER_HEIGHT}px)`,
+          minHeight: isDashboard ? '100vh' : `calc(100vh - ${HEADER_HEIGHT + FOOTER_HEIGHT}px)`,
         }}
       >
         {viewMode === "excalidraw" && (
           <Suspense fallback={<div className="p-4">Loading Excalidraw...</div>}>
             <ExcalidrawPage />
           </Suspense>
+        )}
+        {viewMode === "dashboard" && (
+          <Dashboard taskData={taskData} setViewMode={setViewMode} />
         )}
         {viewMode === "text" && (
           <div className="rte-editor-container">
