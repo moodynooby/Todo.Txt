@@ -18,7 +18,7 @@ turndownService.addRule("strikethrough", {
 
 turndownService.addRule("underline", {
 	filter: ["u"],
-	replacement: (content) => content, 
+	replacement: (content) => content,
 });
 
 /**

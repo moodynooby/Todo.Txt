@@ -1,5 +1,10 @@
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const daisyuiThemes = require("daisyui/src/theming/themes");
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
 	content: ["./src/**/*.{js,jsx,ts,tsx}"],
 	theme: {
 		extend: {
@@ -13,7 +18,7 @@ module.exports = {
 		themes: [
 			{
 				light: {
-					...require("daisyui/src/theming/themes")["light"],
+					...daisyuiThemes["light"],
 					primary: "#6965db",
 					"primary-content": "#ffffff",
 					accent: "#6965db",
@@ -22,7 +27,7 @@ module.exports = {
 					"base-300": "#e9ecef",
 				},
 				dark: {
-					...require("daisyui/src/theming/themes")["dark"],
+					...daisyuiThemes["dark"],
 					primary: "#a9a5ff",
 					accent: "#a9a5ff",
 					"base-100": "#1a1a1a",

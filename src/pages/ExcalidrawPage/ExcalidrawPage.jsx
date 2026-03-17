@@ -77,8 +77,7 @@ const ExcalidrawPage = () => {
 					scrollToContent: true,
 				};
 			}
-		} catch {
-		}
+		} catch {}
 		return { appState: { zenModeEnabled: true }, scrollToContent: true };
 	}, []);
 

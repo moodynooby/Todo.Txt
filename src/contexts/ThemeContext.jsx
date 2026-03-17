@@ -19,7 +19,7 @@ export const ThemeProvider = ({ children }) => {
 		);
 	};
 
-	const [isDark, setIsDark] = useLocalStorage("isdark", getSystemTheme);
+	const [isDark, setIsDark] = useLocalStorage("isdark", getSystemTheme());
 
 	useEffect(() => {
 		document.documentElement.setAttribute(

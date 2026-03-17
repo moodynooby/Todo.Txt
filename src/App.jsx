@@ -1,21 +1,22 @@
 import "./App.css";
-import Quill from "quill";
 import {
 	lazy,
 	Suspense,
 	useCallback,
 	useEffect,
 	useMemo,
-	useRef,
 	useState,
 } from "react";
 import "quill/dist/quill.snow.css";
-import QuillMarkdown from "quilljs-markdown";
 import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
 import AppHeader from "./components/AppHeader/AppHeader";
 import Sidebar from "./components/Sidebar/Sidebar";
+import FilteredView from "./components/FilteredView";
 import { useTheme } from "./contexts/ThemeContext";
 import { useLocalStorage } from "./hooks/useLocalStorage";
+import { useQuill } from "./hooks/useQuill";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useFileHandler } from "./hooks/useFileHandler";
 import WelcomeScreen from "./pages/WelcomeScreen/WelcomeScreen";
 import { saveAsHtml, saveAsMarkdown, saveAsText } from "./utils/fileSaveUtils";
 import { applyFilter } from "./utils/filterUtils";
@@ -38,9 +39,6 @@ const ExcalidrawPage = lazy(
 
 const App = ({ viewMode, setViewMode, onAddTimer }) => {
 	const { isDark } = useTheme();
-	const quillContainerRef = useRef(null);
-	const quillInstanceRef = useRef(null);
-	const fileInputRef = useRef(null);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [showWelcome, setShowWelcome] = useState(true);
 	const [activeFilter, setActiveFilter] = useState(null);
@@ -48,6 +46,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 	const [rteContent, setRteContentState] = useLocalStorage("rteContent", "");
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
 
+	// Sync content to localStorage with debounce
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedRteContent(rteContent);
@@ -57,62 +56,26 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 		return () => clearTimeout(timer);
 	}, [rteContent, setRteContentState]);
 
-	useEffect(() => {
-		const handleTextChange = () => {
-			if (quillInstanceRef.current) {
-				setRteContent(quillInstanceRef.current.root.innerHTML);
-				setShowWelcome(false);
-			}
-		};
+	const handleContentChange = useCallback(
+		(content) => {
+			setRteContentState(content);
+			setShowWelcome(false);
+		},
+		[setRteContentState],
+	);
 
-		if (quillContainerRef.current && viewMode === "text" && !activeFilter) {
-			if (!quillInstanceRef.current) {
-				const toolbarOptions = [
-					[{ header: [1, 2, 3, false] }],
-					["bold", "italic", "underline", "strike"],
-					[{ list: "ordered" }, { list: "bullet" }],
-					["blockquote", "code-block"],
-					[{ script: "sub" }, { script: "super" }],
-					[{ indent: "-1" }, { indent: "+1" }],
-					[{ direction: "rtl" }],
-					[{ color: [] }, { background: [] }],
-					[{ font: [] }],
-					[{ align: [] }],
-					["link", "image", "video"],
-					["clean"],
-				];
-				const quill = new Quill(quillContainerRef.current, {
-					modules: {
-						toolbar: toolbarOptions,
-					},
-					theme: "snow",
-					placeholder: "Start writing your todos...",
-				});
-				quillInstanceRef.current = quill;
-				new QuillMarkdown(quill, {});
-				if (rteContent) {
-					quill.clipboard.dangerouslyPasteHTML(rteContent);
-				}
-				quill.on("text-change", handleTextChange);
-			}
-		}
-		return () => {
-			if (quillInstanceRef.current && (viewMode !== "text" || activeFilter)) {
-				quillInstanceRef.current.off("text-change", handleTextChange);
-				if (typeof quillInstanceRef.current.destroy === "function") {
-					quillInstanceRef.current.destroy();
-				}
-				quillInstanceRef.current = null;
-				if (quillContainerRef.current) {
-					quillContainerRef.current.innerHTML = "";
-					const toolbar = quillContainerRef.current.previousElementSibling;
-					if (toolbar?.classList?.contains("ql-toolbar")) {
-						toolbar.remove();
-					}
-				}
-			}
-		};
-	}, [viewMode, activeFilter, showWelcome]);
+	const { quillContainerRef, quillInstanceRef } = useQuill({
+		viewMode,
+		activeFilter,
+		initialContent: rteContent,
+		onContentChange: handleContentChange,
+	});
+
+	const { fileInputRef, handleOpenRepo, handleFileChange, handleNewFile } =
+		useFileHandler({
+			setRteContent: setRteContentState,
+			setShowWelcome,
+		});
 
 	const taskData = useMemo(
 		() => parseTodoContent(debouncedRteContent),
@@ -132,55 +95,19 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 
 			saveActions[type]?.() || console.warn("Unknown save type:", type);
 		},
-		[rteContent],
+		[rteContent, quillInstanceRef],
 	);
 
-	useEffect(() => {
-		const keyActions = {
+	const keyActions = useMemo(
+		() => ({
 			m: () => handleSave("markdown"),
 			t: () => handleSave("text"),
 			h: () => handleSave("html"),
-		};
+		}),
+		[handleSave],
+	);
 
-		const handleKeyDown = (e) => {
-			if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
-				const key = e.key.toLowerCase();
-				if (keyActions[key]) {
-					e.preventDefault();
-					keyActions[key]();
-				}
-			}
-		};
-
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [handleSave]);
-
-	const handleNewFile = () => {
-		setRteContentState("");
-		setShowWelcome(false);
-	};
-
-	const handleOpenRepo = () => {
-		fileInputRef.current?.click();
-	};
-
-	const handleFileChange = (e) => {
-		const file = e.target.files[0];
-		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			const content = e.target.result;
-			setRteContentState(
-				content
-					.split("\n")
-					.map((line) => `<p>${line}</p>`)
-					.join(""),
-			);
-			setShowWelcome(false);
-		};
-		reader.readAsText(file);
-	};
+	useKeyboardShortcuts(keyActions);
 
 	const handleAiTools = () => {
 		const formatted = rteContent.replace(/([A-Z])(?=[^\s])/g, "$1 ");
@@ -191,38 +118,6 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 	const filteredTasks = useMemo(() => {
 		return applyFilter(taskData.tasks, activeFilter);
 	}, [activeFilter, taskData]);
-
-	const FilteredView = useMemo(() => {
-		return () => (
-			<div className="filtered-view p-4">
-				<h2 className="text-xl font-bold mb-4">
-					Filtered Results:{" "}
-					{activeFilter.type === "priority"
-						? `Priority ${activeFilter.value}`
-						: activeFilter.value}
-				</h2>
-				<div className="flex flex-col gap-2">
-					{filteredTasks.map((task) => (
-						<div
-							key={task.id}
-							className="p-2 bg-base-200 rounded border border-base-300"
-						>
-							{task.raw}
-						</div>
-					))}
-					{filteredTasks.length === 0 && (
-						<p className="italic opacity-50">No tasks match this filter.</p>
-					)}
-				</div>
-				<button
-					className="btn btn-sm btn-outline mt-4"
-					onClick={() => setActiveFilter(null)}
-				>
-					Clear Filter to Edit
-				</button>
-			</div>
-		);
-	}, [filteredTasks, activeFilter]);
 
 	return (
 		<>
@@ -272,7 +167,11 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 								onOpenRepo={handleOpenRepo}
 							/>
 						) : activeFilter ? (
-							<FilteredView />
+							<FilteredView
+								activeFilter={activeFilter}
+								filteredTasks={filteredTasks}
+								onClearFilter={() => setActiveFilter(null)}
+							/>
 						) : (
 							<div
 								ref={quillContainerRef}

@@ -1,6 +1,6 @@
-import { Code, Download, File, FileText } from "lucide-react";
+import { ChevronDown, Code, File, FileText, Save } from "lucide-react";
 import PropTypes from "prop-types";
-import React, { useState } from "react";
+import { useState } from "react";
 
 const SaveMenu = ({ onSave }) => {
 	const [isOpen, setIsOpen] = useState(false);
@@ -11,7 +11,6 @@ const SaveMenu = ({ onSave }) => {
 			label: "Save as Markdown",
 			icon: FileText,
 			action: () => onSave("markdown"),
-			description: "Export as .md file",
 			shortcut: "Ctrl+M",
 		},
 		{
@@ -19,7 +18,6 @@ const SaveMenu = ({ onSave }) => {
 			label: "Save as Text",
 			icon: File,
 			action: () => onSave("text"),
-			description: "Export as .txt file",
 			shortcut: "Ctrl+T",
 		},
 		{
@@ -27,7 +25,6 @@ const SaveMenu = ({ onSave }) => {
 			label: "Save as HTML",
 			icon: Code,
 			action: () => onSave("html"),
-			description: "Export as .html file",
 			shortcut: "Ctrl+H",
 		},
 	];
@@ -46,21 +43,9 @@ const SaveMenu = ({ onSave }) => {
 				aria-expanded={isOpen}
 				aria-haspopup="true"
 			>
-				<Download className="w-4 h-4" />
+				<Save className="w-4 h-4" />
 				Save
-				<svg
-					className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth={2}
-						d="M19 9l-7 7-7-7"
-					/>
-				</svg>
+				<ChevronDown className="w-4 h-4" />
 			</button>
 
 			{isOpen && (
@@ -83,9 +68,6 @@ const SaveMenu = ({ onSave }) => {
 										<Icon className="w-4 h-4 text-base-content/70 group-hover:text-base-content" />
 										<div className="flex-1">
 											<div className="text-sm font-medium">{option.label}</div>
-											<div className="text-xs text-base-content/60">
-												{option.description}
-											</div>
 										</div>
 										<kbd className="text-xs px-2 py-1 bg-base-200 rounded border border-base-300">
 											{option.shortcut}

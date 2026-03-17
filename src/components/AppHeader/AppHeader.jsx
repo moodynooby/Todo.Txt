@@ -8,8 +8,8 @@ import {
 	Timer as TimerIcon,
 } from "lucide-react";
 import PropTypes from "prop-types";
-import FullscreenIcon, { toggleFullscreen } from "../../utils/fullscreen.jsx";
-import Theme from "../../utils/theme.jsx";
+import FullscreenToggle, { toggleFullscreen } from "../FullscreenToggle";
+import ThemeToggle from "../ThemeToggle";
 import Help from "../Help/Help";
 import SaveMenu from "../SaveMenu/SaveMenu";
 
@@ -102,13 +102,13 @@ const AppHeader = ({
 					<div className="toolbar-divider" />
 
 					<div className="toolbar-group">
-						<Theme />
+						<ThemeToggle />
 						<button
 							onClick={toggleFullscreen}
 							className="btn btn-sm btn-ghost p-1"
 							title="Fullscreen"
 						>
-							<FullscreenIcon />
+							<FullscreenToggle />
 						</button>
 						<Help />
 					</div>
