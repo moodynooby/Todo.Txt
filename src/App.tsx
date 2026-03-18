@@ -1,4 +1,5 @@
 import "./App.css";
+import { ArrowRight, BookOpen, FilePlus, Paperclip } from "lucide-react";
 import {
 	lazy,
 	Suspense,
@@ -10,6 +11,7 @@ import {
 import "quill/dist/quill.snow.css";
 import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
 import AppHeader from "./components/AppHeader/AppHeader";
+import { DescriptionSvg } from "./components/DescriptionSvg";
 import FilteredView from "./components/FilteredView";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { useTheme } from "./contexts/ThemeContext";
@@ -17,7 +19,6 @@ import { useFileHandler } from "./hooks/useFileHandler";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useQuill } from "./hooks/useQuill";
-import WelcomeScreen from "./pages/WelcomeScreen/WelcomeScreen";
 import { applyFilter, type Filter } from "./utils/filterUtils";
 import saveService from "./utils/saveService";
 import {
@@ -41,10 +42,13 @@ interface AppProps {
 	onAddTimer: () => void;
 }
 
+const isEmptyContent = (content: string): boolean => {
+	return !content || content.trim() === "" || content === "<p></p>";
+};
+
 const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	const { isDark } = useTheme();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-	const [showWelcome, setShowWelcome] = useState(true);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 
 	const [rteContent, setRteContentState] = useLocalStorage<string>(
@@ -53,20 +57,19 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	);
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
 
+	const showWelcome = isEmptyContent(rteContent);
 	// Sync content to localStorage with debounce
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedRteContent(rteContent);
-			setRteContentState(rteContent);
 		}, DEBOUNCE_DELAY);
 
 		return () => clearTimeout(timer);
-	}, [rteContent, setRteContentState]);
+	}, [rteContent]);
 
 	const handleContentChange = useCallback(
 		(content: string) => {
 			setRteContentState(content);
-			setShowWelcome(false);
 		},
 		[setRteContentState],
 	);
@@ -81,7 +84,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	const { fileInputRef, handleOpenRepo, handleFileChange, handleNewFile } =
 		useFileHandler({
 			setRteContent: setRteContentState,
-			setShowWelcome,
+			quillInstanceRef,
 		});
 
 	const taskData: ParsedTodoContent = useMemo(
@@ -130,6 +133,34 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 		return applyFilter(taskData.tasks, activeFilter);
 	}, [activeFilter, taskData]);
 
+	const quickActions = [
+		{
+			id: "new-file",
+			icon: FilePlus,
+			title: "New File",
+			description: "Create a new todo.txt file",
+			color: "#a9a5ff",
+			action: handleNewFile,
+		},
+		{
+			id: "open-repo",
+			icon: Paperclip,
+			title: "Open File",
+			description: "Open an existing todo.txt file",
+			color: "#4ade80",
+			action: handleOpenRepo,
+		},
+		{
+			id: "help",
+			icon: BookOpen,
+			title: "Documentation",
+			description: "Learn about todo.txt format",
+			color: "#f472b6",
+			action: () =>
+				window.open("https://github.com/todotxt/todo.txt", "_blank"),
+		},
+	];
+
 	return (
 		<>
 			<AppHeader
@@ -164,11 +195,83 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 				)}
 				{viewMode === "text" && (
 					<div className="rte-editor-container">
-						{showWelcome && !rteContent ? (
-							<WelcomeScreen
-								onNewFile={handleNewFile}
-								onOpenRepo={handleOpenRepo}
-							/>
+						{showWelcome ? (
+							<div className="welcome-screen flex flex-col items-center justify-center min-h-[calc(100vh-76px)] p-8">
+								<div className="text-center mb-12">
+									<div className="flex justify-center mb-4">
+										<img
+											src="/todotxt2.svg"
+											alt="Todo.txt Logo"
+											className="h-20 w-20"
+										/>
+									</div>
+									<h1 className="text-5xl font-bold mb-3 gradient-text">
+										Welcome to Todo.txt
+									</h1>
+									<p className="text-lg opacity-70 max-w-md mx-auto">
+										A simple, plain text task management system based on the{" "}
+										<a
+											href="https://github.com/todotxt/todo.txt"
+											target="_blank"
+											rel="noopener noreferrer"
+											className="link link-primary"
+										>
+											todo.txt
+										</a>{" "}
+										philosophy
+									</p>
+								</div>
+
+								<div className="quick-actions-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl w-full mb-12">
+									{quickActions.map((action) => (
+										<button
+											key={action.id}
+											type="button"
+											onClick={action.action}
+											className="card bg-base-200 hover:bg-base-300 border border-base-300 hover:border-primary hover:shadow-2xl transition-all duration-300 text-left p-6 group cursor-pointer"
+										>
+											<div className="flex items-start gap-4">
+												<div
+													className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300"
+													style={{
+														backgroundColor: `${action.color}25`,
+													}}
+												>
+													<action.icon
+														size={28}
+														style={{ color: action.color }}
+														className="group-hover:rotate-6 transition-transform duration-300"
+													/>
+												</div>
+												<div className="flex-1">
+													<div className="font-bold text-lg mb-1 flex items-center gap-2 group-hover:text-primary transition-colors">
+														{action.title}
+														<ArrowRight
+															size={16}
+															className="opacity-0 group-hover:opacity-60 transform group-hover:translate-x-1 transition-all duration-300"
+														/>
+													</div>
+													<div className="text-sm opacity-60 group-hover:opacity-80">
+														{action.description}
+													</div>
+												</div>
+											</div>
+										</button>
+									))}
+								</div>
+
+								<div className="preview-card card bg-base-200 border border-base-300 max-w-3xl w-full p-6 shadow-lg">
+									<div className="preview-header flex justify-between items-center mb-4">
+										<span className="text-xs uppercase tracking-wider opacity-60 font-semibold">
+											BASIC INFO
+										</span>
+									</div>
+
+									<div className="bg-base-300 rounded-lg p-4 font-mono text-sm border-base-300">
+										<DescriptionSvg />
+									</div>
+								</div>
+							</div>
 						) : activeFilter ? (
 							<FilteredView
 								activeFilter={activeFilter}

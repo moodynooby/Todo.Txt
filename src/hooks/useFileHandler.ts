@@ -1,8 +1,12 @@
 import { type RefObject, useRef } from "react";
 
+interface QuillInstance {
+	focus: () => void;
+}
+
 interface UseFileHandlerProps {
 	setRteContent: (content: string) => void;
-	setShowWelcome: (show: boolean) => void;
+	quillInstanceRef?: React.RefObject<QuillInstance | null>;
 }
 
 interface UseFileHandlerReturn {
@@ -14,7 +18,7 @@ interface UseFileHandlerReturn {
 
 export const useFileHandler = ({
 	setRteContent,
-	setShowWelcome,
+	quillInstanceRef,
 }: UseFileHandlerProps): UseFileHandlerReturn => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,14 +38,17 @@ export const useFileHandler = ({
 					.map((line) => `<p>${line}</p>`)
 					.join(""),
 			);
-			setShowWelcome(false);
 		};
 		reader.readAsText(file);
 	};
 
 	const handleNewFile = (): void => {
-		setRteContent("");
-		setShowWelcome(false);
+		// Set to empty paragraph with space to dismiss welcome screen
+		setRteContent("<p><br></p>");
+		// Focus the Quill editor after creating a new file
+		if (quillInstanceRef?.current) {
+			quillInstanceRef.current.focus();
+		}
 	};
 
 	return {

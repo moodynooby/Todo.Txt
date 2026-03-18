@@ -10,21 +10,21 @@ const root = ReactDOM.createRoot(
 );
 
 root.render(<RootComponent />);
-
-if ("serviceWorker" in navigator) {
-	window.addEventListener("load", () => {
-		navigator.serviceWorker
-			.register("/service-worker.js")
-			.then((registration) => {
-				registration.update().catch((error) => {
-					console.error("ServiceWorker update check failed:", error);
-				});
-			})
-			.catch((error) => {
-				console.error("ServiceWorker registration failed: ", error);
-			});
-	});
-}
+// TODO add functionily of sw
+// if ("serviceWorker" in navigator) {
+// 	window.addEventListener("load", () => {
+// 		navigator.serviceWorker
+// 			.register("/service-worker.js")
+// 			.then((registration) => {
+// 				registration.update().catch((error) => {
+// 					console.error("ServiceWorker update check failed:", error);
+// 				});
+// 			})
+// 			.catch((error) => {
+// 				console.error("ServiceWorker registration failed: ", error);
+// 			});
+// 	});
+// }
 
 function RootComponent() {
 	const [viewMode, setViewMode] = useLocalStorage<string>("viewMode", "text");

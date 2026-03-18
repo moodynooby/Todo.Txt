@@ -38,3 +38,46 @@
 	width: 90vw;
 	margin-top: 70px;
 }
+
+/* ==========================================
+   WELCOME SCREEN STYLES
+   ========================================== */
+.welcome-screen {
+	color: var(--color-base-content);
+}
+
+.welcome-screen .link {
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	text-underline-offset: 2px;
+}
+
+.welcome-screen .link:hover {
+	opacity: 0.8;
+}
+
+.gradient-text {
+	background: linear-gradient(135deg, #a9a5ff 0%, #f472b6 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+.code-preview-text {
+	color: #a9a5ff;
+}
+
+.code-preview-text .text-primary {
+	color: #a9a5ff;
+	font-weight: 600;
+}
+
+.code-preview-text .text-secondary {
+	color: #4ade80;
+	font-weight: 500;
+}
+
+.code-preview-text .text-accent {
+	color: #f472b6;
+	font-weight: 500;
+}
