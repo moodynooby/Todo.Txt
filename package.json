@@ -10,15 +10,18 @@
 		"lint": "biome check --write . && tsc --noEmit"
 	},
 	"dependencies": {
+		"@ai-sdk/groq": "^3.0.29",
 		"@excalidraw/excalidraw": "0.18.0",
 		"@tailwindcss/vite": "^4.2.1",
+		"ai": "^6.0.116",
 		"file-saver": "^2.0.5",
 		"lucide-react": "^0.577.0",
 		"quill": "2.0.3",
 		"quilljs-markdown": "^1.2.0",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
-		"turndown": "^7.2.2"
+		"turndown": "^7.2.2",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.7",

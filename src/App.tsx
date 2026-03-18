@@ -10,6 +10,7 @@ import {
 } from "react";
 import "quill/dist/quill.snow.css";
 import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
+import AiToolsDialog from "./components/AiTools/AiToolsDialog";
 import AppHeader from "./components/AppHeader/AppHeader";
 import { DescriptionSvg } from "./components/DescriptionSvg";
 import FilteredView from "./components/FilteredView";
@@ -50,6 +51,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	const { isDark } = useTheme();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
+	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
 	const [rteContent, setRteContentState] = useLocalStorage<string>(
 		"rteContent",
@@ -124,9 +126,26 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	useKeyboardShortcuts(keyActions);
 
 	const handleAiTools = (): void => {
-		const formatted = rteContent.replace(/([A-Z])(?=[^\s])/g, "$1 ");
-		setRteContentState(formatted);
-		quillInstanceRef.current?.clipboard.dangerouslyPasteHTML(formatted);
+		setIsAiDialogOpen(true);
+	};
+
+	const handleAiInsert = (text: string, mode: "replace" | "append") => {
+		if (!quillInstanceRef.current) return;
+
+		const quill = quillInstanceRef.current;
+		const range = quill.getSelection();
+
+		if (mode === "replace" && range && range.length > 0) {
+			quill.deleteText(range.index, range.length);
+			quill.insertText(range.index, text);
+		} else if (mode === "append") {
+			const length = quill.getLength();
+			quill.insertText(length, `\n${text}`);
+		} else {
+			// Default to replacing all if no selection and replace mode
+			quill.setText(text);
+		}
+		setIsAiDialogOpen(false);
 	};
 
 	const filteredTasks: Task[] = useMemo(() => {
@@ -170,6 +189,19 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 				onOpenRepo={handleOpenRepo}
 				onSave={handleSave}
 				onAiTools={handleAiTools}
+			/>
+			<AiToolsDialog
+				isOpen={isAiDialogOpen}
+				onClose={() => setIsAiDialogOpen(false)}
+				initialContent={
+					quillInstanceRef.current?.getSelection()?.length
+						? quillInstanceRef.current.getText(
+								quillInstanceRef.current.getSelection()?.index,
+								quillInstanceRef.current.getSelection()?.length,
+							)
+						: quillInstanceRef.current?.getText() || ""
+				}
+				onInsert={handleAiInsert}
 			/>
 			<input
 				type="file"
