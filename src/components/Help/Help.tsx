@@ -1,37 +1,55 @@
 import { Info, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 
 const Help = () => {
-	const [isOpen, setIsOpen] = useState(false);
+	const dialogRef = useRef<HTMLDialogElement>(null);
+
+	const openDialog = () => {
+		dialogRef.current?.showModal();
+	};
+
+	useEffect(() => {
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				dialog.close();
+			}
+		};
+
+		dialog.addEventListener("keydown", handleKeyDown);
+		return () => dialog.removeEventListener("keydown", handleKeyDown);
+	}, []);
 
 	return (
 		<>
 			<button
 				type="button"
 				className="btn btn-circle btn-soft btn-info"
-				onClick={() => setIsOpen(true)}
+				onClick={openDialog}
 				aria-label="Open help dialog"
 			>
 				<Info size={20} />
 			</button>
 
-			<div
-				className={`modal modal-bottom sm:modal-middle ${isOpen ? "modal-open" : ""}`}
-			>
-				<div className="modal-box overflow-y-auto help-box">
-					<div className="flex justify-between items-center mb-4">
-						<h3 className="text-lg font-bold">Help Dialog</h3>
+			<dialog ref={dialogRef} className="modal">
+				<div className="modal-box overflow-y-auto max-h-[80vh]">
+					<form
+						method="dialog"
+						className="flex justify-between items-center mb-4"
+					>
+						<h3 className="font-bold text-lg">Help Dialog</h3>
 						<button
-							type="button"
+							type="submit"
 							className="btn btn-sm btn-circle btn-ghost"
-							onClick={() => setIsOpen(false)}
 							aria-label="Close help dialog"
 						>
 							<X size={20} />
 						</button>
-					</div>
+					</form>
 
-					<table className="table table-xs table-zebra">
+					<table className="table table-zebra w-full">
 						<thead>
 							<tr>
 								<th>Syntax</th>
@@ -189,11 +207,12 @@ const Help = () => {
 						</tbody>
 					</table>
 				</div>
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: Modal backdrop is decorative */}
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: Modal backdrop is decorative */}
-				<div className="modal-backdrop" onClick={() => setIsOpen(false)}></div>
-			</div>
+				<form method="dialog" className="modal-backdrop">
+					<button type="button">close</button>
+				</form>
+			</dialog>
 		</>
 	);
 };
+
 export default Help;

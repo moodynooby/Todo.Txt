@@ -8,6 +8,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import { useState } from "react";
+import "./WelcomeScreen.css";
 
 interface QuickAction {
 	id: string;
@@ -71,52 +72,17 @@ Buy bread
 priority:A @Work`;
 
 	return (
-		<div
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				justifyContent: "center",
-				minHeight: "calc(100vh - 76px)",
-				padding: "2rem",
-				color: "var(--color-base-content)",
-			}}
-		>
-			<div
-				style={{
-					textAlign: "center",
-					marginBottom: "3rem",
-				}}
-			>
-				<h1
-					style={{
-						fontFamily:
-							"system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-						fontSize: "2.5rem",
-						marginBottom: "0.5rem",
-						background: "linear-gradient(135deg, #a9a5ff 0%, #f472b6 100%)",
-						WebkitBackgroundClip: "text",
-						WebkitTextFillColor: "transparent",
-						backgroundClip: "text",
-					}}
-				>
+		<div className="welcome-screen flex flex-col items-center justify-center min-h-[calc(100vh-76px)] p-8">
+			<div className="text-center mb-12">
+				<h1 className="text-4xl font-bold mb-2 gradient-text">
 					Welcome to T0do.Txt
 				</h1>
-				<p style={{ opacity: 0.7, fontSize: "1rem" }}>
+				<p className="text-base opacity-70">
 					Your minimalist task management companion
 				</p>
 			</div>
 
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-					gap: "1rem",
-					maxWidth: "800px",
-					width: "100%",
-					marginBottom: "3rem",
-				}}
-			>
+			<div className="quick-actions-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl w-full mb-12">
 				{quickActions.map((action) => (
 					<button
 						key={action.id}
@@ -124,122 +90,48 @@ priority:A @Work`;
 						onClick={action.action}
 						onMouseEnter={() => setHoveredAction(action.id)}
 						onMouseLeave={() => setHoveredAction(null)}
+						className="card bg-base-200 border border-base-300 hover:shadow-xl transition-all text-left p-5"
 						style={{
-							display: "flex",
-							alignItems: "flex-start",
-							gap: "1rem",
-							padding: "1.25rem",
-							backgroundColor: "var(--color-base-200)",
-							border: "1px solid var(--color-border-light)",
-							borderRadius: "var(--radius-xl)",
-							cursor: "pointer",
-							textAlign: "left",
-							transition: "all 0.2s ease",
-							transform:
-								hoveredAction === action.id ? "translateY(-2px)" : "none",
 							boxShadow:
 								hoveredAction === action.id
 									? `var(--shadow-lg), 0 0 0 1px ${action.color}40`
-									: "var(--shadow-sm)",
+									: undefined,
+							transform: hoveredAction === action.id ? "translateY(-2px)" : "",
 						}}
 					>
 						<div
+							className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
 							style={{
-								width: "40px",
-								height: "40px",
-								borderRadius: "var(--radius-lg)",
 								backgroundColor: `${action.color}20`,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								flexShrink: 0,
 							}}
 						>
 							<action.icon size={20} style={{ color: action.color }} />
 						</div>
-						<div style={{ flex: 1 }}>
-							<div
-								style={{
-									fontWeight: 600,
-									fontSize: "0.95rem",
-									marginBottom: "0.25rem",
-									display: "flex",
-									alignItems: "center",
-									gap: "0.5rem",
-								}}
-							>
+						<div className="flex-1">
+							<div className="font-semibold text-sm mb-1 flex items-center gap-2">
 								{action.title}
 								{hoveredAction === action.id && (
-									<ArrowRight size={14} style={{ opacity: 0.6 }} />
+									<ArrowRight size={14} className="opacity-60" />
 								)}
 							</div>
-							<div
-								style={{
-									fontSize: "0.8rem",
-									opacity: 0.6,
-								}}
-							>
-								{action.description}
-							</div>
+							<div className="text-xs opacity-60">{action.description}</div>
 						</div>
 					</button>
 				))}
 			</div>
 
-			<div
-				style={{
-					backgroundColor: "var(--color-base-200)",
-					border: "1px solid var(--color-border-light)",
-					borderRadius: "var(--radius-xl)",
-					padding: "1.5rem",
-					maxWidth: "600px",
-					width: "100%",
-					boxShadow: "var(--shadow-md)",
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						marginBottom: "1rem",
-					}}
-				>
-					<span
-						style={{
-							fontSize: "0.75rem",
-							textTransform: "uppercase",
-							letterSpacing: "0.05em",
-							opacity: 0.6,
-						}}
-					>
+			<div className="preview-card card bg-base-200 border border-base-300 max-w-2xl w-full p-6 shadow-md">
+				<div className="preview-header flex justify-between items-center mb-4">
+					<span className="text-xs uppercase tracking-wider opacity-60">
 						Preview
 					</span>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "0.5rem",
-							fontSize: "0.75rem",
-							color: "var(--color-primary)",
-						}}
-					>
+					<div className="text-primary text-xs flex items-center gap-2">
 						<Sparkles size={12} />
 						<span>todo.txt format</span>
 					</div>
 				</div>
-				<pre
-					style={{
-						fontFamily:
-							"system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-						fontSize: "0.9rem",
-						lineHeight: "1.6",
-						margin: 0,
-						whiteSpace: "pre-wrap",
-						opacity: 0.9,
-					}}
-				>
-					<span style={{ color: "#a9a5ff" }}>{codePreview}</span>
+				<pre className="code-preview font-mono text-sm leading-relaxed m-0 whitespace-pre-wrap opacity-90">
+					<span className="code-preview-text text-primary">{codePreview}</span>
 				</pre>
 			</div>
 		</div>

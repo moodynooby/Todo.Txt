@@ -46,7 +46,7 @@ const SaveMenu = ({ onSave }: SaveMenuProps) => {
 	};
 
 	return (
-		<div className="relative">
+		<div className="dropdown dropdown-end">
 			<button
 				type="button"
 				onClick={() => setIsOpen(!isOpen)}
@@ -67,16 +67,15 @@ const SaveMenu = ({ onSave }: SaveMenuProps) => {
 						onClick={() => setIsOpen(false)}
 						aria-hidden="true"
 					/>
-					<div className="absolute top-full mt-2 right-0 bg-base-100 border border-base-300 rounded-lg shadow-lg z-20 min-w-[200px]">
-						<div className="p-1">
-							{saveOptions.map((option) => {
-								const Icon = option.icon;
-								return (
+					<ul className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52">
+						{saveOptions.map((option) => {
+							const Icon = option.icon;
+							return (
+								<li key={option.id}>
 									<button
 										type="button"
-										key={option.id}
 										onClick={() => handleSave(option.action)}
-										className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-base-200 transition-colors text-left group"
+										className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-base-200 transition-colors text-left w-full"
 									>
 										<Icon className="w-4 h-4 text-base-content/70 group-hover:text-base-content" />
 										<div className="flex-1">
@@ -86,10 +85,10 @@ const SaveMenu = ({ onSave }: SaveMenuProps) => {
 											{option.shortcut}
 										</kbd>
 									</button>
-								);
-							})}
-						</div>
-					</div>
+								</li>
+							);
+						})}
+					</ul>
 				</>
 			)}
 		</div>

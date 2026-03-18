@@ -43,29 +43,42 @@ const FilterButton = ({
 	prefix,
 }: FilterButtonProps) => {
 	const priorityColor = type === "priority" ? getPriorityColor(value) : null;
-	const activeBg =
-		type === "priority" ? `${priorityColor}20` : "var(--color-primary)20";
 
 	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className={`filter-btn ${isActive ? "active" : ""}`}
-			style={{ "--active-bg-color": activeBg } as React.CSSProperties}
-		>
-			{type === "priority" ? (
-				<span
-					className="priority-indicator"
-					style={{ "--priority-color": priorityColor } as React.CSSProperties}
-				>
-					{value}
-				</span>
-			) : (
-				<span className={`${type}-prefix`}>{prefix}</span>
-			)}
-			<span className="filter-text">{label}</span>
-			<span className="filter-count">{count}</span>
-		</button>
+		<li>
+			<button
+				type="button"
+				onClick={onClick}
+				className={`flex items-center gap-2 w-full px-3 py-2 rounded-md transition-colors ${
+					isActive ? "bg-primary/10" : "hover:bg-base-300"
+				}`}
+				style={
+					isActive && type === "priority"
+						? { backgroundColor: `${priorityColor}20` }
+						: {}
+				}
+			>
+				{type === "priority" ? (
+					<span
+						className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold"
+						style={{
+							backgroundColor: `${priorityColor}30`,
+							color: priorityColor,
+						}}
+					>
+						{value}
+					</span>
+				) : (
+					<span
+						className={`${type === "project" ? "text-primary" : type === "context" ? "text-context" : ""} font-medium`}
+					>
+						{prefix}
+					</span>
+				)}
+				<span className="flex-1 text-left text-sm">{label}</span>
+				<span className="text-xs opacity-50">{count}</span>
+			</button>
+		</li>
 	);
 };
 
@@ -88,20 +101,26 @@ const SidebarSection = ({
 	isEmpty,
 	emptyMessage,
 }: SidebarSectionProps) => (
-	<div className="section-wrapper">
+	<div className="mb-2">
 		<button
 			type="button"
 			onClick={() => onToggle(id)}
-			className="section-header"
+			className="w-full flex justify-between items-center px-3 py-2 text-xs font-bold uppercase tracking-wider hover:bg-base-300 rounded-md transition-colors"
 		>
 			<span>
 				{title} {expandedSections.has(id) ? "▼" : "▶"}
 			</span>
 		</button>
 		{expandedSections.has(id) && (
-			<div className="section-content">
-				{isEmpty ? <div className="empty-state">{emptyMessage}</div> : children}
-			</div>
+			<ul className="menu w-full mt-1">
+				{isEmpty ? (
+					<li className="text-sm italic opacity-50 px-3 py-2">
+						{emptyMessage}
+					</li>
+				) : (
+					children
+				)}
+			</ul>
 		)}
 	</div>
 );
@@ -122,13 +141,13 @@ const CollapsedPriorityButton = ({
 	<button
 		type="button"
 		onClick={onClick}
-		className={`collapsed-priority-btn ${isActive ? "active" : ""}`}
-		style={
-			{
-				color: getPriorityColor(priority),
-				"--priority-color": getPriorityColor(priority),
-			} as React.CSSProperties
-		}
+		className={`w-9 h-9 rounded-md flex items-center justify-center font-bold text-sm transition-colors ${
+			isActive ? "bg-opacity-30" : "bg-base-300"
+		}`}
+		style={{
+			color: getPriorityColor(priority),
+			backgroundColor: isActive ? `${getPriorityColor(priority)}30` : undefined,
+		}}
 		title={`Priority ${priority} (${count})`}
 	>
 		{priority}
@@ -171,25 +190,23 @@ const Sidebar = ({
 		onFilterChange(toggleFilter(activeFilter, type, value));
 	};
 
-	const clearFilter = (e: React.MouseEvent): void => {
-		e.stopPropagation();
+	const clearFilter = (): void => {
 		onFilterChange(null);
 	};
 
 	if (isCollapsed) {
 		return (
-			<aside className={`sidebar ${isCollapsed ? "collapsed" : "expanded"}`}>
-				<div className="sidebar-header collapsed">
+			<aside className="sidebar collapsed bg-base-200 border-r border-base-300 fixed top-12 left-0 bottom-7 z-50 w-[60px] min-w-[60px] shadow-sidebar">
+				<div className="sidebar-header collapsed p-2 flex justify-center border-b border-base-300">
 					<button
 						type="button"
 						onClick={onToggle}
 						className="btn btn-ghost btn-xs"
-						style={{ padding: "2px" }}
 					>
 						<ChevronRight size={16} />
 					</button>
 				</div>
-				<div className="collapsed-priority-container">
+				<div className="collapsed-priority-container p-2 flex flex-col gap-2">
 					{Object.keys(priorities)
 						.filter((p) => priorities[p]?.length)
 						.map((p) => (
@@ -209,25 +226,26 @@ const Sidebar = ({
 	}
 
 	return (
-		<aside className={`sidebar ${isCollapsed ? "collapsed" : "expanded"}`}>
-			<div className="sidebar-header">
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+		<aside className="sidebar expanded bg-base-200 border-r border-base-300 fixed top-12 left-0 bottom-7 z-50 w-[280px] min-w-[280px] shadow-sidebar overflow-hidden">
+			<div className="sidebar-header p-3 flex justify-between items-center border-b border-base-300">
+				<div className="flex items-center gap-2">
 					<Filter size={14} />
-					<span className="filter-title">Filters</span>
+					<span className="text-xs font-bold uppercase tracking-wider">
+						Filters
+					</span>
 				</div>
 				<button
 					type="button"
 					onClick={onToggle}
 					className="btn btn-ghost btn-xs"
-					style={{ padding: "2px" }}
 				>
 					<ChevronLeft size={16} />
 				</button>
 			</div>
 
 			{activeFilter && (
-				<div className="active-filter">
-					<span>
+				<div className="alert alert-primary py-2 px-4 rounded-none border-none">
+					<span className="text-sm">
 						{activeFilter.type === "priority" &&
 							`Priority ${activeFilter.value}`}
 						{activeFilter.type === "project" && `+${activeFilter.value}`}
@@ -236,19 +254,19 @@ const Sidebar = ({
 					<button
 						onClick={clearFilter}
 						type="button"
-						className="clear-filter-btn"
+						className="btn btn-ghost btn-xs"
 					>
 						<X size={14} />
 					</button>
 				</div>
 			)}
 
-			<div className="task-stats">
+			<div className="text-xs px-3 py-2 border-b border-base-300 flex justify-between opacity-70">
 				<span>{tasks.length} tasks</span>
 				<span>{tasks.filter((t) => t.text.startsWith("x ")).length} done</span>
 			</div>
 
-			<div className="sidebar-content">
+			<div className="sidebar-content overflow-auto p-2">
 				<SidebarSection
 					title="Priorities"
 					id="priorities"

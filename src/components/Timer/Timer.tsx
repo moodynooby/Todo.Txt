@@ -75,12 +75,10 @@ const Timer = ({ id, onRemove }: TimerProps) => {
 	return (
 		// biome-ignore lint/a11y/noStaticElementInteractions: Draggable timer element
 		<div
-			className="floating-timer"
+			className={`floating-timer ${isDragging ? "dragging" : ""}`}
 			style={{
 				left: `${position.x}px`,
 				top: `${position.y}px`,
-				opacity: isDragging ? 0.8 : 1,
-				transition: isDragging ? "none" : "opacity 0.2s",
 			}}
 			onMouseDown={handleMouseDown}
 		>

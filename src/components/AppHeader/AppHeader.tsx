@@ -1,4 +1,3 @@
-import "./AppHeader.css";
 import {
 	DraftingCompass,
 	FolderOpen,
@@ -30,99 +29,101 @@ const AppHeader = ({
 	onAiTools,
 }: AppHeaderProps) => {
 	return (
-		<header>
-			<div className="header-inner">
-				<div className="logo-cont">
-					<h1>T0do.Txt</h1>
+		<header className="navbar bg-base-200 border-b border-base-300 fixed top-0 z-50 h-12 px-4">
+			<div className="flex-1">
+				<h1 className="text-xl font-bold text-primary">T0do.Txt</h1>
+			</div>
+
+			<div className="flex-none flex items-center gap-2">
+				{/* Open & Save */}
+				<div className="flex items-center gap-1">
+					<button
+						type="button"
+						onClick={onOpenRepo}
+						className="btn btn-ghost btn-sm"
+						title="Open Repository"
+					>
+						<FolderOpen size={18} />
+						<span className="hidden sm:inline">Open</span>
+					</button>
+					<SaveMenu onSave={onSave} />
 				</div>
 
-				<div className="ctrl-cont">
-					<div className="toolbar-group">
-						<button
-							type="button"
-							onClick={onOpenRepo}
-							className="btn btn-sm btn-ghost p-4 m-2"
-							title="Open Repository"
-						>
-							<FolderOpen size={18} />
-							Open
-						</button>
-						<SaveMenu onSave={onSave} />
-					</div>
+				<div className="divider divider-horizontal my-0 mx-1" />
 
-					<div className="toolbar-divider" />
+				{/* View Toggle */}
+				<div className="join">
+					<label
+						className={`join-item btn btn-ghost btn-sm ${
+							viewMode === "text" ? "btn-active" : "opacity-70"
+						}`}
+					>
+						<input
+							type="radio"
+							checked={viewMode === "text"}
+							onChange={() => setViewMode("text")}
+							aria-label="Text View"
+							name="view-options"
+							className="sr-only"
+						/>
+						<SquarePen size={18} />
+						<span className="hidden sm:inline ml-1 text-xs">Text</span>
+					</label>
+					<label
+						className={`join-item btn btn-ghost btn-sm ${
+							viewMode === "excalidraw" ? "btn-active" : "opacity-70"
+						}`}
+					>
+						<input
+							type="radio"
+							checked={viewMode === "excalidraw"}
+							onChange={() => setViewMode("excalidraw")}
+							aria-label="Excalidraw View"
+							name="view-options"
+							className="sr-only"
+						/>
+						<DraftingCompass size={18} />
+						<span className="hidden sm:inline ml-1 text-xs">Draw</span>
+					</label>
+				</div>
 
-					<div className="join">
-						<label
-							className={`join-item btn btn-ghost btn-sm ${
-								viewMode === "text" ? "btn-active" : "opacity-70"
-							}`}
-						>
-							<input
-								type="radio"
-								checked={viewMode === "text"}
-								onChange={() => setViewMode("text")}
-								aria-label="Text View"
-								name="view-options"
-								className="radio"
-							/>
-							<SquarePen size={18} />
-							<span className="hidden sm:inline ml-1 text-xs">Text</span>
-						</label>
-						<label
-							className={`join-item btn btn-ghost btn-sm ${
-								viewMode === "excalidraw" ? "btn-active" : "opacity-70"
-							}`}
-						>
-							<input
-								type="radio"
-								checked={viewMode === "excalidraw"}
-								onChange={() => setViewMode("excalidraw")}
-								aria-label="Excalidraw View"
-								name="view-options"
-								className="radio"
-							/>
-							<DraftingCompass size={18} />
-							<span className="hidden sm:inline ml-1 text-xs">Draw</span>
-						</label>
-					</div>
+				<div className="divider divider-horizontal my-0 mx-1" />
 
-					<div className="toolbar-divider" />
+				{/* Timer & AI */}
+				<div className="flex items-center gap-1">
+					<button
+						type="button"
+						onClick={onAddTimer}
+						className="btn btn-ghost btn-sm"
+						title="Add Timer"
+					>
+						<TimerIcon size={18} />
+						<Plus size={12} className="-ml-1 -mt-1" />
+					</button>
+					<button
+						type="button"
+						onClick={onAiTools}
+						className="btn btn-ghost btn-sm"
+						title="AI Tools"
+					>
+						<Sparkles size={18} />
+					</button>
+				</div>
 
-					<div className="toolbar-group">
-						<button
-							type="button"
-							onClick={onAddTimer}
-							className="btn btn-sm btn-ghost p-1"
-							title="Add Timer"
-						>
-							<TimerIcon size={18} />
-							<Plus size={12} className="-ml-1 -mt-1" />
-						</button>
-						<button
-							type="button"
-							onClick={onAiTools}
-							className="btn btn-sm btn-ghost p-1"
-							title="AI Tools"
-						>
-							<Sparkles size={18} />
-						</button>
-					</div>
+				<div className="divider divider-horizontal my-0 mx-1" />
 
-					<div className="toolbar-divider" />
-
-					<div className="toolbar-group">
-						<ThemeToggle />
-						<button
-							type="button"
-							onClick={() => toggleFullscreen()}
-							className="btn btn-sm btn-ghost p-1"
-							title="Fullscreen"
-						>
-							<FullscreenToggle />
-						</button>
-						<Help />
-					</div>
+				{/* Theme, Fullscreen, Help */}
+				<div className="flex items-center gap-1">
+					<ThemeToggle />
+					<button
+						type="button"
+						onClick={() => toggleFullscreen()}
+						className="btn btn-ghost btn-sm"
+						title="Fullscreen"
+					>
+						<FullscreenToggle />
+					</button>
+					<Help />
 				</div>
 			</div>
 		</header>

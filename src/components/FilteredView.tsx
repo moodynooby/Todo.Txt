@@ -13,30 +13,48 @@ const FilteredView = ({
 }: FilteredViewProps) => {
 	if (!activeFilter) return null;
 
+	const filterName =
+		activeFilter.type === "priority"
+			? `Priority ${activeFilter.value}`
+			: activeFilter.type === "project"
+				? `+${activeFilter.value}`
+				: `@${activeFilter.value}`;
+
 	return (
-		<div className="filtered-view p-4">
-			<h2 className="text-xl font-bold mb-4">
-				Filtered Results:{" "}
-				{activeFilter.type === "priority"
-					? `Priority ${activeFilter.value}`
-					: activeFilter.value}
-			</h2>
+		<div className="p-4">
+			<div className="alert alert-info mb-4">
+				<span>Filtered: {filterName}</span>
+				<button
+					type="button"
+					onClick={onClearFilter}
+					className="btn btn-ghost btn-xs"
+				>
+					Clear
+				</button>
+			</div>
+
 			<div className="flex flex-col gap-2">
 				{filteredTasks.map((task) => (
 					<div
 						key={task.id}
-						className="p-2 bg-base-200 rounded border border-base-300"
+						className="card bg-base-200 border border-base-300"
 					>
-						{task.raw}
+						<div className="card-body p-3">
+							<p className="font-mono text-sm">{task.raw}</p>
+						</div>
 					</div>
 				))}
-				{filteredTasks.length === 0 && (
-					<p className="italic opacity-50">No tasks match this filter.</p>
-				)}
 			</div>
+
+			{filteredTasks.length === 0 && (
+				<div className="alert alert-warning mt-4">
+					<span>No tasks match this filter</span>
+				</div>
+			)}
+
 			<button
 				type="button"
-				className="btn btn-sm btn-outline mt-4"
+				className="btn btn-outline btn-sm mt-4"
 				onClick={onClearFilter}
 			>
 				Clear Filter to Edit

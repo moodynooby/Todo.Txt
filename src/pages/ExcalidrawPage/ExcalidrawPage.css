@@ -1,9 +1,9 @@
-@import "tailwindcss";
+@import "../../styles/design-tokens.css";
 
-@plugin "daisyui" {
-	themes:
-		emerald --default,
-		dark --prefersdark;
+.ExcalidrawPage {
+	height: calc(100vh - 80px);
+	width: 90vw;
+	margin-top: 70px;
 }
 
 .ExcalidrawPage .excalidraw,

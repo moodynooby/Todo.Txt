@@ -1,0 +1,16 @@
+@import "../../styles/design-tokens.css";
+
+.welcome-screen {
+	color: var(--color-base-content);
+}
+
+.gradient-text {
+	background: linear-gradient(135deg, #a9a5ff 0%, #f472b6 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+.code-preview-text {
+	color: #a9a5ff;
+}

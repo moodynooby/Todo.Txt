@@ -26,13 +26,7 @@ import {
 	type Task,
 } from "./utils/todoParser";
 
-const SIDEBAR_EXPANDED_WIDTH = 280;
-const SIDEBAR_COLLAPSED_WIDTH = 60;
-const HEADER_HEIGHT = 48;
-const FOOTER_HEIGHT = 28;
 const DEBOUNCE_DELAY = 1000;
-const TRANSITION_DURATION = "0.2s";
-const TRANSITION_TIMING = "ease";
 
 const stripHtml = (html: string, replacement = ""): string =>
 	html?.replace(/<[^>]*>/g, replacement) || "";
@@ -149,7 +143,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 			<input
 				type="file"
 				ref={fileInputRef}
-				style={{ display: "none" }}
+				className="file-input"
 				accept=".txt"
 				onChange={handleFileChange}
 			/>
@@ -161,15 +155,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 				onFilterChange={setActiveFilter}
 			/>
 			<div
-				style={{
-					marginLeft: sidebarCollapsed
-						? `${SIDEBAR_COLLAPSED_WIDTH}px`
-						: `${SIDEBAR_EXPANDED_WIDTH}px`,
-					marginTop: `${HEADER_HEIGHT}px`,
-					marginBottom: `${FOOTER_HEIGHT}px`,
-					transition: `margin-left ${TRANSITION_DURATION} ${TRANSITION_TIMING}`,
-					minHeight: `calc(100vh - ${HEADER_HEIGHT + FOOTER_HEIGHT}px)`,
-				}}
+				className={`app-layout ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
 			>
 				{viewMode === "excalidraw" && (
 					<Suspense fallback={<div className="p-4">Loading Excalidraw...</div>}>
@@ -192,8 +178,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 						) : (
 							<div
 								ref={quillContainerRef}
-								style={{ minHeight: "70vh" }}
-								className={`quill-theme-${isDark ? "dark" : "light"}`}
+								className={`quill-container quill-theme-${isDark ? "dark" : "light"}`}
 							/>
 						)}
 					</div>

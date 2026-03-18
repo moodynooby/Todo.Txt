@@ -39,10 +39,7 @@ const ExcalidrawPage = () => {
 	}, []);
 
 	return (
-		<div
-			style={{ height: "calc(100vh - 80px)", width: "90vw", marginTop: "70px" }}
-			className="ExcalidrawPage"
-		>
+		<div className="ExcalidrawPage">
 			<Excalidraw
 				theme={excalidrawTheme as "light" | "dark"}
 				// @ts-expect-error - Excalidraw UIOptions type is overly strict
