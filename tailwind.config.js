@@ -18,7 +18,7 @@ export default {
 		themes: [
 			{
 				light: {
-					...daisyuiThemes["light"],
+					...daisyuiThemes.light,
 					primary: "#6965db",
 					"primary-content": "#ffffff",
 					accent: "#6965db",
@@ -27,7 +27,7 @@ export default {
 					"base-300": "#e9ecef",
 				},
 				dark: {
-					...daisyuiThemes["dark"],
+					...daisyuiThemes.dark,
 					primary: "#a9a5ff",
 					accent: "#a9a5ff",
 					"base-100": "#1a1a1a",

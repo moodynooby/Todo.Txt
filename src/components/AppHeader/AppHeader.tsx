@@ -7,11 +7,19 @@ import {
 	SquarePen,
 	Timer as TimerIcon,
 } from "lucide-react";
-import PropTypes from "prop-types";
 import FullscreenToggle, { toggleFullscreen } from "../FullscreenToggle";
-import ThemeToggle from "../ThemeToggle";
 import Help from "../Help/Help";
 import SaveMenu from "../SaveMenu/SaveMenu";
+import ThemeToggle from "../ThemeToggle";
+
+interface AppHeaderProps {
+	viewMode: string;
+	setViewMode: (mode: string) => void;
+	onAddTimer: () => void;
+	onOpenRepo: () => void;
+	onSave: (format: string) => void;
+	onAiTools: () => void;
+}
 
 const AppHeader = ({
 	viewMode,
@@ -20,7 +28,7 @@ const AppHeader = ({
 	onOpenRepo,
 	onSave,
 	onAiTools,
-}) => {
+}: AppHeaderProps) => {
 	return (
 		<header>
 			<div className="header-inner">
@@ -31,10 +39,10 @@ const AppHeader = ({
 				<div className="ctrl-cont">
 					<div className="toolbar-group">
 						<button
+							type="button"
 							onClick={onOpenRepo}
 							className="btn btn-sm btn-ghost p-4 m-2"
 							title="Open Repository"
-							variant="outlined"
 						>
 							<FolderOpen size={18} />
 							Open
@@ -83,6 +91,7 @@ const AppHeader = ({
 
 					<div className="toolbar-group">
 						<button
+							type="button"
 							onClick={onAddTimer}
 							className="btn btn-sm btn-ghost p-1"
 							title="Add Timer"
@@ -91,6 +100,7 @@ const AppHeader = ({
 							<Plus size={12} className="-ml-1 -mt-1" />
 						</button>
 						<button
+							type="button"
 							onClick={onAiTools}
 							className="btn btn-sm btn-ghost p-1"
 							title="AI Tools"
@@ -104,7 +114,8 @@ const AppHeader = ({
 					<div className="toolbar-group">
 						<ThemeToggle />
 						<button
-							onClick={toggleFullscreen}
+							type="button"
+							onClick={() => toggleFullscreen()}
 							className="btn btn-sm btn-ghost p-1"
 							title="Fullscreen"
 						>
@@ -116,15 +127,6 @@ const AppHeader = ({
 			</div>
 		</header>
 	);
-};
-
-AppHeader.propTypes = {
-	viewMode: PropTypes.string.isRequired,
-	setViewMode: PropTypes.func.isRequired,
-	onAddTimer: PropTypes.func.isRequired,
-	onOpenRepo: PropTypes.func.isRequired,
-	onSave: PropTypes.func.isRequired,
-	onAiTools: PropTypes.func.isRequired,
 };
 
 export default AppHeader;

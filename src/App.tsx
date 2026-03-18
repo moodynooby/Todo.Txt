@@ -10,17 +10,21 @@ import {
 import "quill/dist/quill.snow.css";
 import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
 import AppHeader from "./components/AppHeader/AppHeader";
-import Sidebar from "./components/Sidebar/Sidebar";
 import FilteredView from "./components/FilteredView";
+import Sidebar from "./components/Sidebar/Sidebar";
 import { useTheme } from "./contexts/ThemeContext";
+import { useFileHandler } from "./hooks/useFileHandler";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useQuill } from "./hooks/useQuill";
-import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { useFileHandler } from "./hooks/useFileHandler";
 import WelcomeScreen from "./pages/WelcomeScreen/WelcomeScreen";
-import { saveAsHtml, saveAsMarkdown, saveAsText } from "./utils/fileSaveUtils";
-import { applyFilter } from "./utils/filterUtils";
-import { parseTodoContent } from "./utils/todoParser";
+import { applyFilter, type Filter } from "./utils/filterUtils";
+import saveService from "./utils/saveService";
+import {
+	type ParsedTodoContent,
+	parseTodoContent,
+	type Task,
+} from "./utils/todoParser";
 
 const SIDEBAR_EXPANDED_WIDTH = 280;
 const SIDEBAR_COLLAPSED_WIDTH = 60;
@@ -30,20 +34,29 @@ const DEBOUNCE_DELAY = 1000;
 const TRANSITION_DURATION = "0.2s";
 const TRANSITION_TIMING = "ease";
 
-const stripHtml = (html, replacement = "") =>
+const stripHtml = (html: string, replacement = ""): string =>
 	html?.replace(/<[^>]*>/g, replacement) || "";
 
 const ExcalidrawPage = lazy(
 	() => import("./pages/ExcalidrawPage/ExcalidrawPage"),
 );
 
-const App = ({ viewMode, setViewMode, onAddTimer }) => {
+interface AppProps {
+	viewMode: string;
+	setViewMode: (mode: string) => void;
+	onAddTimer: () => void;
+}
+
+const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	const { isDark } = useTheme();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [showWelcome, setShowWelcome] = useState(true);
-	const [activeFilter, setActiveFilter] = useState(null);
+	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 
-	const [rteContent, setRteContentState] = useLocalStorage("rteContent", "");
+	const [rteContent, setRteContentState] = useLocalStorage<string>(
+		"rteContent",
+		"",
+	);
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
 
 	// Sync content to localStorage with debounce
@@ -57,7 +70,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 	}, [rteContent, setRteContentState]);
 
 	const handleContentChange = useCallback(
-		(content) => {
+		(content: string) => {
 			setRteContentState(content);
 			setShowWelcome(false);
 		},
@@ -77,23 +90,27 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 			setShowWelcome,
 		});
 
-	const taskData = useMemo(
+	const taskData: ParsedTodoContent = useMemo(
 		() => parseTodoContent(debouncedRteContent),
 		[debouncedRteContent],
 	);
 
 	const handleSave = useCallback(
-		(type) => {
-			const saveActions = {
-				markdown: () => saveAsMarkdown(rteContent),
+		(type: string) => {
+			const saveActions: Record<string, () => void> = {
+				markdown: () => saveService.saveAsMarkdown(rteContent),
 				text: () =>
-					saveAsText(
+					saveService.saveAsText(
 						quillInstanceRef.current?.getText() || stripHtml(rteContent, ""),
 					),
-				html: () => saveAsHtml(rteContent),
+				html: () => saveService.saveAsHtml(rteContent),
 			};
 
-			saveActions[type]?.() || console.warn("Unknown save type:", type);
+			if (saveActions[type]) {
+				saveActions[type]();
+			} else {
+				console.warn("Unknown save type:", type);
+			}
 		},
 		[rteContent, quillInstanceRef],
 	);
@@ -109,13 +126,13 @@ const App = ({ viewMode, setViewMode, onAddTimer }) => {
 
 	useKeyboardShortcuts(keyActions);
 
-	const handleAiTools = () => {
+	const handleAiTools = (): void => {
 		const formatted = rteContent.replace(/([A-Z])(?=[^\s])/g, "$1 ");
 		setRteContentState(formatted);
 		quillInstanceRef.current?.clipboard.dangerouslyPasteHTML(formatted);
 	};
 
-	const filteredTasks = useMemo(() => {
+	const filteredTasks: Task[] = useMemo(() => {
 		return applyFilter(taskData.tasks, activeFilter);
 	}, [activeFilter, taskData]);
 

@@ -1,23 +1,23 @@
 import { useCallback, useState } from "react";
 
 /**
- * Simple custom hook for persisting state to localStorage
- * @param {string} key - localStorage key
- * @param {*} initialValue - Initial value
- * @returns {[*, (value) => void]} - [storedValue, setValue]
+ * Custom hook for persisting state to localStorage
  */
-export function useLocalStorage(key, initialValue) {
-	const [storedValue, setStoredValue] = useState(() => {
+export function useLocalStorage<T>(
+	key: string,
+	initialValue: T,
+): [T, (value: T | ((prev: T) => T)) => void] {
+	const [storedValue, setStoredValue] = useState<T>(() => {
 		try {
 			const item = localStorage.getItem(key);
-			return item !== null ? JSON.parse(item) : initialValue;
+			return item !== null ? (JSON.parse(item) as T) : initialValue;
 		} catch {
 			return initialValue;
 		}
 	});
 
 	const setValue = useCallback(
-		(value) => {
+		(value: T | ((prev: T) => T)) => {
 			const valueToStore =
 				value instanceof Function ? value(storedValue) : value;
 			setStoredValue(valueToStore);

@@ -5,11 +5,13 @@ import Timer from "./components/Timer/Timer";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+const root = ReactDOM.createRoot(
+	document.getElementById("root") as HTMLElement,
+);
 
 root.render(<RootComponent />);
 
-if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+if ("serviceWorker" in navigator) {
 	window.addEventListener("load", () => {
 		navigator.serviceWorker
 			.register("/service-worker.js")
@@ -25,14 +27,14 @@ if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
 }
 
 function RootComponent() {
-	const [viewMode, setViewMode] = useLocalStorage("viewMode", "text");
-	const [timers, setTimers] = useState([]);
+	const [viewMode, setViewMode] = useLocalStorage<string>("viewMode", "text");
+	const [timers, setTimers] = useState<Array<{ id: number }>>([]);
 
-	const addTimer = () => {
+	const addTimer = (): void => {
 		setTimers([...timers, { id: Date.now() }]);
 	};
 
-	const removeTimer = (id) => {
+	const removeTimer = (id: number): void => {
 		setTimers(timers.filter((t) => t.id !== id));
 	};
 

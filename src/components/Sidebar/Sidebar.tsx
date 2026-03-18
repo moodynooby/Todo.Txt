@@ -1,17 +1,37 @@
 import { ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
-import PropTypes from "prop-types";
 import { useState } from "react";
 import "./Sidebar.css";
-import { toggleFilter } from "../../utils/filterUtils";
+import {
+	type Filter as FilterType,
+	toggleFilter,
+} from "../../utils/filterUtils";
+import type { ParsedTodoContent } from "../../utils/todoParser";
 
-const PRIORITY_CONFIG = {
+interface PriorityConfig {
+	label: string;
+	color: string;
+}
+
+const PRIORITY_CONFIG: Record<string, PriorityConfig> = {
 	A: { label: "High", color: "#ef4444" },
 	B: { label: "Medium", color: "#f59e0b" },
 	C: { label: "Low", color: "#3b82f6" },
 };
 
-const getPriorityColor = (level) => PRIORITY_CONFIG[level]?.color || "#6b7280";
-const getPriorityLabel = (level) => PRIORITY_CONFIG[level]?.label || "Unknown";
+const getPriorityColor = (level: string): string =>
+	PRIORITY_CONFIG[level]?.color || "#6b7280";
+const getPriorityLabel = (level: string): string =>
+	PRIORITY_CONFIG[level]?.label || "Unknown";
+
+interface FilterButtonProps {
+	type: string;
+	value: string;
+	label: string;
+	count: number;
+	isActive: boolean;
+	onClick: () => void;
+	prefix?: string;
+}
 
 const FilterButton = ({
 	type,
@@ -21,21 +41,22 @@ const FilterButton = ({
 	isActive,
 	onClick,
 	prefix,
-}) => {
+}: FilterButtonProps) => {
 	const priorityColor = type === "priority" ? getPriorityColor(value) : null;
 	const activeBg =
 		type === "priority" ? `${priorityColor}20` : "var(--color-primary)20";
 
 	return (
 		<button
+			type="button"
 			onClick={onClick}
 			className={`filter-btn ${isActive ? "active" : ""}`}
-			style={{ "--active-bg-color": activeBg }}
+			style={{ "--active-bg-color": activeBg } as React.CSSProperties}
 		>
 			{type === "priority" ? (
 				<span
 					className="priority-indicator"
-					style={{ "--priority-color": priorityColor }}
+					style={{ "--priority-color": priorityColor } as React.CSSProperties}
 				>
 					{value}
 				</span>
@@ -48,6 +69,16 @@ const FilterButton = ({
 	);
 };
 
+interface SidebarSectionProps {
+	title: string;
+	id: string;
+	expandedSections: Set<string>;
+	onToggle: (id: string) => void;
+	children: React.ReactNode;
+	isEmpty: boolean;
+	emptyMessage: string;
+}
+
 const SidebarSection = ({
 	title,
 	id,
@@ -56,9 +87,13 @@ const SidebarSection = ({
 	children,
 	isEmpty,
 	emptyMessage,
-}) => (
+}: SidebarSectionProps) => (
 	<div className="section-wrapper">
-		<button onClick={() => onToggle(id)} className="section-header">
+		<button
+			type="button"
+			onClick={() => onToggle(id)}
+			className="section-header"
+		>
 			<span>
 				{title} {expandedSections.has(id) ? "▼" : "▶"}
 			</span>
@@ -71,19 +106,42 @@ const SidebarSection = ({
 	</div>
 );
 
-const CollapsedPriorityButton = ({ priority, count, isActive, onClick }) => (
+interface CollapsedPriorityButtonProps {
+	priority: string;
+	count: number;
+	isActive: boolean;
+	onClick: () => void;
+}
+
+const CollapsedPriorityButton = ({
+	priority,
+	count,
+	isActive,
+	onClick,
+}: CollapsedPriorityButtonProps) => (
 	<button
+		type="button"
 		onClick={onClick}
 		className={`collapsed-priority-btn ${isActive ? "active" : ""}`}
-		style={{
-			color: getPriorityColor(priority),
-			"--priority-color": getPriorityColor(priority),
-		}}
+		style={
+			{
+				color: getPriorityColor(priority),
+				"--priority-color": getPriorityColor(priority),
+			} as React.CSSProperties
+		}
 		title={`Priority ${priority} (${count})`}
 	>
 		{priority}
 	</button>
 );
+
+interface SidebarProps {
+	isCollapsed: boolean;
+	onToggle: () => void;
+	taskData: ParsedTodoContent;
+	activeFilter: FilterType | null;
+	onFilterChange: (filter: FilterType | null) => void;
+}
 
 const Sidebar = ({
 	isCollapsed,
@@ -91,13 +149,13 @@ const Sidebar = ({
 	taskData,
 	activeFilter,
 	onFilterChange,
-}) => {
+}: SidebarProps) => {
 	const { tasks, priorities, projects, contexts } = taskData;
-	const [expandedSections, setExpandedSections] = useState(
+	const [expandedSections, setExpandedSections] = useState<Set<string>>(
 		new Set(["priorities", "projects", "contexts"]),
 	);
 
-	const toggleSection = (section) => {
+	const toggleSection = (section: string): void => {
 		setExpandedSections((prev) => {
 			const next = new Set(prev);
 			if (next.has(section)) {
@@ -109,11 +167,11 @@ const Sidebar = ({
 		});
 	};
 
-	const handleFilterClick = (type, value) => {
+	const handleFilterClick = (type: string, value: string): void => {
 		onFilterChange(toggleFilter(activeFilter, type, value));
 	};
 
-	const clearFilter = (e) => {
+	const clearFilter = (e: React.MouseEvent): void => {
 		e.stopPropagation();
 		onFilterChange(null);
 	};
@@ -123,6 +181,7 @@ const Sidebar = ({
 			<aside className={`sidebar ${isCollapsed ? "collapsed" : "expanded"}`}>
 				<div className="sidebar-header collapsed">
 					<button
+						type="button"
 						onClick={onToggle}
 						className="btn btn-ghost btn-xs"
 						style={{ padding: "2px" }}
@@ -157,6 +216,7 @@ const Sidebar = ({
 					<span className="filter-title">Filters</span>
 				</div>
 				<button
+					type="button"
 					onClick={onToggle}
 					className="btn btn-ghost btn-xs"
 					style={{ padding: "2px" }}
@@ -173,7 +233,11 @@ const Sidebar = ({
 						{activeFilter.type === "project" && `+${activeFilter.value}`}
 						{activeFilter.type === "context" && `@${activeFilter.value}`}
 					</span>
-					<button onClick={clearFilter} className="clear-filter-btn">
+					<button
+						onClick={clearFilter}
+						type="button"
+						className="clear-filter-btn"
+					>
 						<X size={14} />
 					</button>
 				</div>
@@ -264,49 +328,6 @@ const Sidebar = ({
 			</div>
 		</aside>
 	);
-};
-
-Sidebar.propTypes = {
-	isCollapsed: PropTypes.bool.isRequired,
-	onToggle: PropTypes.func.isRequired,
-	taskData: PropTypes.shape({
-		tasks: PropTypes.array.isRequired,
-		priorities: PropTypes.object.isRequired,
-		projects: PropTypes.object.isRequired,
-		contexts: PropTypes.object.isRequired,
-	}).isRequired,
-	activeFilter: PropTypes.shape({
-		type: PropTypes.string,
-		value: PropTypes.string,
-	}),
-	onFilterChange: PropTypes.func.isRequired,
-};
-
-FilterButton.propTypes = {
-	type: PropTypes.string.isRequired,
-	value: PropTypes.string.isRequired,
-	label: PropTypes.string.isRequired,
-	count: PropTypes.number.isRequired,
-	isActive: PropTypes.bool.isRequired,
-	onClick: PropTypes.func.isRequired,
-	prefix: PropTypes.string,
-};
-
-SidebarSection.propTypes = {
-	title: PropTypes.string.isRequired,
-	id: PropTypes.string.isRequired,
-	expandedSections: PropTypes.instanceOf(Set).isRequired,
-	onToggle: PropTypes.func.isRequired,
-	children: PropTypes.node,
-	isEmpty: PropTypes.bool.isRequired,
-	emptyMessage: PropTypes.string.isRequired,
-};
-
-CollapsedPriorityButton.propTypes = {
-	priority: PropTypes.string.isRequired,
-	count: PropTypes.number.isRequired,
-	isActive: PropTypes.bool.isRequired,
-	onClick: PropTypes.func.isRequired,
 };
 
 export default Sidebar;

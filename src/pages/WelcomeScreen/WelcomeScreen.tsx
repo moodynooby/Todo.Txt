@@ -4,14 +4,29 @@ import {
 	Clock,
 	FilePlus,
 	FolderOpen,
+	type LucideIcon,
 	Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 
-const WelcomeScreen = ({ onNewFile, onOpenRepo }) => {
-	const [hoveredAction, setHoveredAction] = useState(null);
+interface QuickAction {
+	id: string;
+	icon: LucideIcon;
+	title: string;
+	description: string;
+	color: string;
+	action: () => void;
+}
 
-	const quickActions = [
+interface WelcomeScreenProps {
+	onNewFile: () => void;
+	onOpenRepo: () => void;
+}
+
+const WelcomeScreen = ({ onNewFile, onOpenRepo }: WelcomeScreenProps) => {
+	const [hoveredAction, setHoveredAction] = useState<string | null>(null);
+
+	const quickActions: QuickAction[] = [
 		{
 			id: "new-file",
 			icon: FilePlus,
@@ -105,6 +120,7 @@ priority:A @Work`;
 				{quickActions.map((action) => (
 					<button
 						key={action.id}
+						type="button"
 						onClick={action.action}
 						onMouseEnter={() => setHoveredAction(action.id)}
 						onMouseLeave={() => setHoveredAction(null)}

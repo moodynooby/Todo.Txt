@@ -1,8 +1,12 @@
 import { useEffect } from "react";
 
-export const useKeyboardShortcuts = (actions) => {
+interface KeyboardActions {
+	[key: string]: () => void;
+}
+
+export const useKeyboardShortcuts = (actions: KeyboardActions): void => {
 	useEffect(() => {
-		const handleKeyDown = (e) => {
+		const handleKeyDown = (e: KeyboardEvent): void => {
 			if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
 				const key = e.key.toLowerCase();
 				if (actions[key]) {

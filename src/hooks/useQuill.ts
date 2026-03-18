@@ -1,8 +1,8 @@
 import Quill from "quill";
 import QuillMarkdown from "quilljs-markdown";
-import { useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
-const toolbarOptions = [
+const toolbarOptions: unknown[] = [
 	[{ header: [1, 2, 3, false] }],
 	["bold", "italic", "underline", "strike"],
 	[{ list: "ordered" }, { list: "bullet" }],
@@ -17,17 +17,29 @@ const toolbarOptions = [
 	["clean"],
 ];
 
+interface UseQuillProps {
+	viewMode: string;
+	activeFilter: unknown | null;
+	initialContent: string;
+	onContentChange: (content: string) => void;
+}
+
+interface UseQuillReturn {
+	quillContainerRef: RefObject<HTMLDivElement | null>;
+	quillInstanceRef: RefObject<Quill | null>;
+}
+
 export const useQuill = ({
 	viewMode,
 	activeFilter,
 	initialContent,
 	onContentChange,
-}) => {
-	const quillContainerRef = useRef(null);
-	const quillInstanceRef = useRef(null);
+}: UseQuillProps): UseQuillReturn => {
+	const quillContainerRef = useRef<HTMLDivElement>(null);
+	const quillInstanceRef = useRef<Quill | null>(null);
 
 	useEffect(() => {
-		const handleTextChange = () => {
+		const handleTextChange = (): void => {
 			if (quillInstanceRef.current) {
 				onContentChange(quillInstanceRef.current.root.innerHTML);
 			}
@@ -56,9 +68,6 @@ export const useQuill = ({
 		return () => {
 			if (quillInstanceRef.current && (viewMode !== "text" || activeFilter)) {
 				quillInstanceRef.current.off("text-change", handleTextChange);
-				if (typeof quillInstanceRef.current.destroy === "function") {
-					quillInstanceRef.current.destroy();
-				}
 				quillInstanceRef.current = null;
 				if (quillContainerRef.current) {
 					quillContainerRef.current.innerHTML = "";
@@ -69,7 +78,7 @@ export const useQuill = ({
 				}
 			}
 		};
-	}, [viewMode, activeFilter, onContentChange]);
+	}, [viewMode, activeFilter, onContentChange, initialContent]);
 
 	return { quillContainerRef, quillInstanceRef };
 };

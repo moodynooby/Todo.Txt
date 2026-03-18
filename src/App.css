@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@plugin "daisyui";
 @import "./styles/variables.css";
+@plugin "daisyui";
 
 @font-face {
 	font-family: WinkySans;

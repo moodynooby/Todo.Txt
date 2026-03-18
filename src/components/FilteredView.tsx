@@ -1,6 +1,16 @@
-import PropTypes from "prop-types";
+import type { Filter, Task } from "../utils/filterUtils";
 
-const FilteredView = ({ activeFilter, filteredTasks, onClearFilter }) => {
+interface FilteredViewProps {
+	activeFilter: Filter | null;
+	filteredTasks: Task[];
+	onClearFilter: () => void;
+}
+
+const FilteredView = ({
+	activeFilter,
+	filteredTasks,
+	onClearFilter,
+}: FilteredViewProps) => {
 	if (!activeFilter) return null;
 
 	return (
@@ -25,6 +35,7 @@ const FilteredView = ({ activeFilter, filteredTasks, onClearFilter }) => {
 				)}
 			</div>
 			<button
+				type="button"
 				className="btn btn-sm btn-outline mt-4"
 				onClick={onClearFilter}
 			>
@@ -32,15 +43,6 @@ const FilteredView = ({ activeFilter, filteredTasks, onClearFilter }) => {
 			</button>
 		</div>
 	);
-};
-
-FilteredView.propTypes = {
-	activeFilter: PropTypes.shape({
-		type: PropTypes.string,
-		value: PropTypes.string,
-	}),
-	filteredTasks: PropTypes.array.isRequired,
-	onClearFilter: PropTypes.func.isRequired,
 };
 
 export default FilteredView;

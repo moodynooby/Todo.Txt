@@ -7,6 +7,7 @@ const Help = () => {
 	return (
 		<>
 			<button
+				type="button"
 				className="btn btn-circle btn-soft btn-info"
 				onClick={() => setIsOpen(true)}
 				aria-label="Open help dialog"
@@ -21,6 +22,7 @@ const Help = () => {
 					<div className="flex justify-between items-center mb-4">
 						<h3 className="text-lg font-bold">Help Dialog</h3>
 						<button
+							type="button"
 							className="btn btn-sm btn-circle btn-ghost"
 							onClick={() => setIsOpen(false)}
 							aria-label="Close help dialog"
@@ -168,11 +170,18 @@ const Help = () => {
 								<td>😊</td>
 							</tr>
 							<tr>
-								<td>```javascript:MyCode.js\n// Some JavaScript code\n```</td>
+								<td>
+									<code>
+										```javascript:MyCode.js{"\n"}
+										{/* Some JavaScript code */}
+										{"\n"}
+										```
+									</code>
+								</td>
 								<td>
 									<pre>
 										<code className="language-javascript" title="MyCode.js">
-											// Some JavaScript code
+											{/* Some JavaScript code */}
 										</code>
 									</pre>
 								</td>
@@ -180,6 +189,8 @@ const Help = () => {
 						</tbody>
 					</table>
 				</div>
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: Modal backdrop is decorative */}
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: Modal backdrop is decorative */}
 				<div className="modal-backdrop" onClick={() => setIsOpen(false)}></div>
 			</div>
 		</>

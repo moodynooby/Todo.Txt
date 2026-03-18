@@ -1,10 +1,9 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import svgr from "vite-plugin-svgr";
 
 export default defineConfig({
-	plugins: [react(), svgr(), tailwindcss()],
+	plugins: [react(), tailwindcss()],
 	publicDir: "public",
 	server: {
 		port: 5173,
@@ -14,23 +13,6 @@ export default defineConfig({
 		outDir: "dist",
 		assetsDir: "assets",
 		emptyOutDir: true,
-		sourcemap: false,
-		minify: "terser",
-		terserOptions: {
-			compress: {
-				drop_console: true,
-			},
-		},
-		rollupOptions: {
-			output: {
-				manualChunks: {
-					vendor: ["react", "react-dom"],
-					editor: ["quill", "quilljs-markdown"],
-					excalidraw: ["@excalidraw/excalidraw"],
-				},
-			},
-		},
-		chunkSizeWarningLimit: 1000,
 		cssCodeSplit: true,
 	},
 	preview: {

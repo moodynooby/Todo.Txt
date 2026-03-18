@@ -1,11 +1,22 @@
 import { ChevronDown, Code, File, FileText, Save } from "lucide-react";
-import PropTypes from "prop-types";
 import { useState } from "react";
 
-const SaveMenu = ({ onSave }) => {
+interface SaveOption {
+	id: string;
+	label: string;
+	icon: React.ElementType;
+	action: () => void;
+	shortcut: string;
+}
+
+interface SaveMenuProps {
+	onSave: (format: string) => void;
+}
+
+const SaveMenu = ({ onSave }: SaveMenuProps) => {
 	const [isOpen, setIsOpen] = useState(false);
 
-	const saveOptions = [
+	const saveOptions: SaveOption[] = [
 		{
 			id: "markdown",
 			label: "Save as Markdown",
@@ -29,7 +40,7 @@ const SaveMenu = ({ onSave }) => {
 		},
 	];
 
-	const handleSave = (action) => {
+	const handleSave = (action: () => void): void => {
 		action();
 		setIsOpen(false);
 	};
@@ -37,6 +48,7 @@ const SaveMenu = ({ onSave }) => {
 	return (
 		<div className="relative">
 			<button
+				type="button"
 				onClick={() => setIsOpen(!isOpen)}
 				className="btn btn-primary btn-sm flex items-center gap-2"
 				aria-label="Save options"
@@ -61,6 +73,7 @@ const SaveMenu = ({ onSave }) => {
 								const Icon = option.icon;
 								return (
 									<button
+										type="button"
 										key={option.id}
 										onClick={() => handleSave(option.action)}
 										className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-base-200 transition-colors text-left group"
@@ -81,10 +94,6 @@ const SaveMenu = ({ onSave }) => {
 			)}
 		</div>
 	);
-};
-
-SaveMenu.propTypes = {
-	onSave: PropTypes.func.isRequired,
 };
 
 export default SaveMenu;

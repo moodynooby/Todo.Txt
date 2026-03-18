@@ -1,25 +1,41 @@
-const stripHtml = (html, replacement = "\n") => {
+export interface Task {
+	id: number;
+	text: string;
+	raw: string;
+	priority?: string;
+	projects?: string[];
+	contexts?: string[];
+}
+
+export interface ParsedTodoContent {
+	tasks: Task[];
+	priorities: Record<string, Task[]>;
+	projects: Record<string, Task[]>;
+	contexts: Record<string, Task[]>;
+}
+
+const stripHtml = (html: string, replacement = "\n"): string => {
 	if (!html) return "";
 	return html.replace(/<[^>]*>/g, replacement);
 };
 
-export const parseTodoContent = (content) => {
+export const parseTodoContent = (content: string): ParsedTodoContent => {
 	if (!content)
 		return { tasks: [], priorities: {}, projects: {}, contexts: {} };
 
 	const text = stripHtml(content, "\n");
 	const lines = text.split("\n").filter((line) => line.trim());
 
-	const tasks = [];
-	const priorities = { A: [], B: [], C: [] };
-	const projects = {};
-	const contexts = {};
+	const tasks: Task[] = [];
+	const priorities: Record<string, Task[]> = { A: [], B: [], C: [] };
+	const projects: Record<string, Task[]> = {};
+	const contexts: Record<string, Task[]> = {};
 
 	lines.forEach((line, index) => {
 		const trimmed = line.trim();
 		if (!trimmed) return;
 
-		const task = { id: index, text: trimmed, raw: line };
+		const task: Task = { id: index, text: trimmed, raw: line };
 
 		const priorityMatch = trimmed.match(/^([A-Z])\s/);
 		if (priorityMatch) {
