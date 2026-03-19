@@ -1,4 +1,4 @@
-import { Info, X } from "lucide-react";
+import { BookOpen, Info, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { DescriptionSvg } from "../DescriptionSvg";
 
@@ -41,7 +41,6 @@ const Help = () => {
 						className="flex justify-between items-center mb-4"
 					>
 						<h3 className="font-bold text-lg">Help Dialog</h3>
-						<DescriptionSvg />
 						<button
 							type="submit"
 							className="btn btn-sm btn-circle btn-ghost"
@@ -50,6 +49,15 @@ const Help = () => {
 							<X size={20} />
 						</button>
 					</form>
+					<DescriptionSvg />
+					<a
+						className="btn btn-accent"
+						href="https://github.com/todotxt/todo.txt"
+						target="_blank"
+						rel="noreferrer"
+					>
+						<BookOpen />
+					</a>
 
 					<table className="table table-zebra w-full">
 						<thead>

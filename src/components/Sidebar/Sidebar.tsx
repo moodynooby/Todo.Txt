@@ -9,17 +9,17 @@ import type { ParsedTodoContent } from "../../utils/todoParser";
 
 interface PriorityConfig {
 	label: string;
-	color: string;
+	cssVar: string;
 }
 
 const PRIORITY_CONFIG: Record<string, PriorityConfig> = {
-	A: { label: "High", color: "#ef4444" },
-	B: { label: "Medium", color: "#f59e0b" },
-	C: { label: "Low", color: "#3b82f6" },
+	A: { label: "High", cssVar: "var(--color-error)" },
+	B: { label: "Medium", cssVar: "var(--color-warning)" },
+	C: { label: "Low", cssVar: "var(--color-info)" },
 };
 
 const getPriorityColor = (level: string): string =>
-	PRIORITY_CONFIG[level]?.color || "#6b7280";
+	PRIORITY_CONFIG[level]?.cssVar || "var(--color-neutral)";
 const getPriorityLabel = (level: string): string =>
 	PRIORITY_CONFIG[level]?.label || "Unknown";
 
@@ -54,7 +54,7 @@ const FilterButton = ({
 				}`}
 				style={
 					isActive && type === "priority"
-						? { backgroundColor: `${priorityColor}20` }
+						? { backgroundColor: `${priorityColor}33` }
 						: {}
 				}
 			>
@@ -62,7 +62,7 @@ const FilterButton = ({
 					<span
 						className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold"
 						style={{
-							backgroundColor: `${priorityColor}30`,
+							backgroundColor: `${priorityColor}4D`,
 							color: priorityColor,
 						}}
 					>
@@ -70,7 +70,7 @@ const FilterButton = ({
 					</span>
 				) : (
 					<span
-						className={`${type === "project" ? "text-primary" : type === "context" ? "text-context" : ""} font-medium`}
+						className={`${type === "project" ? "text-primary" : type === "context" ? "text-success" : ""} font-medium`}
 					>
 						{prefix}
 					</span>
@@ -146,7 +146,7 @@ const CollapsedPriorityButton = ({
 		}`}
 		style={{
 			color: getPriorityColor(priority),
-			backgroundColor: isActive ? `${getPriorityColor(priority)}30` : undefined,
+			backgroundColor: isActive ? `${getPriorityColor(priority)}4D` : undefined,
 		}}
 		title={`Priority ${priority} (${count})`}
 	>

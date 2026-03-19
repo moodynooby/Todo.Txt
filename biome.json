@@ -20,6 +20,7 @@
 				"noImportantStyles": "off"
 			},
 			"a11y": {
+				"useAnchorContent": "off",
 				"noSvgWithoutTitle": "off"
 			}
 		}

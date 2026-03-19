@@ -16,6 +16,7 @@ import { DescriptionSvg } from "./components/DescriptionSvg";
 import FilteredView from "./components/FilteredView";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { useTheme } from "./contexts/ThemeContext";
+import { useDueNotifications } from "./hooks/useDueNotifications";
 import { useFileHandler } from "./hooks/useFileHandler";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useLocalStorage } from "./hooks/useLocalStorage";
@@ -34,7 +35,7 @@ const stripHtml = (html: string, replacement = ""): string =>
 	html?.replace(/<[^>]*>/g, replacement) || "";
 
 const ExcalidrawPage = lazy(
-	() => import("./pages/ExcalidrawPage/ExcalidrawPage"),
+	() => import("./components/ExcalidrawPage/ExcalidrawPage.tsx"),
 );
 
 interface AppProps {
@@ -93,6 +94,8 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 		() => parseTodoContent(debouncedRteContent),
 		[debouncedRteContent],
 	);
+
+	useDueNotifications(taskData.tasks);
 
 	const handleSave = useCallback(
 		(type: string) => {
@@ -158,7 +161,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 			icon: FilePlus,
 			title: "New File",
 			description: "Create a new todo.txt file",
-			color: "#a9a5ff",
+			color: "var(--color-secondary)",
 			action: handleNewFile,
 		},
 		{
@@ -166,7 +169,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 			icon: Paperclip,
 			title: "Open File",
 			description: "Open an existing todo.txt file",
-			color: "#4ade80",
+			color: "var(--color-success)",
 			action: handleOpenRepo,
 		},
 		{
@@ -174,7 +177,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 			icon: BookOpen,
 			title: "Documentation",
 			description: "Learn about todo.txt format",
-			color: "#f472b6",
+			color: "var(--color-accent)",
 			action: () =>
 				window.open("https://github.com/todotxt/todo.txt", "_blank"),
 		},

@@ -1,5 +1,3 @@
-@import "../../styles/design-tokens.css";
-
 .ExcalidrawPage {
 	height: calc(100vh - 80px);
 	width: 90vw;

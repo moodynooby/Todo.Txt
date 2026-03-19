@@ -34,7 +34,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 	useEffect(() => {
 		document.documentElement.setAttribute(
 			"data-theme",
-			isDark ? "dark" : "light",
+			isDark ? "sunset" : "fantasy ",
 		);
 	}, [isDark]);
 
