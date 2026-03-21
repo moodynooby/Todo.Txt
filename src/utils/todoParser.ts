@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 export interface Task {
 	id: number;
 	text: string;
@@ -18,6 +20,22 @@ export interface ParsedTodoContent {
 const stripHtml = (html: string, replacement = "\n"): string => {
 	if (!html) return "";
 	return html.replace(/<[^>]*>/g, replacement);
+};
+
+const parseRelativeDate = (value: string): string | undefined => {
+	if (value === "today") {
+		return dayjs().format("YYYY-MM-DD");
+	}
+	if (value === "tomorrow") {
+		return dayjs().add(1, "day").format("YYYY-MM-DD");
+	}
+	if (value === "yesterday") {
+		return dayjs().subtract(1, "day").format("YYYY-MM-DD");
+	}
+	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		return value;
+	}
+	return undefined;
 };
 
 export const parseTodoContent = (content: string): ParsedTodoContent => {
@@ -65,21 +83,7 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		const dueMatch = trimmed.match(/due:([\w-]+)/);
 		if (dueMatch) {
 			const value = dueMatch[1].toLowerCase();
-			const today = new Date();
-
-			if (value === "today") {
-				task.due = today.toISOString().split("T")[0];
-			} else if (value === "tomorrow") {
-				const tomorrow = new Date(today);
-				tomorrow.setDate(tomorrow.getDate() + 1);
-				task.due = tomorrow.toISOString().split("T")[0];
-			} else if (value === "yesterday") {
-				const yesterday = new Date(today);
-				yesterday.setDate(yesterday.getDate() - 1);
-				task.due = yesterday.toISOString().split("T")[0];
-			} else if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-				task.due = value;
-			}
+			task.due = parseRelativeDate(value);
 		}
 
 		tasks.push(task);

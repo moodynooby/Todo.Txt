@@ -1,27 +1,36 @@
+import {
+	ActionIcon,
+	Badge,
+	Button,
+	Collapse,
+	Divider,
+	Group,
+	NavLink,
+	Paper,
+	ScrollArea,
+	Stack,
+	Text,
+	ThemeIcon,
+	useMantineColorScheme,
+} from "@mantine/core";
 import { ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
 import { useState } from "react";
-import "./Sidebar.css";
 import {
 	type Filter as FilterType,
 	toggleFilter,
 } from "../../utils/filterUtils";
-import type { ParsedTodoContent } from "../../utils/todoParser";
+import type { ParsedTodoContent, Task } from "../../utils/todoParser";
 
 interface PriorityConfig {
 	label: string;
-	cssVar: string;
+	color: string;
 }
 
 const PRIORITY_CONFIG: Record<string, PriorityConfig> = {
-	A: { label: "High", cssVar: "var(--color-error)" },
-	B: { label: "Medium", cssVar: "var(--color-warning)" },
-	C: { label: "Low", cssVar: "var(--color-info)" },
+	A: { label: "High", color: "red" },
+	B: { label: "Medium", color: "yellow" },
+	C: { label: "Low", color: "blue" },
 };
-
-const getPriorityColor = (level: string): string =>
-	PRIORITY_CONFIG[level]?.cssVar || "var(--color-neutral)";
-const getPriorityLabel = (level: string): string =>
-	PRIORITY_CONFIG[level]?.label || "Unknown";
 
 interface FilterButtonProps {
 	type: string;
@@ -42,43 +51,24 @@ const FilterButton = ({
 	onClick,
 	prefix,
 }: FilterButtonProps) => {
-	const priorityColor = type === "priority" ? getPriorityColor(value) : null;
+	const priorityColor =
+		type === "priority" ? PRIORITY_CONFIG[value]?.color : null;
+	const variant = isActive ? "light" : "subtle";
 
 	return (
-		<li>
-			<button
-				type="button"
-				onClick={onClick}
-				className={`flex items-center gap-2 w-full px-3 py-2 rounded-md transition-colors ${
-					isActive ? "bg-primary/10" : "hover:bg-base-300"
-				}`}
-				style={
-					isActive && type === "priority"
-						? { backgroundColor: `${priorityColor}33` }
-						: {}
-				}
-			>
-				{type === "priority" ? (
-					<span
-						className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold"
-						style={{
-							backgroundColor: `${priorityColor}4D`,
-							color: priorityColor,
-						}}
-					>
-						{value}
-					</span>
-				) : (
-					<span
-						className={`${type === "project" ? "text-primary" : type === "context" ? "text-success" : ""} font-medium`}
-					>
-						{prefix}
-					</span>
-				)}
-				<span className="flex-1 text-left text-sm">{label}</span>
-				<span className="text-xs opacity-50">{count}</span>
-			</button>
-		</li>
+		<NavLink
+			label={label}
+			description={prefix ? `${prefix}${value}` : undefined}
+			rightSection={
+				<Badge size="sm" variant="light">
+					{count}
+				</Badge>
+			}
+			active={isActive}
+			onClick={onClick}
+			color={priorityColor || "violet"}
+			variant={variant}
+		/>
 	);
 };
 
@@ -101,57 +91,96 @@ const SidebarSection = ({
 	isEmpty,
 	emptyMessage,
 }: SidebarSectionProps) => (
-	<div className="mb-2">
-		<button
-			type="button"
+	<Stack gap="xs">
+		<Button
+			variant="subtle"
+			color="gray"
+			fullWidth
+			justify="space-between"
+			rightSection={<ChevronRight size={14} />}
 			onClick={() => onToggle(id)}
-			className="w-full flex justify-between items-center px-3 py-2 text-xs font-bold uppercase tracking-wider hover:bg-base-300 rounded-md transition-colors"
+			styles={{
+				root: {
+					textTransform: "uppercase",
+					fontSize: "var(--mantine-font-size-xs)",
+					fontWeight: 700,
+					letterSpacing: "0.05em",
+				},
+			}}
 		>
-			<span>
-				{title} {expandedSections.has(id) ? "▼" : "▶"}
-			</span>
-		</button>
-		{expandedSections.has(id) && (
-			<ul className="menu w-full mt-1">
+			{title}
+		</Button>
+		<Collapse in={expandedSections.has(id)}>
+			<Stack gap={4}>
 				{isEmpty ? (
-					<li className="text-sm italic opacity-50 px-3 py-2">
+					<Text size="xs" c="dimmed" fs="italic" px="sm" py="xs">
 						{emptyMessage}
-					</li>
+					</Text>
 				) : (
 					children
 				)}
-			</ul>
-		)}
-	</div>
+			</Stack>
+		</Collapse>
+	</Stack>
 );
 
 interface CollapsedPriorityButtonProps {
 	priority: string;
-	count: number;
 	isActive: boolean;
 	onClick: () => void;
 }
 
 const CollapsedPriorityButton = ({
 	priority,
-	count,
 	isActive,
 	onClick,
-}: CollapsedPriorityButtonProps) => (
-	<button
-		type="button"
-		onClick={onClick}
-		className={`w-9 h-9 rounded-md flex items-center justify-center font-bold text-sm transition-colors ${
-			isActive ? "bg-opacity-30" : "bg-base-300"
-		}`}
-		style={{
-			color: getPriorityColor(priority),
-			backgroundColor: isActive ? `${getPriorityColor(priority)}4D` : undefined,
-		}}
-		title={`Priority ${priority} (${count})`}
-	>
-		{priority}
-	</button>
+}: CollapsedPriorityButtonProps) => {
+	const config = PRIORITY_CONFIG[priority] || {
+		label: priority,
+		color: "gray",
+	};
+	return (
+		<ThemeIcon
+			variant={isActive ? "filled" : "light"}
+			color={config.color}
+			size="lg"
+			radius="md"
+			onClick={onClick}
+			style={{ cursor: "pointer" }}
+		>
+			<Text fw={700} size="sm">
+				{priority}
+			</Text>
+		</ThemeIcon>
+	);
+};
+
+interface FilteredTasksProps {
+	filteredTasks: Task[];
+	onClearFilter: () => void;
+}
+
+const FilteredTasks = ({
+	filteredTasks,
+	onClearFilter,
+}: FilteredTasksProps) => (
+	<Stack gap="xs" p="md">
+		<Group justify="space-between">
+			<Text size="sm" fw={600}>
+				{filteredTasks.length} matching tasks
+			</Text>
+			<Button variant="subtle" size="xs" onClick={onClearFilter}>
+				Clear Filter
+			</Button>
+		</Group>
+		{filteredTasks.map((task) => (
+			<Paper key={task.id} p="xs" withBorder>
+				<Text size="xs" ff="monospace">
+					{task.raw}
+				</Text>
+			</Paper>
+		))}
+	</Stack>
 );
 
 interface SidebarProps {
@@ -173,6 +202,8 @@ const Sidebar = ({
 	const [expandedSections, setExpandedSections] = useState<Set<string>>(
 		new Set(["priorities", "projects", "contexts"]),
 	);
+	const { colorScheme } = useMantineColorScheme();
+	const isDark = colorScheme === "dark";
 
 	const toggleSection = (section: string): void => {
 		setExpandedSections((prev) => {
@@ -194,157 +225,200 @@ const Sidebar = ({
 		onFilterChange(null);
 	};
 
+	const completedCount = tasks.filter((t) => t.text.startsWith("x ")).length;
+	const filteredTasks = activeFilter
+		? tasks.filter((t) => {
+				if (activeFilter.type === "priority") {
+					return t.priority === activeFilter.value;
+				}
+				if (activeFilter.type === "project") {
+					return t.projects?.includes(activeFilter.value);
+				}
+				if (activeFilter.type === "context") {
+					return t.contexts?.includes(activeFilter.value);
+				}
+				return true;
+			})
+		: [];
+
+	const borderColor = isDark ? "dark.4" : "gray.3";
+
 	if (isCollapsed) {
 		return (
-			<aside className="sidebar collapsed bg-base-200 border-r border-base-300 fixed top-12 left-0 bottom-7 z-50 w-[60px] min-w-[60px] shadow-sidebar">
-				<div className="sidebar-header collapsed p-2 flex justify-center border-b border-base-300">
-					<button
-						type="button"
-						onClick={onToggle}
-						className="btn btn-ghost btn-xs"
-					>
+			<Paper
+				component="aside"
+				shadow="sm"
+				radius={0}
+				style={{
+					height: "100%",
+				}}
+			>
+				<Group justify="center" py="sm">
+					<ActionIcon variant="subtle" size="sm" onClick={onToggle}>
 						<ChevronRight size={16} />
-					</button>
-				</div>
-				<div className="collapsed-priority-container p-2 flex flex-col gap-2">
+					</ActionIcon>
+				</Group>
+				<Stack align="center" gap="xs" p="xs">
 					{Object.keys(priorities)
 						.filter((p) => priorities[p]?.length)
 						.map((p) => (
 							<CollapsedPriorityButton
 								key={p}
 								priority={p}
-								count={priorities[p]?.length || 0}
 								isActive={
 									activeFilter?.type === "priority" && activeFilter?.value === p
 								}
 								onClick={() => handleFilterClick("priority", p)}
 							/>
 						))}
-				</div>
-			</aside>
+				</Stack>
+			</Paper>
 		);
 	}
 
 	return (
-		<aside className="sidebar expanded bg-base-200 border-r border-base-300 fixed top-12 left-0 bottom-7 z-50 w-[280px] min-w-[280px] shadow-sidebar overflow-hidden">
-			<div className="sidebar-header p-3 flex justify-between items-center border-b border-base-300">
-				<div className="flex items-center gap-2">
+		<Paper
+			component="aside"
+			shadow="sm"
+			radius={0}
+			style={{
+				height: "100%",
+				display: "flex",
+				flexDirection: "column",
+			}}
+		>
+			<Group justify="space-between" px="md" py="sm">
+				<Group gap="xs">
 					<Filter size={14} />
-					<span className="text-xs font-bold uppercase tracking-wider">
+					<Text
+						size="xs"
+						fw={700}
+						tt="uppercase"
+						style={{ letterSpacing: "0.05em" }}
+					>
 						Filters
-					</span>
-				</div>
-				<button
-					type="button"
-					onClick={onToggle}
-					className="btn btn-ghost btn-xs"
-				>
+					</Text>
+				</Group>
+				<ActionIcon variant="subtle" size="sm" onClick={onToggle}>
 					<ChevronLeft size={16} />
-				</button>
-			</div>
+				</ActionIcon>
+			</Group>
+			<Divider color={borderColor} />
 
 			{activeFilter && (
-				<div className="alert alert-primary py-2 px-4 rounded-none border-none">
-					<span className="text-sm">
-						{activeFilter.type === "priority" &&
-							`Priority ${activeFilter.value}`}
-						{activeFilter.type === "project" && `+${activeFilter.value}`}
-						{activeFilter.type === "context" && `@${activeFilter.value}`}
-					</span>
-					<button
-						onClick={clearFilter}
-						type="button"
-						className="btn btn-ghost btn-xs"
-					>
-						<X size={14} />
-					</button>
-				</div>
+				<Paper px="md" py="xs" bg="violet.0">
+					<Group justify="space-between">
+						<Text size="sm">
+							{activeFilter.type === "priority" &&
+								`Priority ${activeFilter.value}`}
+							{activeFilter.type === "project" && `+${activeFilter.value}`}
+							{activeFilter.type === "context" && `@${activeFilter.value}`}
+						</Text>
+						<ActionIcon variant="subtle" size="xs" onClick={clearFilter}>
+							<X size={14} />
+						</ActionIcon>
+					</Group>
+				</Paper>
 			)}
 
-			<div className="text-xs px-3 py-2 border-b border-base-300 flex justify-between opacity-70">
-				<span>{tasks.length} tasks</span>
-				<span>{tasks.filter((t) => t.text.startsWith("x ")).length} done</span>
-			</div>
+			<Group justify="space-between" px="md" py="xs">
+				<Text size="xs" c="dimmed">
+					{tasks.length} tasks
+				</Text>
+				<Text size="xs" c="dimmed">
+					{completedCount} done
+				</Text>
+			</Group>
+			<Divider color={borderColor} />
 
-			<div className="sidebar-content overflow-auto p-2">
-				<SidebarSection
-					title="Priorities"
-					id="priorities"
-					expandedSections={expandedSections}
-					onToggle={toggleSection}
-					isEmpty={Object.values(priorities).every((arr) => !arr?.length)}
-					emptyMessage="No prioritized tasks"
-				>
-					{Object.entries(priorities).map(
-						([priority, items]) =>
-							items?.length > 0 && (
+			<ScrollArea style={{ flex: 1 }} p="sm">
+				{activeFilter ? (
+					<FilteredTasks
+						filteredTasks={filteredTasks}
+						onClearFilter={clearFilter}
+					/>
+				) : (
+					<>
+						<SidebarSection
+							title="Priorities"
+							id="priorities"
+							expandedSections={expandedSections}
+							onToggle={toggleSection}
+							isEmpty={Object.values(priorities).every((arr) => !arr?.length)}
+							emptyMessage="No prioritized tasks"
+						>
+							{Object.entries(priorities).map(
+								([priority, items]) =>
+									items?.length > 0 && (
+										<FilterButton
+											key={priority}
+											type="priority"
+											value={priority}
+											label={PRIORITY_CONFIG[priority]?.label || priority}
+											count={items.length}
+											isActive={
+												activeFilter?.type === "priority" &&
+												activeFilter?.value === priority
+											}
+											onClick={() => handleFilterClick("priority", priority)}
+										/>
+									),
+							)}
+						</SidebarSection>
+
+						<SidebarSection
+							title="Projects"
+							id="projects"
+							expandedSections={expandedSections}
+							onToggle={toggleSection}
+							isEmpty={Object.keys(projects).length === 0}
+							emptyMessage="No projects found"
+						>
+							{Object.entries(projects).map(([project, items]) => (
 								<FilterButton
-									key={priority}
-									type="priority"
-									value={priority}
-									label={getPriorityLabel(priority)}
+									key={project}
+									type="project"
+									value={project}
+									label={project}
 									count={items.length}
 									isActive={
-										activeFilter?.type === "priority" &&
-										activeFilter?.value === priority
+										activeFilter?.type === "project" &&
+										activeFilter?.value === project
 									}
-									onClick={() => handleFilterClick("priority", priority)}
+									onClick={() => handleFilterClick("project", project)}
+									prefix="+"
 								/>
-							),
-					)}
-				</SidebarSection>
+							))}
+						</SidebarSection>
 
-				<SidebarSection
-					title="Projects"
-					id="projects"
-					expandedSections={expandedSections}
-					onToggle={toggleSection}
-					isEmpty={Object.keys(projects).length === 0}
-					emptyMessage="No projects found"
-				>
-					{Object.entries(projects).map(([project, items]) => (
-						<FilterButton
-							key={project}
-							type="project"
-							value={project}
-							label={project}
-							count={items.length}
-							isActive={
-								activeFilter?.type === "project" &&
-								activeFilter?.value === project
-							}
-							onClick={() => handleFilterClick("project", project)}
-							prefix="+"
-						/>
-					))}
-				</SidebarSection>
-
-				<SidebarSection
-					title="Contexts"
-					id="contexts"
-					expandedSections={expandedSections}
-					onToggle={toggleSection}
-					isEmpty={Object.keys(contexts).length === 0}
-					emptyMessage="No contexts found"
-				>
-					{Object.entries(contexts).map(([context, items]) => (
-						<FilterButton
-							key={context}
-							type="context"
-							value={context}
-							label={context}
-							count={items.length}
-							isActive={
-								activeFilter?.type === "context" &&
-								activeFilter?.value === context
-							}
-							onClick={() => handleFilterClick("context", context)}
-							prefix="@"
-						/>
-					))}
-				</SidebarSection>
-			</div>
-		</aside>
+						<SidebarSection
+							title="Contexts"
+							id="contexts"
+							expandedSections={expandedSections}
+							onToggle={toggleSection}
+							isEmpty={Object.keys(contexts).length === 0}
+							emptyMessage="No contexts found"
+						>
+							{Object.entries(contexts).map(([context, items]) => (
+								<FilterButton
+									key={context}
+									type="context"
+									value={context}
+									count={items.length}
+									isActive={
+										activeFilter?.type === "context" &&
+										activeFilter?.value === context
+									}
+									onClick={() => handleFilterClick("context", context)}
+									prefix="@"
+									label={context}
+								/>
+							))}
+						</SidebarSection>
+					</>
+				)}
+			</ScrollArea>
+		</Paper>
 	);
 };
 

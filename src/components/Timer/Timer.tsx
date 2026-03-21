@@ -1,5 +1,19 @@
+import {
+	ActionIcon,
+	Box,
+	Group,
+	Paper,
+	Text,
+	useMantineColorScheme,
+} from "@mantine/core";
+import dayjs from "dayjs";
+import duration from "dayjs/plugin/duration";
 import { Pause, Play, RotateCcw, Timer as TimerIcon, X } from "lucide-react";
+
+dayjs.extend(duration);
+
 import { useEffect, useRef, useState } from "react";
+import { Z_INDEX } from "../../providers/layout";
 
 const TIMER_BASE_X = 20;
 const TIMER_BASE_Y = 100;
@@ -8,11 +22,9 @@ const TIMER_Y_OFFSET = 30;
 
 const formatTime = (totalSeconds: number): string => {
 	const hrs = Math.floor(totalSeconds / 3600);
-	const mins = Math.floor((totalSeconds % 3600) / 60);
-	const secs = totalSeconds % 60;
-	return `${hrs > 0 ? `${hrs.toString().padStart(2, "0")}:` : ""}${mins
-		.toString()
-		.padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+	return dayjs
+		.duration(totalSeconds, "seconds")
+		.format(hrs > 0 ? "HH:mm:ss" : "mm:ss");
 };
 
 interface TimerProps {
@@ -34,6 +46,8 @@ const Timer = ({ id, onRemove }: TimerProps) => {
 	});
 	const [isDragging, setIsDragging] = useState(false);
 	const offsetRef = useRef({ x: 0, y: 0 });
+	const { colorScheme } = useMantineColorScheme();
+	const isDark = colorScheme === "dark";
 
 	const handleMouseDown = (e: React.MouseEvent): void => {
 		if ((e.target as Element).closest("button")) return;
@@ -73,48 +87,73 @@ const Timer = ({ id, onRemove }: TimerProps) => {
 	}, [isActive]);
 
 	return (
-		// biome-ignore lint/a11y/noStaticElementInteractions: Draggable timer element
-		<div
-			className={`floating-timer ${isDragging ? "dragging" : ""}`}
+		<Box
+			component="div"
 			style={{
-				left: `${position.x}px`,
-				top: `${position.y}px`,
+				position: "fixed",
+				left: position.x,
+				top: position.y,
+				zIndex: Z_INDEX.TIMER,
+				cursor: isDragging ? "grabbing" : "move",
+				opacity: isDragging ? 0.8 : 1,
+				transition: isDragging ? "none" : "opacity 0.2s",
 			}}
 			onMouseDown={handleMouseDown}
 		>
-			<div className="flex justify-between w-full items-center mb-1">
-				<TimerIcon size={14} className="text-primary opacity-70" />
-				<button
-					type="button"
-					onClick={() => onRemove(id)}
-					className="text-base-content hover:text-error transition-colors"
+			<Paper p="sm" radius="md" shadow="md" bg={isDark ? "dark.7" : "white"}>
+				<Group justify="space-between" mb="xs">
+					<TimerIcon
+						size={14}
+						color="var(--mantine-color-violet-6)"
+						style={{ opacity: 0.7 }}
+					/>
+					<ActionIcon
+						variant="subtle"
+						size="xs"
+						color="gray"
+						onClick={() => onRemove(id)}
+						aria-label="Remove timer"
+					>
+						<X size={14} />
+					</ActionIcon>
+				</Group>
+
+				<Text
+					size="xl"
+					fw={700}
+					ff="monospace"
+					c="violet.6"
+					ta="center"
+					mb="xs"
 				>
-					<X size={14} />
-				</button>
-			</div>
-			<div className="timer-display font-mono text-primary">
-				{formatTime(seconds)}
-			</div>
-			<div className="timer-controls">
-				<button
-					type="button"
-					onClick={() => setIsActive(!isActive)}
-					className="btn btn-xs btn-circle btn-ghost"
-				>
-					{isActive ? <Pause size={14} /> : <Play size={14} />}
-				</button>
-				<button
-					type="button"
-					onClick={() => {
-						setSeconds(0);
-						setIsActive(false);
-					}}
-					className="btn btn-xs btn-circle btn-ghost"
-				>
-					<RotateCcw size={14} />
-				</button>
-			</div>
-		</div>
+					{formatTime(seconds)}
+				</Text>
+
+				<Group justify="center" gap="xs">
+					<ActionIcon
+						variant="subtle"
+						size="sm"
+						color="gray"
+						onClick={() => setIsActive(!isActive)}
+						aria-label={isActive ? "Pause timer" : "Start timer"}
+					>
+						{isActive ? <Pause size={14} /> : <Play size={14} />}
+					</ActionIcon>
+					<ActionIcon
+						variant="subtle"
+						size="sm"
+						color="gray"
+						onClick={() => {
+							setSeconds(0);
+							setIsActive(false);
+						}}
+						aria-label="Reset timer"
+					>
+						<RotateCcw size={14} />
+					</ActionIcon>
+				</Group>
+			</Paper>
+		</Box>
 	);
 };
 

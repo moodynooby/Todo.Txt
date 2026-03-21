@@ -2,18 +2,30 @@ import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import { useEffect, useMemo, useState } from "react";
 import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
-import FullscreenToggle, {
-	toggleFullscreen,
-} from "../../components/FullscreenToggle";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useComputedColorScheme } from "@mantine/core";
 import saveService from "../../utils/saveService";
+import { toggleFullscreen } from "../Header/HeaderActions";
 
 const FullscreenIcon = () => {
-	return <FullscreenToggle />;
+	return (
+		<button
+			type="button"
+			onClick={toggleFullscreen}
+			style={{
+				background: "none",
+				border: "none",
+				cursor: "pointer",
+				padding: "8px",
+			}}
+		>
+			Fullscreen
+		</button>
+	);
 };
 
 const ExcalidrawPage = () => {
-	const { isDark } = useTheme();
+	const computedColorScheme = useComputedColorScheme("light");
+	const isDark = computedColorScheme === "dark";
 	const [excalidrawTheme, setExcalidrawTheme] = useState("light");
 	const UIOptions = {
 		canvasActions: {

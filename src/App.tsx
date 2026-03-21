@@ -1,4 +1,21 @@
 import "./App.css";
+import {
+	ActionIcon,
+	Anchor,
+	AppShell,
+	Box,
+	Card,
+	Group,
+	Image,
+	Paper,
+	SimpleGrid,
+	Stack,
+	Text,
+	ThemeIcon,
+	Title,
+	useComputedColorScheme,
+} from "@mantine/core";
+import { useHotkeys, useLocalStorage } from "@mantine/hooks";
 import { ArrowRight, BookOpen, FilePlus, Paperclip } from "lucide-react";
 import {
 	lazy,
@@ -8,26 +25,17 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import "quill/dist/quill.snow.css";
-import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
 import AiToolsDialog from "./components/AiTools/AiToolsDialog";
 import AppHeader from "./components/AppHeader/AppHeader";
 import { DescriptionSvg } from "./components/DescriptionSvg";
-import FilteredView from "./components/FilteredView";
 import Sidebar from "./components/Sidebar/Sidebar";
-import { useTheme } from "./contexts/ThemeContext";
 import { useDueNotifications } from "./hooks/useDueNotifications";
 import { useFileHandler } from "./hooks/useFileHandler";
-import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useQuill } from "./hooks/useQuill";
-import { applyFilter, type Filter } from "./utils/filterUtils";
+import { LAYOUT } from "./providers/layout";
+import type { Filter } from "./utils/filterUtils";
 import saveService from "./utils/saveService";
-import {
-	type ParsedTodoContent,
-	parseTodoContent,
-	type Task,
-} from "./utils/todoParser";
+import { type ParsedTodoContent, parseTodoContent } from "./utils/todoParser";
 
 const DEBOUNCE_DELAY = 1000;
 
@@ -49,15 +57,16 @@ const isEmptyContent = (content: string): boolean => {
 };
 
 const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
-	const { isDark } = useTheme();
+	const computedColorScheme = useComputedColorScheme("light");
+	const isDark = computedColorScheme === "dark";
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
-	const [rteContent, setRteContentState] = useLocalStorage<string>(
-		"rteContent",
-		"",
-	);
+	const [rteContent, setRteContentState] = useLocalStorage({
+		key: "rteContent",
+		defaultValue: "",
+	});
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
 
 	const showWelcome = isEmptyContent(rteContent);
@@ -117,16 +126,11 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 		[rteContent, quillInstanceRef],
 	);
 
-	const keyActions = useMemo(
-		() => ({
-			m: () => handleSave("markdown"),
-			t: () => handleSave("text"),
-			h: () => handleSave("html"),
-		}),
-		[handleSave],
-	);
-
-	useKeyboardShortcuts(keyActions);
+	useHotkeys([
+		["mod+m", () => handleSave("markdown")],
+		["mod+t", () => handleSave("text")],
+		["mod+h", () => handleSave("html")],
+	]);
 
 	const handleAiTools = (): void => {
 		setIsAiDialogOpen(true);
@@ -150,10 +154,6 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 		}
 		setIsAiDialogOpen(false);
 	};
-
-	const filteredTasks: Task[] = useMemo(() => {
-		return applyFilter(taskData.tasks, activeFilter);
-	}, [activeFilter, taskData]);
 
 	const quickActions = [
 		{
@@ -184,145 +184,143 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	];
 
 	return (
-		<>
-			<AppHeader
-				viewMode={viewMode}
-				setViewMode={setViewMode}
-				onAddTimer={onAddTimer}
-				onOpenRepo={handleOpenRepo}
-				onSave={handleSave}
-				onAiTools={handleAiTools}
-			/>
-			<AiToolsDialog
-				isOpen={isAiDialogOpen}
-				onClose={() => setIsAiDialogOpen(false)}
-				initialContent={
-					quillInstanceRef.current?.getSelection()?.length
-						? quillInstanceRef.current.getText(
-								quillInstanceRef.current.getSelection()?.index,
-								quillInstanceRef.current.getSelection()?.length,
-							)
-						: quillInstanceRef.current?.getText() || ""
-				}
-				onInsert={handleAiInsert}
-			/>
-			<input
-				type="file"
-				ref={fileInputRef}
-				className="file-input"
-				accept=".txt"
-				onChange={handleFileChange}
-			/>
-			<Sidebar
-				isCollapsed={sidebarCollapsed}
-				onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-				taskData={taskData}
-				activeFilter={activeFilter}
-				onFilterChange={setActiveFilter}
-			/>
-			<div
-				className={`app-layout ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
-			>
+		<AppShell
+			header={{ height: LAYOUT.HEADER_HEIGHT }}
+			aside={{
+				width: sidebarCollapsed
+					? LAYOUT.SIDEBAR_COLLAPSED_WIDTH
+					: LAYOUT.SIDEBAR_WIDTH,
+				collapsed: { mobile: true, desktop: false },
+				breakpoint: "sm",
+			}}
+			padding="md"
+		>
+			<AppShell.Header>
+				<AppHeader
+					viewMode={viewMode}
+					setViewMode={setViewMode}
+					onAddTimer={onAddTimer}
+					onOpenRepo={handleOpenRepo}
+					onSave={handleSave}
+					onAiTools={handleAiTools}
+				/>
+			</AppShell.Header>
+
+			<AppShell.Aside>
+				<Sidebar
+					isCollapsed={sidebarCollapsed}
+					onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+					taskData={taskData}
+					activeFilter={activeFilter}
+					onFilterChange={setActiveFilter}
+				/>
+			</AppShell.Aside>
+
+			<AppShell.Main>
+				<AiToolsDialog
+					isOpen={isAiDialogOpen}
+					onClose={() => setIsAiDialogOpen(false)}
+					initialContent={
+						quillInstanceRef.current?.getSelection()?.length
+							? quillInstanceRef.current.getText(
+									quillInstanceRef.current.getSelection()?.index,
+									quillInstanceRef.current.getSelection()?.length,
+								)
+							: quillInstanceRef.current?.getText() || ""
+					}
+					onInsert={handleAiInsert}
+				/>
+				<input
+					type="file"
+					ref={fileInputRef}
+					className="file-input"
+					accept=".txt"
+					onChange={handleFileChange}
+				/>
 				{viewMode === "excalidraw" && (
-					<Suspense fallback={<div className="p-4">Loading Excalidraw...</div>}>
+					<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
 						<ExcalidrawPage />
 					</Suspense>
 				)}
 				{viewMode === "text" && (
-					<div className="rte-editor-container">
+					<Box className="rte-editor-container">
 						{showWelcome ? (
-							<div className="welcome-screen flex flex-col items-center justify-center min-h-[calc(100vh-76px)] p-8">
-								<div className="text-center mb-12">
-									<div className="flex justify-center mb-4">
-										<img
-											src="/todotxt2.svg"
-											alt="Todo.txt Logo"
-											className="h-20 w-20"
-										/>
-									</div>
-									<h1 className="text-5xl font-bold mb-3 gradient-text">
+							<Stack align="center" className="welcome-screen" gap="xl" py="xl">
+								<Stack align="center" gap="md">
+									<Image
+										src="/todotxt2.svg"
+										alt="Todo.txt Logo"
+										w={80}
+										h={80}
+									/>
+									<Title order={1} className="gradient-text" ta="center">
 										Welcome to Todo.txt
-									</h1>
-									<p className="text-lg opacity-70 max-w-md mx-auto">
+									</Title>
+									<Text size="lg" c="dimmed" maw={400} ta="center">
 										A simple, plain text task management system based on the{" "}
-										<a
+										<Anchor
 											href="https://github.com/todotxt/todo.txt"
 											target="_blank"
-											rel="noopener noreferrer"
-											className="link link-primary"
+											rel="noreferrer"
 										>
 											todo.txt
-										</a>{" "}
+										</Anchor>{" "}
 										philosophy
-									</p>
-								</div>
+									</Text>
+								</Stack>
 
-								<div className="quick-actions-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl w-full mb-12">
-									{quickActions.map((action) => (
-										<button
-											key={action.id}
-											type="button"
-											onClick={action.action}
-											className="card bg-base-200 hover:bg-base-300 border border-base-300 hover:border-primary hover:shadow-2xl transition-all duration-300 text-left p-6 group cursor-pointer"
-										>
-											<div className="flex items-start gap-4">
-												<div
-													className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300"
-													style={{
-														backgroundColor: `${action.color}25`,
-													}}
-												>
-													<action.icon
-														size={28}
-														style={{ color: action.color }}
-														className="group-hover:rotate-6 transition-transform duration-300"
-													/>
-												</div>
-												<div className="flex-1">
-													<div className="font-bold text-lg mb-1 flex items-center gap-2 group-hover:text-primary transition-colors">
-														{action.title}
-														<ArrowRight
-															size={16}
-															className="opacity-0 group-hover:opacity-60 transform group-hover:translate-x-1 transition-all duration-300"
-														/>
-													</div>
-													<div className="text-sm opacity-60 group-hover:opacity-80">
-														{action.description}
-													</div>
-												</div>
-											</div>
-										</button>
-									))}
-								</div>
+								<SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} maw={900} w="100%">
+									{quickActions.map((action) => {
+										const Icon = action.icon;
+										return (
+											<Card
+												key={action.id}
+												withBorder
+												padding="lg"
+												radius="md"
+												style={{ cursor: "pointer" }}
+												onClick={action.action}
+											>
+												<Group>
+													<ThemeIcon size="xl" radius="md" variant="light">
+														<Icon size={24} />
+													</ThemeIcon>
+													<Box style={{ flex: 1 }}>
+														<Text fw={600} size="lg">
+															{action.title}
+														</Text>
+														<Text size="sm" c="dimmed">
+															{action.description}
+														</Text>
+													</Box>
+													<ActionIcon variant="subtle" size="sm">
+														<ArrowRight size={16} />
+													</ActionIcon>
+												</Group>
+											</Card>
+										);
+									})}
+								</SimpleGrid>
 
-								<div className="preview-card card bg-base-200 border border-base-300 max-w-3xl w-full p-6 shadow-lg">
-									<div className="preview-header flex justify-between items-center mb-4">
-										<span className="text-xs uppercase tracking-wider opacity-60 font-semibold">
-											BASIC INFO
-										</span>
-									</div>
-
-									<div className="bg-base-300 rounded-lg p-4 font-mono text-sm border-base-300">
+								<Paper withBorder p="lg" radius="md" maw={600} w="100%">
+									<Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="sm">
+										Basic Info
+									</Text>
+									<Paper p="md" radius="sm">
 										<DescriptionSvg />
-									</div>
-								</div>
-							</div>
-						) : activeFilter ? (
-							<FilteredView
-								activeFilter={activeFilter}
-								filteredTasks={filteredTasks}
-								onClearFilter={() => setActiveFilter(null)}
-							/>
+									</Paper>
+								</Paper>
+							</Stack>
 						) : (
-							<div
+							<Box
 								ref={quillContainerRef}
 								className={`quill-container quill-theme-${isDark ? "dark" : "light"}`}
 							/>
 						)}
-					</div>
+					</Box>
 				)}
-			</div>
-		</>
+			</AppShell.Main>
+		</AppShell>
 	);
 };
 

@@ -1,7 +1,8 @@
-import { useTheme } from "../contexts/ThemeContext";
+import { useComputedColorScheme } from "@mantine/core";
 
 export function DescriptionSvg() {
-	const { isDark } = useTheme();
+	const computedColorScheme = useComputedColorScheme("light");
+	const isDark = computedColorScheme === "dark";
 	const textColor = isDark ? "#e8e8e8" : "#000000";
 
 	return (

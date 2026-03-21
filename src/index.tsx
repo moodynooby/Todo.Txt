@@ -1,33 +1,27 @@
+import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
+import "@mantine/code-highlight/styles.css";
+import "@mantine/tiptap/styles.css";
+import "quill/dist/quill.snow.css";
+import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
+import { useLocalStorage } from "@mantine/hooks";
 import { useState } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import Timer from "./components/Timer/Timer";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import { useLocalStorage } from "./hooks/useLocalStorage";
+import { MantineProvider } from "./providers/MantineProvider";
 
 const root = ReactDOM.createRoot(
 	document.getElementById("root") as HTMLElement,
 );
 
 root.render(<RootComponent />);
-// TODO add functionily of sw
-// if ("serviceWorker" in navigator) {
-// 	window.addEventListener("load", () => {
-// 		navigator.serviceWorker
-// 			.register("/service-worker.js")
-// 			.then((registration) => {
-// 				registration.update().catch((error) => {
-// 					console.error("ServiceWorker update check failed:", error);
-// 				});
-// 			})
-// 			.catch((error) => {
-// 				console.error("ServiceWorker registration failed: ", error);
-// 			});
-// 	});
-// }
 
 function RootComponent() {
-	const [viewMode, setViewMode] = useLocalStorage<string>("viewMode", "text");
+	const [viewMode, setViewMode] = useLocalStorage({
+		key: "viewMode",
+		defaultValue: "text",
+	});
 	const [timers, setTimers] = useState<Array<{ id: number }>>([]);
 
 	const addTimer = (): void => {
@@ -39,7 +33,7 @@ function RootComponent() {
 	};
 
 	return (
-		<ThemeProvider>
+		<MantineProvider>
 			<App
 				viewMode={viewMode}
 				setViewMode={setViewMode}
@@ -48,6 +42,6 @@ function RootComponent() {
 			{timers.map((timer) => (
 				<Timer key={timer.id} id={timer.id} onRemove={removeTimer} />
 			))}
-		</ThemeProvider>
+		</MantineProvider>
 	);
 }

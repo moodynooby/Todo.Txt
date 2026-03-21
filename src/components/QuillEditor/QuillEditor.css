@@ -1,70 +1,91 @@
-/* Quill Editor Theme - Using daisyUI colors */
+/* Quill Editor Theme - Auto-switching with Mantine color scheme */
+
 .ql-toolbar.ql-snow {
-	background: var(--color-base-200) !important;
-	border: 1px solid var(--color-border-dark) !important;
-	border-bottom: none !important;
-	border-radius: var(--radius-box) var(--radius-box) 0 0 !important;
-	padding: 8px !important;
-	box-shadow: var(--shadow-sm);
+	background: var(--mantine-color-gray-0);
+	border: 1px solid var(--mantine-color-gray-3);
+	border-bottom: none;
+	border-radius: var(--mantine-radius-md) var(--mantine-radius-md) 0 0;
+	padding: 8px;
+}
+
+[data-mantine-color-scheme="dark"] .ql-toolbar.ql-snow {
+	background: var(--mantine-color-dark-8);
+	border-color: var(--mantine-color-dark-5);
 }
 
 .ql-snow .ql-stroke,
 .ql-snow .ql-fill,
 .ql-snow .ql-picker {
-	stroke: var(--color-base-content) !important;
-	fill: var(--color-base-content) !important;
-	color: var(--color-base-content) !important;
+	stroke: var(--mantine-color-gray-7);
+	fill: var(--mantine-color-gray-7);
+	color: var(--mantine-color-gray-7);
+}
+
+[data-mantine-color-scheme="dark"] .ql-snow .ql-stroke,
+[data-mantine-color-scheme="dark"] .ql-snow .ql-fill,
+[data-mantine-color-scheme="dark"] .ql-snow .ql-picker {
+	stroke: var(--mantine-color-gray-3);
+	fill: var(--mantine-color-gray-3);
+	color: var(--mantine-color-gray-3);
 }
 
 .ql-snow .ql-stroke {
-	stroke-width: 1.5px !important;
-	stroke-linecap: round !important;
-	stroke-linejoin: round !important;
-	fill: none !important;
+	stroke-width: 1.5px;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	fill: none;
 }
 
 .ql-snow.ql-toolbar button:hover .ql-stroke,
 .ql-snow.ql-toolbar button:hover .ql-fill,
-.ql-snow.ql-toolbar button.ql-active .ql-stroke {
-	stroke: var(--color-primary) !important;
-	fill: var(--color-primary) !important;
+.ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-fill {
+	stroke: var(--mantine-color-violet-6);
+	fill: var(--mantine-color-violet-6);
 }
 
 .ql-container.ql-snow {
-	border: 1px solid var(--color-border-dark) !important;
-	border-radius: 0 0 var(--radius-box) var(--radius-box) !important;
-	font-size: 1.1rem !important;
-	box-shadow: var(--shadow-md);
-	background-color: var(--color-base-100);
+	border: 1px solid var(--mantine-color-gray-3);
+	border-radius: 0 0 var(--mantine-radius-md) var(--mantine-radius-md);
+	font-size: 1.1rem;
+	background-color: var(--mantine-color-white);
+}
+
+[data-mantine-color-scheme="dark"] .ql-container.ql-snow {
+	border-color: var(--mantine-color-dark-5);
+	background-color: var(--mantine-color-dark-7);
 }
 
 .ql-snow .ql-picker-options {
-	background-color: var(--color-base-200) !important;
-	border: 1px solid var(--color-border-dark) !important;
-	border-radius: var(--radius-box) !important;
-	box-shadow: var(--shadow-lg);
+	background-color: var(--mantine-color-gray-0);
+	border: 1px solid var(--mantine-color-gray-3);
+	border-radius: var(--mantine-radius-md);
+}
+
+[data-mantine-color-scheme="dark"] .ql-snow .ql-picker-options {
+	background-color: var(--mantine-color-dark-8);
+	border-color: var(--mantine-color-dark-5);
 }
 
 .ql-snow .ql-picker-item:hover {
-	color: var(--color-primary) !important;
+	color: var(--mantine-color-violet-6);
 }
 
 .ql-editor {
-	background: var(--color-base-100) !important;
-	color: var(--color-base-content) !important;
+	background: var(--mantine-color-white);
+	color: var(--mantine-color-black);
 	min-height: 70vh;
+}
+
+[data-mantine-color-scheme="dark"] .ql-editor {
+	background: var(--mantine-color-dark-7);
+	color: var(--mantine-color-white);
 }
 
 .ql-editor.ql-blank::before {
 	opacity: 0.5;
-}
-
-.quill-theme-light .ql-editor.ql-blank::before {
-	color: var(--color-placeholder-light);
-}
-
-.quill-theme-dark .ql-editor.ql-blank::before {
-	color: var(--color-placeholder-dark);
+	color: var(--mantine-color-dimmed);
+	font-style: italic;
 }
 
 .rte-editor-container {

@@ -1,12 +1,4 @@
-@import "./components/Timer/Timer.css";
 @import "./components/QuillEditor/QuillEditor.css";
-
-@import "tailwindcss";
-@plugin "daisyui" {
-	themes:
-		fantasy --default,
-		sunset --prefersdark;
-}
 
 @font-face {
 	font-family: WinkySans;
@@ -18,55 +10,17 @@
 	src: url(/ZillaSlab-Regular.ttf);
 }
 
-/* ==========================================
-   GLOBAL STYLES
-   ========================================== */
 html {
 	margin: 0;
-	font-family:
-		system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
-	font-family:
-		WinkySans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-		sans-serif;
-}
-
-body::before {
-	content: "";
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-image: radial-gradient(rgba(0, 0, 0, 0.15) 1px, transparent 1px);
-	background-size: 20px 20px;
-	pointer-events: none;
-	z-index: 0;
-}
-
-[data-theme="dark"] body::before {
-	background-image: radial-gradient(
-		rgba(255, 255, 255, 0.06) 1px,
-		transparent 1px
-	);
+	margin: 0;
+	min-height: 100vh;
 }
 
 ul {
 	list-style-type: circle;
-}
-
-.app-layout {
-	margin-left: var(--sidebar-width, 280px);
-	margin-top: 48px;
-	margin-bottom: 28px;
-	transition: margin-left 0.2s ease;
-	min-height: calc(100vh - 76px);
-}
-
-.app-layout.sidebar-collapsed {
-	margin-left: 60px;
 }
 
 .file-input {
@@ -77,55 +31,24 @@ ul {
 	min-height: 70vh;
 }
 
-.ExcalidrawPage {
-	height: calc(100vh - 80px);
-	width: 90vw;
-	margin-top: 70px;
-}
-
-/* ==========================================
-   WELCOME SCREEN STYLES
-   ========================================== */
-.welcome-screen {
-	color: var(--color-base-content);
-}
-
-.welcome-screen .link {
+.welcome-screen a {
+	color: var(--mantine-color-violet-6);
 	text-decoration: underline;
 	text-decoration-thickness: 2px;
 	text-underline-offset: 2px;
 }
 
-.welcome-screen .link:hover {
+.welcome-screen a:hover {
 	opacity: 0.8;
 }
 
 .gradient-text {
 	background: linear-gradient(
 		135deg,
-		var(--color-secondary) 0%,
-		var(--color-accent) 100%
+		var(--mantine-color-violet-6) 0%,
+		var(--mantine-color-pink-6) 100%
 	);
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 	background-clip: text;
-}
-
-.code-preview-text {
-	color: var(--color-primary);
-}
-
-.code-preview-text .text-primary {
-	color: var(--color-primary);
-	font-weight: 600;
-}
-
-.code-preview-text .text-secondary {
-	color: var(--color-success);
-	font-weight: 500;
-}
-
-.code-preview-text .text-accent {
-	color: var(--color-accent);
-	font-weight: 500;
 }

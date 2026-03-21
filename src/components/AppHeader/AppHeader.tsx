@@ -1,15 +1,15 @@
 import {
-	DraftingCompass,
-	FolderOpen,
-	Plus,
-	Sparkles,
-	SquarePen,
-	Timer as TimerIcon,
-} from "lucide-react";
-import FullscreenToggle, { toggleFullscreen } from "../FullscreenToggle";
-import Help from "../Help/Help";
+	ActionIcon,
+	Divider,
+	Group,
+	Paper,
+	Title,
+	Tooltip,
+} from "@mantine/core";
+import { FolderOpen, Plus, Sparkles, Timer as TimerIcon } from "lucide-react";
+import HeaderActions from "../Header/HeaderActions";
+import ViewSwitcher from "../Header/ViewSwitcher";
 import SaveMenu from "../SaveMenu/SaveMenu";
-import ThemeToggle from "../ThemeToggle";
 
 interface AppHeaderProps {
 	viewMode: string;
@@ -29,104 +29,52 @@ const AppHeader = ({
 	onAiTools,
 }: AppHeaderProps) => {
 	return (
-		<header className="navbar bg-base-200 border-b border-base-300 fixed top-0 z-50 h-12 px-4">
-			<div className="flex-1">
-				<h1 className="text-xl font-bold text-primary">T0do.Txt</h1>
-			</div>
+		<Paper
+			component="header"
+			shadow="sm"
+			radius={0}
+			style={{
+				height: "100%",
+			}}
+		>
+			<Group h="100%" justify="space-between" px="md">
+				<Group gap="md">
+					<Title order={4} c="violet.6">
+						T0do.Txt
+					</Title>
+					<ViewSwitcher value={viewMode} onChange={setViewMode} />
+				</Group>
 
-			<div className="flex-none flex items-center gap-2">
-				{/* Open & Save */}
-				<div className="flex items-center gap-1">
-					<button
-						type="button"
-						onClick={onOpenRepo}
-						className="btn btn-ghost btn-sm"
-						title="Open Repository"
-					>
-						<FolderOpen size={18} />
-						<span className="hidden sm:inline">Open</span>
-					</button>
+				<Group gap="sm">
+					<Tooltip label="Open file">
+						<ActionIcon variant="subtle" size="lg" onClick={onOpenRepo}>
+							<FolderOpen size={18} />
+						</ActionIcon>
+					</Tooltip>
 					<SaveMenu onSave={onSave} />
-				</div>
 
-				<div className="divider divider-horizontal my-0 mx-1" />
+					<Divider orientation="vertical" />
 
-				{/* View Toggle */}
-				<div className="join">
-					<label
-						className={`join-item btn btn-ghost btn-sm ${
-							viewMode === "text" ? "btn-active" : "opacity-70"
-						}`}
-					>
-						<input
-							type="radio"
-							checked={viewMode === "text"}
-							onChange={() => setViewMode("text")}
-							aria-label="Text View"
-							name="view-options"
-							className="sr-only"
-						/>
-						<SquarePen size={18} />
-						<span className="hidden sm:inline ml-1 text-xs">Text</span>
-					</label>
-					<label
-						className={`join-item btn btn-ghost btn-sm ${
-							viewMode === "excalidraw" ? "btn-active" : "opacity-70"
-						}`}
-					>
-						<input
-							type="radio"
-							checked={viewMode === "excalidraw"}
-							onChange={() => setViewMode("excalidraw")}
-							aria-label="Excalidraw View"
-							name="view-options"
-							className="sr-only"
-						/>
-						<DraftingCompass size={18} />
-						<span className="hidden sm:inline ml-1 text-xs">Draw</span>
-					</label>
-				</div>
+					<Tooltip label="Add timer">
+						<ActionIcon variant="subtle" size="lg" onClick={onAddTimer}>
+							<Group gap={2}>
+								<TimerIcon size={18} />
+								<Plus size={12} />
+							</Group>
+						</ActionIcon>
+					</Tooltip>
+					<Tooltip label="AI Tools">
+						<ActionIcon variant="subtle" size="lg" onClick={onAiTools}>
+							<Sparkles size={18} />
+						</ActionIcon>
+					</Tooltip>
 
-				<div className="divider divider-horizontal my-0 mx-1" />
+					<Divider orientation="vertical" />
 
-				{/* Timer & AI */}
-				<div className="flex items-center gap-1">
-					<button
-						type="button"
-						onClick={onAddTimer}
-						className="btn btn-ghost btn-sm"
-						title="Add Timer"
-					>
-						<TimerIcon size={18} />
-						<Plus size={12} className="-ml-1 -mt-1" />
-					</button>
-					<button
-						type="button"
-						onClick={onAiTools}
-						className="btn btn-ghost btn-sm"
-						title="AI Tools"
-					>
-						<Sparkles size={18} />
-					</button>
-				</div>
-
-				<div className="divider divider-horizontal my-0 mx-1" />
-
-				{/* Theme, Fullscreen, Help */}
-				<div className="flex items-center gap-1">
-					<ThemeToggle />
-					<button
-						type="button"
-						onClick={() => toggleFullscreen()}
-						className="btn btn-ghost btn-sm"
-						title="Fullscreen"
-					>
-						<FullscreenToggle />
-					</button>
-					<Help />
-				</div>
-			</div>
-		</header>
+					<HeaderActions />
+				</Group>
+			</Group>
+		</Paper>
 	);
 };
 
