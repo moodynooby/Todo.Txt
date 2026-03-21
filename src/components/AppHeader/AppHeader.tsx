@@ -7,8 +7,6 @@ interface AppHeaderProps {
 	viewMode: string;
 	setViewMode: (mode: string) => void;
 	onAddTimer: () => void;
-	onOpenRepo: () => void;
-	onSave: (format: string) => void;
 	onAiTools: () => void;
 }
 

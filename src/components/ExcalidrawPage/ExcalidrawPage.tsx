@@ -3,8 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
 import { useComputedColorScheme } from "@mantine/core";
-import saveService from "../../utils/saveService";
-import { toggleFullscreen } from "../Header/HeaderActions";
+import {
+	createExcalidrawSaver,
+	loadExcalidrawData,
+} from "../../utils/excalidrawStorageService";
+import { toggleFullscreen } from "../../utils/fullscreen";
 
 const FullscreenIcon = () => {
 	return (
@@ -38,7 +41,7 @@ const ExcalidrawPage = () => {
 		setExcalidrawTheme(isDark ? "dark" : "light");
 	}, [isDark]);
 
-	const onSave = useMemo(() => saveService.createExcalidrawSaver(), []);
+	const onSave = useMemo(() => createExcalidrawSaver(), []);
 
 	useEffect(() => {
 		return () => {
@@ -47,7 +50,7 @@ const ExcalidrawPage = () => {
 	}, [onSave]);
 
 	const initialData = useMemo(() => {
-		return saveService.loadExcalidrawData();
+		return loadExcalidrawData();
 	}, []);
 
 	return (

@@ -1,15 +1,8 @@
-import type { Task } from "./todoParser";
-
-export type { Task };
-
-export interface Filter {
-	type: string;
-	value: string;
-}
+import type { Filter, FilterType, Task } from "../types/todo";
 
 export const toggleFilter = (
 	activeFilter: Filter | null,
-	type: string,
+	type: FilterType,
 	value: string,
 ): Filter | null =>
 	activeFilter?.type === type && activeFilter?.value === value
@@ -21,7 +14,7 @@ export const applyFilter = (
 	activeFilter: Filter | null,
 ): Task[] => {
 	if (!activeFilter) return [];
-	const filters: Record<string, (t: Task) => boolean> = {
+	const filters: Record<FilterType, (t: Task) => boolean> = {
 		priority: (t) => t.priority === activeFilter.value,
 		project: (t) => t.projects?.includes(activeFilter.value),
 		context: (t) => t.contexts?.includes(activeFilter.value),

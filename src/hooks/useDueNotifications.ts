@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { useEffect } from "react";
-import type { Task } from "../utils/todoParser";
+import type { Task } from "../types/todo";
 
 const STORAGE_KEY_PREFIX = "todo-notifications-";
 

@@ -1,15 +1,14 @@
 import type { Editor } from "@tiptap/core";
-import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import Underline from "@tiptap/extension-underline";
 import { Markdown } from "@tiptap/markdown";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
+import type { Filter } from "../types/todo";
 
 interface UseTipTapProps {
 	viewMode: string;
-	activeFilter: unknown | null;
+	activeFilter: Filter | null;
 	initialContent: string;
 	onContentChange: (content: string) => void;
 }
@@ -31,13 +30,6 @@ export const useTipTap = ({
 			StarterKit.configure({
 				heading: {
 					levels: [1, 2, 3, 4, 5, 6],
-				},
-			}),
-			Underline,
-			Link.configure({
-				openOnClick: false,
-				HTMLAttributes: {
-					class: "editor-link",
 				},
 			}),
 			Placeholder.configure({
@@ -73,20 +65,4 @@ export const useTipTap = ({
 	}, [editor, shouldShowEditor, initialContent]);
 
 	return { editor };
-};
-
-interface TipTapEditorProps {
-	editor: Editor | null;
-	isDark: boolean;
-}
-
-export const TipTapEditor = ({ editor, isDark }: TipTapEditorProps) => {
-	if (!editor) return null;
-
-	return (
-		<EditorContent
-			editor={editor}
-			className={`tiptap-container tiptap-theme-${isDark ? "dark" : "light"}`}
-		/>
-	);
 };

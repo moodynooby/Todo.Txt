@@ -1,6 +1,5 @@
-import { Button, Divider, Kbd, Menu, Tooltip } from "@mantine/core";
+import { Divider, Group, Kbd, Menu, Text, Tooltip } from "@mantine/core";
 import { RichTextEditor } from "@mantine/tiptap";
-import type { Editor } from "@tiptap/react";
 import {
 	ChevronDown,
 	Code,
@@ -12,8 +11,7 @@ import {
 } from "lucide-react";
 
 interface EditorToolbarProps {
-	editor: Editor | null;
-	onSave: (format: string) => void;
+	onSave: (format: "markdown" | "text" | "html") => void;
 	onOpen: () => void;
 	onAiTools: () => void;
 }
@@ -85,16 +83,12 @@ export const EditorToolbar = ({
 
 				<Menu shadow="md" width={180} position="bottom-end">
 					<Menu.Target>
-						<RichTextEditor.Control active={false} aria-label="Save">
-							<Button
-								variant="subtle"
-								size="compact-xs"
-								px="xs"
-								rightSection={<ChevronDown size={10} />}
-								leftSection={<Save size={14} />}
-							>
-								Save
-							</Button>
+						<RichTextEditor.Control active={false} aria-label="Save as">
+							<Group gap={6} wrap="nowrap">
+								<Save size={14} />
+								<Text size="xs">Save</Text>
+								<ChevronDown size={10} />
+							</Group>
 						</RichTextEditor.Control>
 					</Menu.Target>
 

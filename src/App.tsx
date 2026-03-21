@@ -1,23 +1,6 @@
 import "./App.css";
-import {
-	ActionIcon,
-	Anchor,
-	AppShell,
-	Box,
-	Card,
-	Group,
-	Image,
-	Paper,
-	SimpleGrid,
-	Stack,
-	Text,
-	ThemeIcon,
-	Title,
-	useComputedColorScheme,
-} from "@mantine/core";
+import { AppShell, Box } from "@mantine/core";
 import { useHotkeys, useLocalStorage } from "@mantine/hooks";
-import { RichTextEditor } from "@mantine/tiptap";
-import { ArrowRight, BookOpen, FilePlus, Paperclip } from "lucide-react";
 import {
 	lazy,
 	Suspense,
@@ -28,16 +11,16 @@ import {
 } from "react";
 import AiToolsDialog from "./components/AiTools/AiToolsDialog";
 import AppHeader from "./components/AppHeader/AppHeader";
-import { DescriptionSvg } from "./components/DescriptionSvg";
-import { EditorToolbar } from "./components/EditorToolbar/EditorToolbar";
 import Sidebar from "./components/Sidebar/Sidebar";
+import TextModeContent from "./components/TextModeContent/TextModeContent";
+import { useDocumentSave } from "./hooks/useDocumentSave";
 import { useDueNotifications } from "./hooks/useDueNotifications";
 import { useFileHandler } from "./hooks/useFileHandler";
+import { useQuickActions } from "./hooks/useQuickActions";
 import { useTipTap } from "./hooks/useTipTap";
 import { LAYOUT } from "./providers/layout";
-import type { Filter } from "./utils/filterUtils";
-import saveService from "./utils/saveService";
-import { type ParsedTodoContent, parseTodoContent } from "./utils/todoParser";
+import type { Filter, ParsedTodoContent } from "./types/todo";
+import { parseTodoContent } from "./utils/todoParser";
 
 const DEBOUNCE_DELAY = 1000;
 
@@ -56,8 +39,6 @@ const isEmptyContent = (content: string): boolean => {
 };
 
 const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
-	const computedColorScheme = useComputedColorScheme("light");
-	const isDark = computedColorScheme === "dark";
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
@@ -105,22 +86,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 
 	useDueNotifications(taskData.tasks);
 
-	const handleSave = useCallback(
-		(type: string) => {
-			const saveActions: Record<string, () => void> = {
-				markdown: () => saveService.saveAsMarkdown(editor?.getMarkdown() || ""),
-				text: () => saveService.saveAsText(editor?.getText() || ""),
-				html: () => saveService.saveAsHtml(rteContent),
-			};
-
-			if (saveActions[type]) {
-				saveActions[type]();
-			} else {
-				console.warn("Unknown save type:", type);
-			}
-		},
-		[rteContent, editor],
-	);
+	const handleSave = useDocumentSave(editor, rteContent);
 
 	useHotkeys([
 		["mod+o", handleOpenRepo],
@@ -146,33 +112,10 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 		setIsAiDialogOpen(false);
 	};
 
-	const quickActions = [
-		{
-			id: "new-file",
-			icon: FilePlus,
-			title: "New File",
-			description: "Create a new todo.txt file",
-			color: "var(--color-secondary)",
-			action: handleNewFile,
-		},
-		{
-			id: "open-repo",
-			icon: Paperclip,
-			title: "Open File",
-			description: "Open an existing todo.txt file",
-			color: "var(--color-success)",
-			action: handleOpenRepo,
-		},
-		{
-			id: "help",
-			icon: BookOpen,
-			title: "Documentation",
-			description: "Learn about todo.txt format",
-			color: "var(--color-accent)",
-			action: () =>
-				window.open("https://github.com/todotxt/todo.txt", "_blank"),
-		},
-	];
+	const quickActions = useQuickActions({
+		onNewFile: handleNewFile,
+		onOpenFile: handleOpenRepo,
+	});
 
 	return (
 		<AppShell
@@ -191,8 +134,6 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 					viewMode={viewMode}
 					setViewMode={setViewMode}
 					onAddTimer={onAddTimer}
-					onOpenRepo={handleOpenRepo}
-					onSave={handleSave}
 					onAiTools={handleAiTools}
 				/>
 			</AppShell.Header>
@@ -235,89 +176,14 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 					</Suspense>
 				)}
 				{viewMode === "text" && (
-					<Box className="rte-editor-container">
-						{showWelcome ? (
-							<Stack align="center" className="welcome-screen" gap="xl" py="xl">
-								<Stack align="center" gap="md">
-									<Image
-										src="/todotxt2.svg"
-										alt="Todo.txt Logo"
-										w={80}
-										h={80}
-									/>
-									<Title order={1} className="gradient-text" ta="center">
-										Welcome to Todo.txt
-									</Title>
-									<Text size="lg" c="dimmed" maw={400} ta="center">
-										A simple, plain text task management system based on the{" "}
-										<Anchor
-											href="https://github.com/todotxt/todo.txt"
-											target="_blank"
-											rel="noreferrer"
-										>
-											todo.txt
-										</Anchor>{" "}
-										philosophy
-									</Text>
-								</Stack>
-
-								<SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} maw={900} w="100%">
-									{quickActions.map((action) => {
-										const Icon = action.icon;
-										return (
-											<Card
-												key={action.id}
-												withBorder
-												padding="lg"
-												radius="md"
-												style={{ cursor: "pointer" }}
-												onClick={action.action}
-											>
-												<Group>
-													<ThemeIcon size="xl" radius="md" variant="light">
-														<Icon size={24} />
-													</ThemeIcon>
-													<Box style={{ flex: 1 }}>
-														<Text fw={600} size="lg">
-															{action.title}
-														</Text>
-														<Text size="sm" c="dimmed">
-															{action.description}
-														</Text>
-													</Box>
-													<ActionIcon variant="subtle" size="sm">
-														<ArrowRight size={16} />
-													</ActionIcon>
-												</Group>
-											</Card>
-										);
-									})}
-								</SimpleGrid>
-
-								<Paper withBorder p="lg" radius="md" maw={600} w="100%">
-									<Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="sm">
-										Basic Info
-									</Text>
-									<Paper p="md" radius="sm">
-										<DescriptionSvg />
-									</Paper>
-								</Paper>
-							</Stack>
-						) : (
-							<RichTextEditor
-								editor={editor}
-								className={`tiptap-container tiptap-theme-${isDark ? "dark" : "light"}`}
-							>
-								<EditorToolbar
-									editor={editor}
-									onSave={handleSave}
-									onOpen={handleOpenRepo}
-									onAiTools={handleAiTools}
-								/>
-								<RichTextEditor.Content />
-							</RichTextEditor>
-						)}
-					</Box>
+					<TextModeContent
+						editor={editor}
+						showWelcome={showWelcome}
+						quickActions={quickActions}
+						onSave={handleSave}
+						onOpen={handleOpenRepo}
+						onAiTools={handleAiTools}
+					/>
 				)}
 			</AppShell.Main>
 		</AppShell>

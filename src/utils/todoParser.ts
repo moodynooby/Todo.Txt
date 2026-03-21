@@ -1,21 +1,5 @@
 import dayjs from "dayjs";
-
-export interface Task {
-	id: number;
-	text: string;
-	raw: string;
-	priority?: string;
-	projects?: string[];
-	contexts?: string[];
-	due?: string;
-}
-
-export interface ParsedTodoContent {
-	tasks: Task[];
-	priorities: Record<string, Task[]>;
-	projects: Record<string, Task[]>;
-	contexts: Record<string, Task[]>;
-}
+import type { ParsedTodoContent, Task } from "../types/todo";
 
 const stripHtml = (html: string, replacement = "\n"): string => {
 	if (!html) return "";

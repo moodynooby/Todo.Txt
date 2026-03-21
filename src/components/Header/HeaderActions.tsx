@@ -7,17 +7,8 @@ import {
 } from "@mantine/core";
 import { Maximize, Minimize, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toggleFullscreen } from "../../utils/fullscreen";
 import Help from "../Help/Help";
-
-export const toggleFullscreen = (): void => {
-	if (!document.fullscreenElement) {
-		document.documentElement.requestFullscreen().catch((err) => {
-			console.error(`Error attempting to enable fullscreen: ${err.message}`);
-		});
-	} else if (document.exitFullscreen) {
-		document.exitFullscreen();
-	}
-};
 
 const HeaderActions = () => {
 	const { setColorScheme } = useMantineColorScheme();
