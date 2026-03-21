@@ -1,5 +1,4 @@
 import { saveAs } from "file-saver";
-import TurndownService from "turndown";
 
 export interface SaveFormatConfig {
 	filename: string;
@@ -50,28 +49,6 @@ export const EXCALIDRAW_STORAGE: ExcalidrawStorageConfig = {
 	delay: 1000,
 };
 
-// Initialize Turndown service for HTML to Markdown conversion
-const turndownService = new TurndownService({
-	headingStyle: "atx",
-	bulletListMarker: "-",
-	codeBlockStyle: "fenced",
-	fence: "```",
-	emDelimiter: "*",
-	strongDelimiter: "**",
-	linkStyle: "inlined",
-});
-
-// Add custom rules for Turndown
-turndownService.addRule("strikethrough", {
-	filter: ["s", "del"],
-	replacement: (content) => `~~${content}~~`,
-});
-
-turndownService.addRule("underline", {
-	filter: ["u"],
-	replacement: (content) => content,
-});
-
 /**
  * Downloads content as a file with proper MIME type
  */
@@ -83,15 +60,6 @@ export const downloadFile = (
 	const blob = new Blob([content], { type: mimeType });
 	saveAs(blob, filename);
 };
-
-/**
- * Converts HTML content to Markdown
- */
-export const htmlToMarkdown = (htmlContent: string): string => {
-	return turndownService.turndown(htmlContent);
-};
-
-SAVE_FORMATS.markdown.transform = htmlToMarkdown;
 
 /**
  * Generic save function for different formats
@@ -237,7 +205,6 @@ const saveService = {
 	clearExcalidrawData,
 	SAVE_FORMATS,
 	EXCALIDRAW_STORAGE,
-	htmlToMarkdown,
 };
 
 export default saveService;

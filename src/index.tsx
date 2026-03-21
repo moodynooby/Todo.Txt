@@ -2,8 +2,6 @@ import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/code-highlight/styles.css";
 import "@mantine/tiptap/styles.css";
-import "quill/dist/quill.snow.css";
-import "quilljs-markdown/dist/quilljs-markdown-common-style.css";
 import { useLocalStorage } from "@mantine/hooks";
 import { useState } from "react";
 import ReactDOM from "react-dom/client";

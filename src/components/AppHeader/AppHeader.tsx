@@ -1,15 +1,7 @@
-import {
-	ActionIcon,
-	Divider,
-	Group,
-	Paper,
-	Title,
-	Tooltip,
-} from "@mantine/core";
-import { FolderOpen, Plus, Sparkles, Timer as TimerIcon } from "lucide-react";
+import { ActionIcon, Group, Paper, Title, Tooltip } from "@mantine/core";
+import { Plus, Sparkles, Timer as TimerIcon } from "lucide-react";
 import HeaderActions from "../Header/HeaderActions";
 import ViewSwitcher from "../Header/ViewSwitcher";
-import SaveMenu from "../SaveMenu/SaveMenu";
 
 interface AppHeaderProps {
 	viewMode: string;
@@ -24,8 +16,6 @@ const AppHeader = ({
 	viewMode,
 	setViewMode,
 	onAddTimer,
-	onOpenRepo,
-	onSave,
 	onAiTools,
 }: AppHeaderProps) => {
 	return (
@@ -46,15 +36,6 @@ const AppHeader = ({
 				</Group>
 
 				<Group gap="sm">
-					<Tooltip label="Open file">
-						<ActionIcon variant="subtle" size="lg" onClick={onOpenRepo}>
-							<FolderOpen size={18} />
-						</ActionIcon>
-					</Tooltip>
-					<SaveMenu onSave={onSave} />
-
-					<Divider orientation="vertical" />
-
 					<Tooltip label="Add timer">
 						<ActionIcon variant="subtle" size="lg" onClick={onAddTimer}>
 							<Group gap={2}>
@@ -68,8 +49,6 @@ const AppHeader = ({
 							<Sparkles size={18} />
 						</ActionIcon>
 					</Tooltip>
-
-					<Divider orientation="vertical" />
 
 					<HeaderActions />
 				</Group>

@@ -16,6 +16,7 @@ import {
 	useComputedColorScheme,
 } from "@mantine/core";
 import { useHotkeys, useLocalStorage } from "@mantine/hooks";
+import { RichTextEditor } from "@mantine/tiptap";
 import { ArrowRight, BookOpen, FilePlus, Paperclip } from "lucide-react";
 import {
 	lazy,
@@ -28,19 +29,17 @@ import {
 import AiToolsDialog from "./components/AiTools/AiToolsDialog";
 import AppHeader from "./components/AppHeader/AppHeader";
 import { DescriptionSvg } from "./components/DescriptionSvg";
+import { EditorToolbar } from "./components/EditorToolbar/EditorToolbar";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { useDueNotifications } from "./hooks/useDueNotifications";
 import { useFileHandler } from "./hooks/useFileHandler";
-import { useQuill } from "./hooks/useQuill";
+import { useTipTap } from "./hooks/useTipTap";
 import { LAYOUT } from "./providers/layout";
 import type { Filter } from "./utils/filterUtils";
 import saveService from "./utils/saveService";
 import { type ParsedTodoContent, parseTodoContent } from "./utils/todoParser";
 
 const DEBOUNCE_DELAY = 1000;
-
-const stripHtml = (html: string, replacement = ""): string =>
-	html?.replace(/<[^>]*>/g, replacement) || "";
 
 const ExcalidrawPage = lazy(
 	() => import("./components/ExcalidrawPage/ExcalidrawPage.tsx"),
@@ -86,7 +85,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 		[setRteContentState],
 	);
 
-	const { quillContainerRef, quillInstanceRef } = useQuill({
+	const { editor } = useTipTap({
 		viewMode,
 		activeFilter,
 		initialContent: rteContent,
@@ -96,7 +95,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	const { fileInputRef, handleOpenRepo, handleFileChange, handleNewFile } =
 		useFileHandler({
 			setRteContent: setRteContentState,
-			quillInstanceRef,
+			editor,
 		});
 
 	const taskData: ParsedTodoContent = useMemo(
@@ -109,11 +108,8 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	const handleSave = useCallback(
 		(type: string) => {
 			const saveActions: Record<string, () => void> = {
-				markdown: () => saveService.saveAsMarkdown(rteContent),
-				text: () =>
-					saveService.saveAsText(
-						quillInstanceRef.current?.getText() || stripHtml(rteContent, ""),
-					),
+				markdown: () => saveService.saveAsMarkdown(editor?.getMarkdown() || ""),
+				text: () => saveService.saveAsText(editor?.getText() || ""),
 				html: () => saveService.saveAsHtml(rteContent),
 			};
 
@@ -123,10 +119,11 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 				console.warn("Unknown save type:", type);
 			}
 		},
-		[rteContent, quillInstanceRef],
+		[rteContent, editor],
 	);
 
 	useHotkeys([
+		["mod+o", handleOpenRepo],
 		["mod+m", () => handleSave("markdown")],
 		["mod+t", () => handleSave("text")],
 		["mod+h", () => handleSave("html")],
@@ -137,20 +134,14 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	};
 
 	const handleAiInsert = (text: string, mode: "replace" | "append") => {
-		if (!quillInstanceRef.current) return;
+		if (!editor) return;
 
-		const quill = quillInstanceRef.current;
-		const range = quill.getSelection();
-
-		if (mode === "replace" && range && range.length > 0) {
-			quill.deleteText(range.index, range.length);
-			quill.insertText(range.index, text);
+		if (mode === "replace" && !editor.state.selection.empty) {
+			editor.chain().focus().deleteSelection().insertContent(text).run();
 		} else if (mode === "append") {
-			const length = quill.getLength();
-			quill.insertText(length, `\n${text}`);
+			editor.chain().focus().insertContent(`\n${text}`).run();
 		} else {
-			// Default to replacing all if no selection and replace mode
-			quill.setText(text);
+			editor.chain().focus().setContent(text).run();
 		}
 		setIsAiDialogOpen(false);
 	};
@@ -221,12 +212,13 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 					isOpen={isAiDialogOpen}
 					onClose={() => setIsAiDialogOpen(false)}
 					initialContent={
-						quillInstanceRef.current?.getSelection()?.length
-							? quillInstanceRef.current.getText(
-									quillInstanceRef.current.getSelection()?.index,
-									quillInstanceRef.current.getSelection()?.length,
-								)
-							: quillInstanceRef.current?.getText() || ""
+						editor?.state.selection.empty
+							? editor?.getText() || ""
+							: editor?.state.doc.textBetween(
+									editor.state.selection.from,
+									editor.state.selection.to,
+									"\n",
+								) || ""
 					}
 					onInsert={handleAiInsert}
 				/>
@@ -312,10 +304,18 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 								</Paper>
 							</Stack>
 						) : (
-							<Box
-								ref={quillContainerRef}
-								className={`quill-container quill-theme-${isDark ? "dark" : "light"}`}
-							/>
+							<RichTextEditor
+								editor={editor}
+								className={`tiptap-container tiptap-theme-${isDark ? "dark" : "light"}`}
+							>
+								<EditorToolbar
+									editor={editor}
+									onSave={handleSave}
+									onOpen={handleOpenRepo}
+									onAiTools={handleAiTools}
+								/>
+								<RichTextEditor.Content />
+							</RichTextEditor>
 						)}
 					</Box>
 				)}
