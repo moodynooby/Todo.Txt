@@ -16,8 +16,8 @@ export const applyFilter = (
 	if (!activeFilter) return [];
 	const filters: Record<FilterType, (t: Task) => boolean> = {
 		priority: (t) => t.priority === activeFilter.value,
-		project: (t) => t.projects?.includes(activeFilter.value),
-		context: (t) => t.contexts?.includes(activeFilter.value),
+		project: (t) => t.projects?.includes(activeFilter.value) ?? false,
+		context: (t) => t.contexts?.includes(activeFilter.value) ?? false,
 	};
 	return tasks.filter(filters[activeFilter.type] || (() => true));
 };

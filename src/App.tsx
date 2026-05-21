@@ -50,7 +50,6 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
 
 	const showWelcome = isEmptyContent(rteContent);
-	// Sync content to localStorage with debounce
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedRteContent(rteContent);

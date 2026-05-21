@@ -13,12 +13,8 @@ A simple todo app based on the philosophy of [todo.txt](https://github.com/todot
 - Based on the todo.txt philosophy
 - Plain text based
 - Searchable and portable
-- Built with Vite, React, and DaisyUI
+- Built with Vite, React, and Mantine
 - Includes Excalidraw for drawing
-
-## Demo / Screenshots
-
-_This is a visual project, but screenshots are not available at this time._
 
 ## Setup
 
@@ -36,10 +32,6 @@ _This is a visual project, but screenshots are not available at this time._
     bun run build
     ```
 
-## Release Notes
-
-_No release notes available at this time._
-
 ## License
 
-_No license specified._
+MIT

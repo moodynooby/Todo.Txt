@@ -1,12 +1,9 @@
-/* Excalidraw Page - Auto-switching with Mantine color scheme */
-
 .ExcalidrawPage {
 	height: calc(100vh - 80px);
 	width: 90vw;
 	margin-top: 70px;
 }
 
-/* Custom primary color for Excalidraw matching Mantine violet theme */
 .ExcalidrawPage .excalidraw {
 	--color-primary: #8b5cf6;
 	--color-primary-darker: #7c3aed;

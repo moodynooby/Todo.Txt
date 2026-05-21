@@ -102,7 +102,7 @@ export const SidebarSection = ({
 		>
 			{title}
 		</Button>
-		<Collapse in={expandedSections.has(id)}>
+		<Collapse expanded={expandedSections.has(id)}>
 			<Stack gap={4}>
 				{isEmpty ? (
 					<Text size="xs" c="dimmed" fs="italic" px="sm" py="xs">

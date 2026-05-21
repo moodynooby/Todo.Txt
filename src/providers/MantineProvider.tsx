@@ -1,6 +1,7 @@
 import {
 	createTheme,
 	MantineProvider as MantineProviderBase,
+	v8CssVariablesResolver,
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import type { ReactNode } from "react";
@@ -68,8 +69,12 @@ interface MantineProviderProps {
 
 export const MantineProvider = ({ children }: MantineProviderProps) => {
 	return (
-		<MantineProviderBase theme={theme} defaultColorScheme="dark">
-			<Notifications position="top-right" />
+		<MantineProviderBase
+			theme={theme}
+			defaultColorScheme="dark"
+			cssVariablesResolver={v8CssVariablesResolver}
+		>
+			<Notifications position="top-right" pauseResetOnHover="notification" />
 			{children}
 		</MantineProviderBase>
 	);

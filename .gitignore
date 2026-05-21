@@ -1,16 +1,15 @@
-# Local
 .DS_Store
 *.local
 *.log*
 
-# Dist
 node_modules
 dist/
+tsconfig.tsbuildinfo
 
-# Profile
-.rspack-profile-*/
+.env*
+!.env.example
 
-# IDE
 .vscode/*
 !.vscode/extensions.json
 .idea
+/.opencode

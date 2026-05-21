@@ -1,6 +1,5 @@
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
-import "@mantine/code-highlight/styles.css";
 import "@mantine/tiptap/styles.css";
 import { useLocalStorage } from "@mantine/hooks";
 import { useState } from "react";

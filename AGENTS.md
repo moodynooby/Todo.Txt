@@ -22,13 +22,18 @@ bun run build
 # Run Biome linter and formatter with fixes
 bun run lint
 
-# Equivalent to:
-# biome check --write . && tsc
+# Run Biome formatting only
+bun run format
 ```
 
 ### Type Checking
 ```bash
 # Run TypeScript compiler
-npx tsc --noEmit
+bun run typecheck
+```
+
+### Full Check (lint + typecheck)
+```bash
+bun run check
 ```
 

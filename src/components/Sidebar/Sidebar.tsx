@@ -32,6 +32,12 @@ interface SidebarProps {
 	onFilterChange: (filter: Filter | null) => void;
 }
 
+const isFilterActive = (
+	filter: Filter | null,
+	type: Filter["type"],
+	value: string,
+) => filter !== null && filter.type === type && filter.value === value;
+
 const Sidebar = ({
 	isCollapsed,
 	onToggle,
@@ -161,23 +167,24 @@ const Sidebar = ({
 							isEmpty={Object.values(priorities).every((arr) => !arr?.length)}
 							emptyMessage="No prioritized tasks"
 						>
-							{Object.entries(priorities).map(
-								([priority, items]) =>
-									items?.length > 0 && (
-										<FilterButton
-											key={priority}
-											type="priority"
-											value={priority}
-											label={PRIORITY_CONFIG[priority]?.label || priority}
-											count={items.length}
-											isActive={
-												activeFilter?.type === "priority" &&
-												activeFilter?.value === priority
-											}
-											onClick={() => handleFilterClick("priority", priority)}
-										/>
-									),
-							)}
+							{Object.entries(priorities).map(([priority, items]) => {
+								if (!items?.length) return null;
+								return (
+									<FilterButton
+										key={priority}
+										type="priority"
+										value={priority}
+										label={PRIORITY_CONFIG[priority]?.label || priority}
+										count={items.length}
+										isActive={isFilterActive(
+											activeFilter,
+											"priority",
+											priority,
+										)}
+										onClick={() => handleFilterClick("priority", priority)}
+									/>
+								);
+							})}
 						</SidebarSection>
 
 						<SidebarSection
@@ -195,10 +202,7 @@ const Sidebar = ({
 									value={project}
 									label={project}
 									count={items.length}
-									isActive={
-										activeFilter?.type === "project" &&
-										activeFilter?.value === project
-									}
+									isActive={isFilterActive(activeFilter, "project", project)}
 									onClick={() => handleFilterClick("project", project)}
 									prefix="+"
 								/>
@@ -219,10 +223,7 @@ const Sidebar = ({
 									type="context"
 									value={context}
 									count={items.length}
-									isActive={
-										activeFilter?.type === "context" &&
-										activeFilter?.value === context
-									}
+									isActive={isFilterActive(activeFilter, "context", context)}
 									onClick={() => handleFilterClick("context", context)}
 									prefix="@"
 									label={context}
