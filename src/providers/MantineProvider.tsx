@@ -1,13 +1,12 @@
 import {
 	createTheme,
 	MantineProvider as MantineProviderBase,
-	v8CssVariablesResolver,
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import type { ReactNode } from "react";
 
 export const theme = createTheme({
-	primaryColor: "violet",
+	primaryColor: "blue",
 	fontFamily:
 		"WinkySans, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
 	fontFamilyMonospace:
@@ -18,49 +17,6 @@ export const theme = createTheme({
 		fontWeight: "600",
 	},
 	defaultRadius: "md",
-	components: {
-		Button: {
-			defaultProps: {
-				size: "sm",
-			},
-		},
-		ActionIcon: {
-			defaultProps: {
-				variant: "subtle",
-			},
-		},
-		Modal: {
-			defaultProps: {
-				radius: "lg",
-				centered: true,
-			},
-		},
-		Paper: {
-			defaultProps: {
-				radius: "md",
-			},
-		},
-		TextInput: {
-			defaultProps: {
-				radius: "md",
-			},
-		},
-		Textarea: {
-			defaultProps: {
-				radius: "md",
-			},
-		},
-		Menu: {
-			defaultProps: {
-				radius: "md",
-			},
-		},
-		Tooltip: {
-			defaultProps: {
-				radius: "md",
-			},
-		},
-	},
 });
 
 interface MantineProviderProps {
@@ -69,12 +25,8 @@ interface MantineProviderProps {
 
 export const MantineProvider = ({ children }: MantineProviderProps) => {
 	return (
-		<MantineProviderBase
-			theme={theme}
-			defaultColorScheme="dark"
-			cssVariablesResolver={v8CssVariablesResolver}
-		>
-			<Notifications position="top-right" pauseResetOnHover="notification" />
+		<MantineProviderBase theme={theme} defaultColorScheme="dark">
+			<Notifications position="top-right" />
 			{children}
 		</MantineProviderBase>
 	);

@@ -8,19 +8,6 @@
 	src: url(/ZillaSlab-Regular.ttf);
 }
 
-html {
-	margin: 0;
-}
-
-body {
-	margin: 0;
-	min-height: 100vh;
-}
-
-ul {
-	list-style-type: circle;
-}
-
 .file-input {
 	display: none;
 }
@@ -29,24 +16,11 @@ ul {
 	min-height: 70vh;
 }
 
-.welcome-screen a {
-	color: var(--mantine-color-violet-6);
-	text-decoration: underline;
-	text-decoration-thickness: 2px;
-	text-underline-offset: 2px;
+.mantine-AppShell-main {
+	position: relative;
 }
 
-.welcome-screen a:hover {
-	opacity: 0.8;
-}
-
-.gradient-text {
-	background: linear-gradient(
-		135deg,
-		var(--mantine-color-violet-6) 0%,
-		var(--mantine-color-pink-6) 100%
-	);
-	-webkit-background-clip: text;
-	-webkit-text-fill-color: transparent;
-	background-clip: text;
+.mantine-AppShell-main:has(.ExcalidrawPage) {
+	padding: 0 !important;
+	overflow: hidden;
 }

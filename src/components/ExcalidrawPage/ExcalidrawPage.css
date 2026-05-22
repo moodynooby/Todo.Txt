@@ -1,21 +1,23 @@
 .ExcalidrawPage {
-	height: calc(100vh - 80px);
-	width: 90vw;
-	margin-top: 70px;
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	top: var(--app-shell-header-height, 48px);
 }
 
 .ExcalidrawPage .excalidraw {
-	--color-primary: #8b5cf6;
-	--color-primary-darker: #7c3aed;
-	--color-primary-darkest: #6d28d9;
-	--color-primary-light: #c4b5fd;
-	--color-primary-hover: #a78bfa;
+	--color-primary: var(--mantine-primary-color-5);
+	--color-primary-darker: var(--mantine-primary-color-7);
+	--color-primary-darkest: var(--mantine-primary-color-9);
+	--color-primary-light: var(--mantine-primary-color-2);
+	--color-primary-hover: var(--mantine-primary-color-4);
 }
 
 .ExcalidrawPage .excalidraw.theme--dark {
-	--color-primary: #a78bfa;
-	--color-primary-darker: #8b5cf6;
-	--color-primary-darkest: #7c3aed;
-	--color-primary-light: #6d28d9;
-	--color-primary-hover: #c4b5fd;
+	--color-primary: var(--mantine-primary-color-4);
+	--color-primary-darker: var(--mantine-primary-color-5);
+	--color-primary-darkest: var(--mantine-primary-color-7);
+	--color-primary-light: var(--mantine-primary-color-9);
+	--color-primary-hover: var(--mantine-primary-color-3);
 }

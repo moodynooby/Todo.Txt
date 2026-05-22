@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import type { ParsedTodoContent, Task } from "../types/todo";
+import { getToday, getTomorrow, getYesterday } from "./dateUtils";
 
 const stripHtml = (html: string, replacement = "\n"): string => {
 	if (!html) return "";
@@ -8,13 +8,13 @@ const stripHtml = (html: string, replacement = "\n"): string => {
 
 const parseRelativeDate = (value: string): string | undefined => {
 	if (value === "today") {
-		return dayjs().format("YYYY-MM-DD");
+		return getToday();
 	}
 	if (value === "tomorrow") {
-		return dayjs().add(1, "day").format("YYYY-MM-DD");
+		return getTomorrow();
 	}
 	if (value === "yesterday") {
-		return dayjs().subtract(1, "day").format("YYYY-MM-DD");
+		return getYesterday();
 	}
 	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
 		return value;

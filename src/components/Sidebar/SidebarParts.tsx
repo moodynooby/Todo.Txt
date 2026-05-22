@@ -58,7 +58,7 @@ export const FilterButton = ({
 			}
 			active={isActive}
 			onClick={onClick}
-			color={priorityColor || "violet"}
+			color={priorityColor || "primary"}
 			variant={variant}
 		/>
 	);

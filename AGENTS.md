@@ -1,39 +1,39 @@
-# Agent Guidelines for Todo.Txt Repository
+# Agent Guidelines for Todo.Txt
 
-## Build, Lint, and Test Commands
+## Commands
 
-### Development
-```bash
-# Start development server
-bun run dev
+| Action | Command |
+|--------|---------|
+| dev server | `npm run dev` |
+| build | `npm run build` |
+| preview | `npm run preview` |
+| lint + format | `npm run lint` (biome check --write) |
+| format only | `npm run format` |
+| typecheck | `npm run typecheck` (tsc --noEmit) |
+| full check | `npm run check` (lint + typecheck) |
 
-# Preview production build locally
-bun run preview
-```
+No test framework is set up.
+USE PNPM TO INSTALL DEPENDENCIES
+## Stack
 
-### Building
-```bash
-# Build for production
-bun run build
-```
+- **Framework**: React 19 + Vite + TypeScript (strict, `noUnusedLocals`/`noUnusedParameters`)
+- **UI**: Mantine 9 (uses `cssVariablesResolver` for v8 compat), dark mode default
+- **Editor**: TipTap (rich text) with Markdown extension
+- **Drawing**: Excalidraw integrated
+- **AI**: GROQ via `@ai-sdk/groq` (`useAiGroq.ts`)
+- **Formatting**: Biome — tabs, double quotes, organize imports on save
 
-### Linting and Formatting
-```bash
-# Run Biome linter and formatter with fixes
-bun run lint
+## Architecture
 
-# Run Biome formatting only
-bun run format
-```
+- Entry: `src/index.tsx` → `src/App.tsx`
+- Two view modes: `"text"` (TipTap) and `"excalidraw"` (drawing), saved in localStorage key `viewMode`
+- Todo content stored in localStorage key `rteContent`
+- Tasks parsed from plain text following todo.txt format (priority `(A)`, projects `+project`, contexts `@context`, due dates)
+- File save supports markdown, plain text, and HTML (via file-saver)
 
-### Type Checking
-```bash
-# Run TypeScript compiler
-bun run typecheck
-```
+## Key shortcuts (App.tsx)
 
-### Full Check (lint + typecheck)
-```bash
-bun run check
-```
-
+- `Ctrl+O` — open `.txt` file
+- `Ctrl+M` — save as markdown
+- `Ctrl+T` — save as plain text
+- `Ctrl+H` — save as HTML

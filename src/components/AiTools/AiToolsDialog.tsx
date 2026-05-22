@@ -208,7 +208,7 @@ const AiToolsDialog = ({
 												<ThemeIcon
 													variant={isActive ? "filled" : "light"}
 													size="lg"
-													color={isActive ? "violet" : "gray"}
+													color={isActive ? "primary" : "gray"}
 												>
 													<Icon size={20} />
 												</ThemeIcon>

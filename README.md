@@ -16,22 +16,6 @@ A simple todo app based on the philosophy of [todo.txt](https://github.com/todot
 - Built with Vite, React, and Mantine
 - Includes Excalidraw for drawing
 
-## Setup
-
-1.  Clone the repository.
-2.  Install dependencies:
-    ```bash
-    bun install
-    ```
-3.  Run the development server:
-    ```bash
-    bun run dev
-    ```
-4.  Build for production:
-    ```bash
-    bun run build
-    ```
-
 ## License
 
 MIT

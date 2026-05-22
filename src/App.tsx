@@ -120,10 +120,11 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 		<AppShell
 			header={{ height: LAYOUT.HEADER_HEIGHT }}
 			aside={{
-				width: sidebarCollapsed
-					? LAYOUT.SIDEBAR_COLLAPSED_WIDTH
-					: LAYOUT.SIDEBAR_WIDTH,
-				collapsed: { mobile: true, desktop: false },
+				width: LAYOUT.SIDEBAR_WIDTH,
+				collapsed: {
+					mobile: true,
+					desktop: sidebarCollapsed || viewMode === "excalidraw",
+				},
 				breakpoint: "sm",
 			}}
 			padding="md"
@@ -134,18 +135,22 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 					setViewMode={setViewMode}
 					onAddTimer={onAddTimer}
 					onAiTools={handleAiTools}
+					onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+					sidebarCollapsed={sidebarCollapsed}
 				/>
 			</AppShell.Header>
 
-			<AppShell.Aside>
-				<Sidebar
-					isCollapsed={sidebarCollapsed}
-					onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-					taskData={taskData}
-					activeFilter={activeFilter}
-					onFilterChange={setActiveFilter}
-				/>
-			</AppShell.Aside>
+			{viewMode === "text" && (
+				<AppShell.Aside>
+					<Sidebar
+						isCollapsed={sidebarCollapsed}
+						onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+						taskData={taskData}
+						activeFilter={activeFilter}
+						onFilterChange={setActiveFilter}
+					/>
+				</AppShell.Aside>
+			)}
 
 			<AppShell.Main>
 				<AiToolsDialog

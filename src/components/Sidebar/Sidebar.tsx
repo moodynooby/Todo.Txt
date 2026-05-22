@@ -6,7 +6,6 @@ import {
 	ScrollArea,
 	Stack,
 	Text,
-	useMantineColorScheme,
 } from "@mantine/core";
 import {
 	ChevronLeft,
@@ -46,8 +45,6 @@ const Sidebar = ({
 	onFilterChange,
 }: SidebarProps) => {
 	const { tasks, priorities, projects, contexts } = taskData;
-	const { colorScheme } = useMantineColorScheme();
-	const isDark = colorScheme === "dark";
 	const {
 		expandedSections,
 		toggleSection,
@@ -60,8 +57,6 @@ const Sidebar = ({
 		activeFilter,
 		onFilterChange,
 	});
-
-	const borderColor = isDark ? "dark.4" : "gray.3";
 
 	if (isCollapsed) {
 		return (
@@ -123,10 +118,10 @@ const Sidebar = ({
 					<ChevronLeft size={16} />
 				</ActionIcon>
 			</Group>
-			<Divider color={borderColor} />
+			<Divider />
 
 			{activeFilter && (
-				<Paper px="md" py="xs" bg="violet.0">
+				<Paper px="md" py="xs" bg="var(--mantine-primary-color-light)">
 					<Group justify="space-between">
 						<Text size="sm">
 							{activeFilter.type === "priority" &&
@@ -149,7 +144,7 @@ const Sidebar = ({
 					{completedCount} done
 				</Text>
 			</Group>
-			<Divider color={borderColor} />
+			<Divider />
 
 			<ScrollArea style={{ flex: 1 }} p="sm">
 				{activeFilter ? (

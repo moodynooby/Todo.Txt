@@ -1,4 +1,4 @@
-import { Box, useComputedColorScheme } from "@mantine/core";
+import { Box } from "@mantine/core";
 import { RichTextEditor } from "@mantine/tiptap";
 import type { Editor } from "@tiptap/core";
 import type { QuickAction } from "../../types/ui";
@@ -22,18 +22,12 @@ const TextModeContent = ({
 	onOpen,
 	onAiTools,
 }: TextModeContentProps) => {
-	const computedColorScheme = useComputedColorScheme("light");
-	const isDark = computedColorScheme === "dark";
-
 	return (
-		<Box className="rte-editor-container">
+		<Box>
 			{showWelcome ? (
 				<WelcomeScreen quickActions={quickActions} />
 			) : (
-				<RichTextEditor
-					editor={editor}
-					className={`tiptap-container tiptap-theme-${isDark ? "dark" : "light"}`}
-				>
+				<RichTextEditor editor={editor} className="tiptap-container">
 					<EditorToolbar
 						onSave={onSave}
 						onOpen={onOpen}

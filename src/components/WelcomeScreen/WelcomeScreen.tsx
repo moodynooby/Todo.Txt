@@ -10,7 +10,6 @@ import {
 	Stack,
 	Text,
 	ThemeIcon,
-	Title,
 } from "@mantine/core";
 import { ArrowRight } from "lucide-react";
 import type { QuickAction } from "../../types/ui";
@@ -22,21 +21,27 @@ interface WelcomeScreenProps {
 
 const WelcomeScreen = ({ quickActions }: WelcomeScreenProps) => {
 	return (
-		<Stack align="center" className="welcome-screen" gap="xl" py="xl">
+		<Stack align="center" gap="xl" py="xl">
 			<Stack align="center" gap="md">
 				<Image src="/todotxt2.svg" alt="Todo.txt Logo" w={80} h={80} />
-				<Title order={1} className="gradient-text" ta="center">
+				<Text
+					component="h1"
+					ta="center"
+					variant="gradient"
+					gradient={{ from: "blue", to: "cyan", deg: 135 }}
+					style={{ fontSize: "var(--mantine-h1-font-size)", fontWeight: 700 }}
+				>
 					Welcome to Todo.txt
-				</Title>
+				</Text>
 				<Text size="lg" c="dimmed" maw={400} ta="center">
-					A simple, plain text task management system based on the{" "}
+					A simple, plain text task management system based on the
 					<Anchor
 						href="https://github.com/todotxt/todo.txt"
 						target="_blank"
 						rel="noreferrer"
 					>
 						todo.txt
-					</Anchor>{" "}
+					</Anchor>
 					philosophy
 				</Text>
 			</Stack>

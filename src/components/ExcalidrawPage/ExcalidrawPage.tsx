@@ -1,5 +1,5 @@
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
 import { useComputedColorScheme } from "@mantine/core";
@@ -9,27 +9,9 @@ import {
 } from "../../utils/excalidrawStorageService";
 import { toggleFullscreen } from "../../utils/fullscreen";
 
-const FullscreenIcon = () => {
-	return (
-		<button
-			type="button"
-			onClick={toggleFullscreen}
-			style={{
-				background: "none",
-				border: "none",
-				cursor: "pointer",
-				padding: "8px",
-			}}
-		>
-			Fullscreen
-		</button>
-	);
-};
-
 const ExcalidrawPage = () => {
-	const computedColorScheme = useComputedColorScheme("light");
-	const isDark = computedColorScheme === "dark";
-	const [excalidrawTheme, setExcalidrawTheme] = useState("light");
+	const excalidrawTheme =
+		useComputedColorScheme("dark") === "dark" ? "dark" : "light";
 	const UIOptions = {
 		canvasActions: {
 			export: false,
@@ -37,9 +19,6 @@ const ExcalidrawPage = () => {
 		},
 		welcomeScreen: false,
 	};
-	useEffect(() => {
-		setExcalidrawTheme(isDark ? "dark" : "light");
-	}, [isDark]);
 
 	const onSave = useMemo(() => createExcalidrawSaver(), []);
 
@@ -70,7 +49,6 @@ const ExcalidrawPage = () => {
 					<MainMenu.DefaultItems.ClearCanvas />
 					<MainMenu.DefaultItems.SaveAsImage />
 					<MainMenu.Item onClick={() => toggleFullscreen()}>
-						<FullscreenIcon />
 						Fullscreen
 					</MainMenu.Item>
 				</MainMenu>

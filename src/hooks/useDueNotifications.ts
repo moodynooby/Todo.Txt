@@ -1,6 +1,7 @@
-import dayjs from "dayjs";
 import { useEffect } from "react";
 import type { Task } from "../types/todo";
+import { playBeep } from "../utils/beep";
+import { getToday } from "../utils/dateUtils";
 
 const STORAGE_KEY_PREFIX = "todo-notifications-";
 
@@ -19,7 +20,7 @@ export const useDueNotifications = (tasks: Task[]) => {
 				return;
 			}
 
-			const today = dayjs().format("YYYY-MM-DD");
+			const today = getToday();
 			const storageKey = `${STORAGE_KEY_PREFIX}${today}`;
 
 			let notifiedTaskIds: number[] = [];
@@ -45,6 +46,8 @@ export const useDueNotifications = (tasks: Task[]) => {
 				});
 				notifiedTaskIds.push(task.id);
 			});
+
+			playBeep();
 
 			localStorage.setItem(storageKey, JSON.stringify(notifiedTaskIds));
 		};

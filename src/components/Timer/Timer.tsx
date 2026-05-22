@@ -1,159 +1,145 @@
-import {
-	ActionIcon,
-	Box,
-	Group,
-	Paper,
-	Text,
-	useMantineColorScheme,
-} from "@mantine/core";
-import dayjs from "dayjs";
-import duration from "dayjs/plugin/duration";
+import { ActionIcon, Box, Group, Paper, Text } from "@mantine/core";
 import { Pause, Play, RotateCcw, Timer as TimerIcon, X } from "lucide-react";
-
-dayjs.extend(duration);
-
 import { useEffect, useRef, useState } from "react";
-import { Z_INDEX } from "../../providers/layout";
-
-const TIMER_BASE_X = 20;
-const TIMER_BASE_Y = 100;
-const TIMER_X_OFFSET = 20;
-const TIMER_Y_OFFSET = 30;
-
-const formatTime = (totalSeconds: number): string => {
-	const hrs = Math.floor(totalSeconds / 3600);
-	return dayjs
-		.duration(totalSeconds, "seconds")
-		.format(hrs > 0 ? "HH:mm:ss" : "mm:ss");
-};
+import Draggable from "react-draggable";
+import type { TimerState } from "../../hooks/useTimers";
+import { playBeep } from "../../utils/beep";
+import { computeElapsed, formatTime } from "../../utils/formatTime";
 
 interface TimerProps {
-	id: number;
+	timer: TimerState;
 	onRemove: (id: number) => void;
+	onStateChange: (
+		id: number,
+		elapsed: number,
+		isActive: boolean,
+		startTime: number | null,
+	) => void;
+	onPositionChange: (id: number, position: { x: number; y: number }) => void;
 }
 
-interface Position {
-	x: number;
-	y: number;
-}
-
-const Timer = ({ id, onRemove }: TimerProps) => {
-	const [seconds, setSeconds] = useState(0);
-	const [isActive, setIsActive] = useState(false);
-	const [position, setPosition] = useState<Position>({
-		x: TIMER_BASE_X + (id % 5) * TIMER_X_OFFSET,
-		y: TIMER_BASE_Y + (id % 10) * TIMER_Y_OFFSET,
+const Timer = ({
+	timer,
+	onRemove,
+	onStateChange,
+	onPositionChange,
+}: TimerProps) => {
+	const nodeRef = useRef<HTMLDivElement>(null);
+	const startTimeRef = useRef(timer.startTime);
+	const baseElapsedRef = useRef(timer.elapsed);
+	const [isActive, setIsActive] = useState(timer.isActive);
+	const [displaySeconds, setDisplaySeconds] = useState(() => {
+		if (timer.isActive && timer.startTime !== null) {
+			return computeElapsed(timer.elapsed, timer.startTime);
+		}
+		return timer.elapsed;
 	});
-	const [isDragging, setIsDragging] = useState(false);
-	const offsetRef = useRef({ x: 0, y: 0 });
-	const { colorScheme } = useMantineColorScheme();
-	const isDark = colorScheme === "dark";
-
-	const handleMouseDown = (e: React.MouseEvent): void => {
-		if ((e.target as Element).closest("button")) return;
-		setIsDragging(true);
-		offsetRef.current = {
-			x: e.clientX - position.x,
-			y: e.clientY - position.y,
-		};
-
-		const handleMouseMove = (e: MouseEvent): void => {
-			setPosition({
-				x: e.clientX - offsetRef.current.x,
-				y: e.clientY - offsetRef.current.y,
-			});
-		};
-
-		const handleMouseUp = (): void => {
-			setIsDragging(false);
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
-		};
-
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", handleMouseUp);
-	};
 
 	useEffect(() => {
-		let interval: ReturnType<typeof setInterval> | null = null;
-		if (isActive) {
-			interval = setInterval(() => {
-				setSeconds((s) => s + 1);
-			}, 1000);
-		}
-		return () => {
-			if (interval) clearInterval(interval);
+		if (!isActive) return;
+		const tick = () => {
+			if (startTimeRef.current !== null) {
+				setDisplaySeconds(
+					computeElapsed(baseElapsedRef.current, startTimeRef.current),
+				);
+			}
 		};
+		tick();
+		const interval = setInterval(tick, 1000);
+		return () => clearInterval(interval);
 	}, [isActive]);
 
+	const handlePlayPause = () => {
+		const startTime = startTimeRef.current;
+		if (isActive && startTime !== null) {
+			const currentElapsed = computeElapsed(baseElapsedRef.current, startTime);
+			baseElapsedRef.current = currentElapsed;
+			startTimeRef.current = null;
+			setDisplaySeconds(currentElapsed);
+			setIsActive(false);
+			playBeep(100, 660);
+			onStateChange(timer.id, currentElapsed, false, null);
+		} else if (!isActive) {
+			const now = Date.now();
+			startTimeRef.current = now;
+			setIsActive(true);
+			playBeep(100, 880);
+			onStateChange(timer.id, baseElapsedRef.current, true, now);
+		}
+	};
+
+	const handleReset = () => {
+		baseElapsedRef.current = 0;
+		startTimeRef.current = null;
+		setDisplaySeconds(0);
+		setIsActive(false);
+		playBeep();
+		onStateChange(timer.id, 0, false, null);
+	};
+
 	return (
-		<Box
-			component="div"
-			style={{
-				position: "fixed",
-				left: position.x,
-				top: position.y,
-				zIndex: Z_INDEX.TIMER,
-				cursor: isDragging ? "grabbing" : "move",
-				opacity: isDragging ? 0.8 : 1,
-				transition: isDragging ? "none" : "opacity 0.2s",
-			}}
-			onMouseDown={handleMouseDown}
+		<Draggable
+			nodeRef={nodeRef}
+			defaultPosition={{ x: timer.position.x, y: timer.position.y }}
+			onStop={(_, data) => onPositionChange(timer.id, { x: data.x, y: data.y })}
+			cancel="button"
 		>
-			<Paper p="sm" radius="md" shadow="md" bg={isDark ? "dark.7" : "white"}>
-				<Group justify="space-between" mb="xs">
-					<TimerIcon
-						size={14}
-						color="var(--mantine-color-violet-6)"
-						style={{ opacity: 0.7 }}
-					/>
-					<ActionIcon
-						variant="subtle"
-						size="xs"
-						color="gray"
-						onClick={() => onRemove(id)}
-						aria-label="Remove timer"
-					>
-						<X size={14} />
-					</ActionIcon>
-				</Group>
+			<Box
+				ref={nodeRef}
+				style={{ position: "fixed", zIndex: 1000, cursor: "move" }}
+			>
+				<Paper p="sm" radius="md" shadow="md" bg="var(--mantine-color-body)">
+					<Group justify="space-between" mb="xs">
+						<TimerIcon
+							size={14}
+							color="var(--mantine-primary-color-6)"
+							style={{ opacity: 0.7 }}
+						/>
+						<ActionIcon
+							variant="subtle"
+							size="xs"
+							color="gray"
+							onClick={() => onRemove(timer.id)}
+							aria-label="Remove timer"
+						>
+							<X size={14} />
+						</ActionIcon>
+					</Group>
 
-				<Text
-					size="xl"
-					fw={700}
-					ff="monospace"
-					c="violet.6"
-					ta="center"
-					mb="xs"
-				>
-					{formatTime(seconds)}
-				</Text>
+					<Text
+						size="xl"
+						fw={700}
+						ff="monospace"
+						c="var(--mantine-primary-color-6)"
+						ta="center"
+						mb="xs"
+					>
+						{formatTime(displaySeconds)}
+					</Text>
 
-				<Group justify="center" gap="xs">
-					<ActionIcon
-						variant="subtle"
-						size="sm"
-						color="gray"
-						onClick={() => setIsActive(!isActive)}
-						aria-label={isActive ? "Pause timer" : "Start timer"}
-					>
-						{isActive ? <Pause size={14} /> : <Play size={14} />}
-					</ActionIcon>
-					<ActionIcon
-						variant="subtle"
-						size="sm"
-						color="gray"
-						onClick={() => {
-							setSeconds(0);
-							setIsActive(false);
-						}}
-						aria-label="Reset timer"
-					>
-						<RotateCcw size={14} />
-					</ActionIcon>
-				</Group>
-			</Paper>
-		</Box>
+					<Group justify="center" gap="xs">
+						<ActionIcon
+							variant="subtle"
+							size="sm"
+							color="gray"
+							onClick={handlePlayPause}
+							aria-label={isActive ? "Pause timer" : "Start timer"}
+						>
+							{isActive ? <Pause size={14} /> : <Play size={14} />}
+						</ActionIcon>
+						<ActionIcon
+							variant="subtle"
+							size="sm"
+							color="gray"
+							onClick={handleReset}
+							aria-label="Reset timer"
+						>
+							<RotateCcw size={14} />
+						</ActionIcon>
+					</Group>
+				</Paper>
+			</Box>
+		</Draggable>
 	);
 };
 

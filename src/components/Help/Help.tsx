@@ -11,7 +11,6 @@ const Help = () => {
 			<ActionIcon
 				variant="subtle"
 				size="lg"
-				color="info"
 				onClick={() => setOpened(true)}
 				aria-label="Open help dialog"
 			>
@@ -23,38 +22,28 @@ const Help = () => {
 				onClose={() => setOpened(false)}
 				title="Help"
 				size="lg"
+				centered
 			>
 				<Stack gap="lg">
 					<Group justify="center">
 						<DescriptionSvg />
 					</Group>
 					<Stack gap="xs" align="center">
-						{" "}
 						<Anchor
 							href="https://github.com/todotxt/todo.txt"
 							target="_blank"
 							rel="noreferrer"
-							c="info"
 						>
-							<Button
-								leftSection={<BookOpen size={16} />}
-								variant="light"
-								color="info"
-							>
+							<Button leftSection={<BookOpen size={16} />} variant="light">
 								Learn more about Todo.txt Format
 							</Button>
-						</Anchor>{" "}
+						</Anchor>
 						<Anchor
 							href="https://www.markdownguide.org/cheat-sheet/"
 							target="_blank"
 							rel="noreferrer"
-							c="info"
 						>
-							<Button
-								leftSection={<BookOpen size={16} />}
-								variant="light"
-								color="info"
-							>
+							<Button leftSection={<BookOpen size={16} />} variant="light">
 								Learn more about Markdown Format
 							</Button>
 						</Anchor>
