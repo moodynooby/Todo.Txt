@@ -1,8 +1,11 @@
 import { type FirebaseApp, initializeApp } from "firebase/app";
 import {
 	type Auth,
+	browserLocalPersistence,
 	GoogleAuthProvider,
 	getAuth,
+	getRedirectResult,
+	setPersistence,
 	signInWithPopup,
 	signOut,
 } from "firebase/auth";
@@ -27,6 +30,7 @@ try {
 	app = initializeApp(firebaseConfig);
 	auth = getAuth(app);
 	db = getFirestore(app);
+	setPersistence(auth, browserLocalPersistence).catch(() => {});
 } catch (e) {
 	initError = e instanceof Error ? e.message : "Failed to initialize Firebase";
 }
@@ -57,7 +61,37 @@ const provider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async (): Promise<void> => {
 	const a = getFirebaseAuth();
-	await signInWithPopup(a, provider);
+	try {
+		await signInWithPopup(a, provider);
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			const code = (error as { code?: string }).code;
+			if (code === "auth/popup-blocked") {
+				throw new Error(
+					"Popup was blocked. Please allow popups for this site in your browser settings and try again.",
+				);
+			}
+			if (code === "auth/popup-closed-by-user") {
+				throw new Error(
+					"Sign-in popup was closed before completing. Please try again.",
+				);
+			}
+			if (code === "auth/cancelled-popup-request") {
+				return;
+			}
+		}
+		throw error;
+	}
+};
+
+export const handleRedirectResult = async (): Promise<boolean> => {
+	try {
+		const a = getFirebaseAuth();
+		const result = await getRedirectResult(a);
+		return !!result;
+	} catch {
+		return false;
+	}
 };
 
 export const signOutUser = async (): Promise<void> => {

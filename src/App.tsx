@@ -7,6 +7,7 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import AiToolsDialog from "./components/AiTools/AiToolsDialog";
@@ -23,6 +24,10 @@ import { EditorContext } from "./providers/EditorContext";
 import { LAYOUT } from "./providers/layout";
 import { useViewMode } from "./providers/ViewModeContext";
 import type { Filter, ParsedTodoContent } from "./types/todo";
+import {
+	syncExcalidrawToText,
+	syncTextToExcalidraw,
+} from "./utils/excalidrawSync";
 import { parseTodoContent } from "./utils/todoParser";
 
 const DEBOUNCE_DELAY = 1000;
@@ -36,7 +41,7 @@ const isEmptyContent = (content: string): boolean => {
 };
 
 const App = () => {
-	const { viewMode } = useViewMode();
+	const { viewMode, setViewMode } = useViewMode();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
@@ -46,14 +51,45 @@ const App = () => {
 		defaultValue: "",
 	});
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
+	const [groqApiKey, setGroqApiKey] = useState(
+		() => localStorage.getItem("groq_api_key") || "",
+	);
 
 	const showWelcome = isEmptyContent(rteContent);
 
+	const isRemoteUpdate = useRef(false);
+	const isFirstMount = useRef(true);
+
 	const handleRemoteContent = useCallback(
 		(content: string) => {
+			isRemoteUpdate.current = true;
 			setRteContentState(content);
+			setTimeout(() => {
+				isRemoteUpdate.current = false;
+			}, 200);
 		},
 		[setRteContentState],
+	);
+
+	const handleRemotePreferences = useCallback(
+		(prefs: Record<string, unknown>) => {
+			if (
+				typeof prefs.groqApiKey === "string" &&
+				prefs.groqApiKey !== groqApiKey
+			) {
+				localStorage.setItem("groq_api_key", prefs.groqApiKey);
+				setGroqApiKey(prefs.groqApiKey);
+			}
+			if (typeof prefs.viewMode === "string" && prefs.viewMode !== viewMode) {
+				setViewMode(prefs.viewMode);
+			}
+		},
+		[groqApiKey, viewMode, setViewMode],
+	);
+
+	const preferences = useMemo(
+		() => ({ groqApiKey, viewMode }),
+		[groqApiKey, viewMode],
 	);
 
 	const {
@@ -64,6 +100,8 @@ const App = () => {
 	} = useFirestoreSync({
 		content: debouncedRteContent,
 		onRemoteContent: handleRemoteContent,
+		preferences,
+		onRemotePreferences: handleRemotePreferences,
 	});
 
 	const handleContentChange = useCallback(
@@ -83,6 +121,22 @@ const App = () => {
 		}, DEBOUNCE_DELAY);
 		return () => clearTimeout(timer);
 	}, [rteContent]);
+
+	useEffect(() => {
+		if (isFirstMount.current) {
+			isFirstMount.current = false;
+			return;
+		}
+
+		if (viewMode === "excalidraw") {
+			syncTextToExcalidraw(rteContent);
+		} else if (viewMode === "text") {
+			const excalidrawHtml = syncExcalidrawToText();
+			if (excalidrawHtml) {
+				setRteContentState((prev: string) => prev + excalidrawHtml);
+			}
+		}
+	}, [viewMode, rteContent, setRteContentState]);
 
 	const { editor } = useTipTap({
 		viewMode,
@@ -208,7 +262,7 @@ const App = () => {
 						type="file"
 						ref={fileInputRef}
 						className="file-input"
-						accept=".txt"
+						accept=".txt,.md,.html"
 						onChange={handleFileChange}
 					/>
 					{viewMode === "excalidraw" && (

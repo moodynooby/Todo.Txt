@@ -1,3 +1,4 @@
+import { marked } from "marked";
 import { type RefObject, useRef } from "react";
 
 interface UseFileHandlerProps {
@@ -26,12 +27,28 @@ export const useFileHandler = ({
 		reader.onload = (e) => {
 			const result = e.target?.result;
 			if (typeof result !== "string") return;
-			setRteContent(
-				result
-					.split("\n")
-					.map((line) => `<p>${line}</p>`)
-					.join(""),
-			);
+			if (file.name.endsWith(".md")) {
+				try {
+					const html = marked.parse(result, { async: false }) as string;
+					setRteContent(html);
+				} catch {
+					setRteContent(
+						result
+							.split("\n")
+							.map((line) => `<p>${line}</p>`)
+							.join(""),
+					);
+				}
+			} else if (file.name.endsWith(".html")) {
+				setRteContent(result);
+			} else {
+				setRteContent(
+					result
+						.split("\n")
+						.map((line) => `<p>${line}</p>`)
+						.join(""),
+				);
+			}
 		};
 		reader.readAsText(file);
 	};
