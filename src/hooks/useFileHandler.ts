@@ -1,21 +1,17 @@
-import type { Editor } from "@tiptap/core";
 import { type RefObject, useRef } from "react";
 
 interface UseFileHandlerProps {
 	setRteContent: (content: string) => void;
-	editor?: Editor | null;
 }
 
 interface UseFileHandlerReturn {
 	fileInputRef: RefObject<HTMLInputElement | null>;
 	handleOpenRepo: () => void;
 	handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	handleNewFile: () => void;
 }
 
 export const useFileHandler = ({
 	setRteContent,
-	editor,
 }: UseFileHandlerProps): UseFileHandlerReturn => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,9 +24,10 @@ export const useFileHandler = ({
 		if (!file) return;
 		const reader = new FileReader();
 		reader.onload = (e) => {
-			const content = e.target?.result as string;
+			const result = e.target?.result;
+			if (typeof result !== "string") return;
 			setRteContent(
-				content
+				result
 					.split("\n")
 					.map((line) => `<p>${line}</p>`)
 					.join(""),
@@ -39,17 +36,9 @@ export const useFileHandler = ({
 		reader.readAsText(file);
 	};
 
-	const handleNewFile = (): void => {
-		setRteContent("<p><br></p>");
-		if (editor) {
-			editor.commands.focus();
-		}
-	};
-
 	return {
 		fileInputRef,
 		handleOpenRepo,
 		handleFileChange,
-		handleNewFile,
 	};
 };

@@ -9,16 +9,17 @@ import {
 } from "../../utils/excalidrawStorageService";
 import { toggleFullscreen } from "../../utils/fullscreen";
 
+const EXCALIDRAW_UI_OPTIONS = {
+	canvasActions: {
+		export: false,
+		toggleTheme: false,
+	},
+	welcomeScreen: false,
+};
+
 const ExcalidrawPage = () => {
 	const excalidrawTheme =
 		useComputedColorScheme("dark") === "dark" ? "dark" : "light";
-	const UIOptions = {
-		canvasActions: {
-			export: false,
-			toggleTheme: false,
-		},
-		welcomeScreen: false,
-	};
 
 	const onSave = useMemo(() => createExcalidrawSaver(), []);
 
@@ -35,9 +36,9 @@ const ExcalidrawPage = () => {
 	return (
 		<div className="ExcalidrawPage">
 			<Excalidraw
-				theme={excalidrawTheme as "light" | "dark"}
+				theme={excalidrawTheme}
 				// @ts-expect-error - Excalidraw UIOptions type is overly strict
-				UIOptions={UIOptions}
+				UIOptions={EXCALIDRAW_UI_OPTIONS}
 				// @ts-expect-error - Excalidraw onChange signature expects readonly arrays
 				onChange={onSave}
 				// @ts-expect-error - Excalidraw initialData type is overly strict

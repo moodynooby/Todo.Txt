@@ -80,9 +80,7 @@ const Sidebar = ({
 							<CollapsedPriorityButton
 								key={p}
 								priority={p}
-								isActive={
-									activeFilter?.type === "priority" && activeFilter?.value === p
-								}
+								isActive={isFilterActive(activeFilter, "priority", p)}
 								onClick={() => handleFilterClick("priority", p)}
 							/>
 						))}

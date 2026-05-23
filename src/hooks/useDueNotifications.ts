@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { Task } from "../types/todo";
 import { playBeep } from "../utils/beep";
 import { getToday } from "../utils/dateUtils";
@@ -6,21 +6,26 @@ import { getToday } from "../utils/dateUtils";
 const STORAGE_KEY_PREFIX = "todo-notifications-";
 
 export const useDueNotifications = (tasks: Task[]) => {
+	const lastCheckedDateRef = useRef<string>("");
+
 	useEffect(() => {
-		if (!("Notification" in window)) {
-			return;
-		}
+		if (!("Notification" in window)) return;
+
+		const today = getToday();
+		if (lastCheckedDateRef.current === today) return;
+		lastCheckedDateRef.current = today;
+
+		let cancelled = false;
 
 		const checkDueTasks = async () => {
 			if (Notification.permission === "default") {
 				await Notification.requestPermission();
 			}
 
-			if (Notification.permission !== "granted") {
-				return;
-			}
+			if (cancelled) return;
 
-			const today = getToday();
+			if (Notification.permission !== "granted") return;
+
 			const storageKey = `${STORAGE_KEY_PREFIX}${today}`;
 
 			let notifiedTaskIds: number[] = [];
@@ -32,6 +37,8 @@ export const useDueNotifications = (tasks: Task[]) => {
 			} catch (e) {
 				console.error("Failed to parse notified tasks", e);
 			}
+
+			if (cancelled) return;
 
 			const dueTasks = tasks.filter((task) => {
 				return task.due === today && !notifiedTaskIds.includes(task.id);
@@ -53,5 +60,9 @@ export const useDueNotifications = (tasks: Task[]) => {
 		};
 
 		checkDueTasks();
+
+		return () => {
+			cancelled = true;
+		};
 	}, [tasks]);
 };

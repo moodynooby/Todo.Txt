@@ -1,6 +1,6 @@
 import "./App.css";
 import { AppShell, Box } from "@mantine/core";
-import { useHotkeys, useLocalStorage } from "@mantine/hooks";
+import { useLocalStorage } from "@mantine/hooks";
 import {
 	lazy,
 	Suspense,
@@ -16,6 +16,7 @@ import TextModeContent from "./components/TextModeContent/TextModeContent";
 import { useDocumentSave } from "./hooks/useDocumentSave";
 import { useDueNotifications } from "./hooks/useDueNotifications";
 import { useFileHandler } from "./hooks/useFileHandler";
+import { useFirestoreSync } from "./hooks/useFirestoreSync";
 import { useQuickActions } from "./hooks/useQuickActions";
 import { useTipTap } from "./hooks/useTipTap";
 import { EditorContext } from "./providers/EditorContext";
@@ -47,13 +48,23 @@ const App = () => {
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
 
 	const showWelcome = isEmptyContent(rteContent);
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedRteContent(rteContent);
-		}, DEBOUNCE_DELAY);
 
-		return () => clearTimeout(timer);
-	}, [rteContent]);
+	const handleRemoteContent = useCallback(
+		(content: string) => {
+			setRteContentState(content);
+		},
+		[setRteContentState],
+	);
+
+	const {
+		syncStatus,
+		isConnected: isSynced,
+		connect: connectSync,
+		disconnect: disconnectSync,
+	} = useFirestoreSync({
+		content: debouncedRteContent,
+		onRemoteContent: handleRemoteContent,
+	});
 
 	const handleContentChange = useCallback(
 		(content: string) => {
@@ -62,6 +73,17 @@ const App = () => {
 		[setRteContentState],
 	);
 
+	const handleStartWriting = useCallback(() => {
+		setRteContentState("<p><br></p>");
+	}, [setRteContentState]);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedRteContent(rteContent);
+		}, DEBOUNCE_DELAY);
+		return () => clearTimeout(timer);
+	}, [rteContent]);
+
 	const { editor } = useTipTap({
 		viewMode,
 		activeFilter,
@@ -69,11 +91,9 @@ const App = () => {
 		onContentChange: handleContentChange,
 	});
 
-	const { fileInputRef, handleOpenRepo, handleFileChange, handleNewFile } =
-		useFileHandler({
-			setRteContent: setRteContentState,
-			editor,
-		});
+	const { fileInputRef, handleOpenRepo, handleFileChange } = useFileHandler({
+		setRteContent: setRteContentState,
+	});
 
 	const taskData: ParsedTodoContent = useMemo(
 		() => parseTodoContent(debouncedRteContent),
@@ -84,16 +104,13 @@ const App = () => {
 
 	const handleSave = useDocumentSave(editor, rteContent);
 
-	useHotkeys([
-		["mod+o", handleOpenRepo],
-		["mod+m", () => handleSave("markdown")],
-		["mod+t", () => handleSave("text")],
-		["mod+h", () => handleSave("html")],
-	]);
-
-	const handleAiTools = (): void => {
+	const handleAiTools = useCallback((): void => {
 		setIsAiDialogOpen(true);
-	};
+	}, []);
+
+	const handleToggleSidebar = useCallback(() => {
+		setSidebarCollapsed((prev) => !prev);
+	}, []);
 
 	const handleAiInsert = (text: string, mode: "replace" | "append") => {
 		if (!editor) return;
@@ -109,50 +126,69 @@ const App = () => {
 	};
 
 	const quickActions = useQuickActions({
-		onNewFile: handleNewFile,
-		onOpenFile: handleOpenRepo,
+		onStart: handleStartWriting,
+		onConnect: connectSync,
 	});
 
-	const editorContextValue = {
-		editor,
-		onSave: handleSave,
-		onOpen: handleOpenRepo,
-		onAiTools: handleAiTools,
-		sidebarCollapsed,
-		onToggleSidebar: () => setSidebarCollapsed(!sidebarCollapsed),
-		quickActions,
-	};
+	const editorContextValue = useMemo(
+		() => ({
+			editor,
+			onSave: handleSave,
+			onOpen: handleOpenRepo,
+			onAiTools: handleAiTools,
+			sidebarCollapsed,
+			onToggleSidebar: handleToggleSidebar,
+			quickActions,
+			syncStatus,
+			isSynced,
+			onConnect: connectSync,
+			onDisconnectSync: disconnectSync,
+		}),
+		[
+			editor,
+			handleSave,
+			handleOpenRepo,
+			handleAiTools,
+			sidebarCollapsed,
+			handleToggleSidebar,
+			quickActions,
+			syncStatus,
+			isSynced,
+			connectSync,
+			disconnectSync,
+		],
+	);
 
 	return (
-		<AppShell
-			header={{ height: LAYOUT.HEADER_HEIGHT }}
-			aside={{
-				width: LAYOUT.SIDEBAR_WIDTH,
-				collapsed: {
-					mobile: true,
-					desktop: sidebarCollapsed || viewMode === "excalidraw",
-				},
-				breakpoint: "sm",
-			}}
-			padding="md"
-		>
-			<AppShell.Header>
-				<AppHeader />
-			</AppShell.Header>
+		<EditorContext.Provider value={editorContextValue}>
+			<AppShell
+				header={{ height: LAYOUT.HEADER_HEIGHT }}
+				aside={{
+					width: LAYOUT.SIDEBAR_WIDTH,
+					collapsed: {
+						mobile: true,
+						desktop: sidebarCollapsed || viewMode === "excalidraw",
+					},
+					breakpoint: "sm",
+				}}
+				padding="md"
+			>
+				<AppShell.Header>
+					<AppHeader />
+				</AppShell.Header>
 
-			{viewMode === "text" && (
-				<AppShell.Aside>
-					<Sidebar
-						isCollapsed={sidebarCollapsed}
-						onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-						taskData={taskData}
-						activeFilter={activeFilter}
-						onFilterChange={setActiveFilter}
-					/>
-				</AppShell.Aside>
-			)}
+				{viewMode === "text" && (
+					<AppShell.Aside>
+						<Sidebar
+							isCollapsed={sidebarCollapsed}
+							onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+							taskData={taskData}
+							activeFilter={activeFilter}
+							onFilterChange={setActiveFilter}
+						/>
+					</AppShell.Aside>
+				)}
 
-			<EditorContext.Provider value={editorContextValue}>
 				<AppShell.Main>
 					<AiToolsDialog
 						isOpen={isAiDialogOpen}
@@ -182,8 +218,8 @@ const App = () => {
 					)}
 					{viewMode === "text" && <TextModeContent showWelcome={showWelcome} />}
 				</AppShell.Main>
-			</EditorContext.Provider>
-		</AppShell>
+			</AppShell>
+		</EditorContext.Provider>
 	);
 };
 

@@ -1,7 +1,6 @@
-import { ActionIcon, Box, Group, Paper, Text } from "@mantine/core";
+import { ActionIcon, FloatingWindow, Group, Text } from "@mantine/core";
 import { Pause, Play, RotateCcw, Timer as TimerIcon, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import Draggable from "react-draggable";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { TimerState } from "../../hooks/useTimers";
 import { playBeep } from "../../utils/beep";
 import { computeElapsed, formatTime } from "../../utils/formatTime";
@@ -15,7 +14,10 @@ interface TimerProps {
 		isActive: boolean,
 		startTime: number | null,
 	) => void;
-	onPositionChange: (id: number, position: { x: number; y: number }) => void;
+	onPositionChange: (
+		id: number,
+		position: { top: number; left: number },
+	) => void;
 }
 
 const Timer = ({
@@ -24,7 +26,6 @@ const Timer = ({
 	onStateChange,
 	onPositionChange,
 }: TimerProps) => {
-	const nodeRef = useRef<HTMLDivElement>(null);
 	const startTimeRef = useRef(timer.startTime);
 	const baseElapsedRef = useRef(timer.elapsed);
 	const [isActive, setIsActive] = useState(timer.isActive);
@@ -48,6 +49,13 @@ const Timer = ({
 		const interval = setInterval(tick, 1000);
 		return () => clearInterval(interval);
 	}, [isActive]);
+
+	const handlePositionChange = useCallback(
+		(pos: { x: number; y: number }) => {
+			onPositionChange(timer.id, { top: pos.y, left: pos.x });
+		},
+		[timer.id, onPositionChange],
+	);
 
 	const handlePlayPause = () => {
 		const startTime = startTimeRef.current;
@@ -78,68 +86,67 @@ const Timer = ({
 	};
 
 	return (
-		<Draggable
-			nodeRef={nodeRef}
-			defaultPosition={{ x: timer.position.x, y: timer.position.y }}
-			onStop={(_, data) => onPositionChange(timer.id, { x: data.x, y: data.y })}
-			cancel="button"
+		<FloatingWindow
+			w={160}
+			p="sm"
+			withBorder
+			shadow="md"
+			dragHandleSelector=".timer-drag-handle"
+			excludeDragHandleSelector="button"
+			initialPosition={{ top: timer.position.top, left: timer.position.left }}
+			constrainToViewport
+			onPositionChange={handlePositionChange}
+			style={{ cursor: "move", touchAction: "none" }}
 		>
-			<Box
-				ref={nodeRef}
-				style={{ position: "fixed", zIndex: 1000, cursor: "move" }}
+			<Group justify="space-between" mb="xs" className="timer-drag-handle">
+				<TimerIcon
+					size={14}
+					color="var(--mantine-primary-color-6)"
+					style={{ opacity: 0.7 }}
+				/>
+				<ActionIcon
+					variant="subtle"
+					size="xs"
+					color="gray"
+					onClick={() => onRemove(timer.id)}
+					aria-label="Remove timer"
+				>
+					<X size={14} />
+				</ActionIcon>
+			</Group>
+
+			<Text
+				size="xl"
+				fw={700}
+				ff="monospace"
+				c="var(--mantine-primary-color-6)"
+				ta="center"
+				mb="xs"
 			>
-				<Paper p="sm" radius="md" shadow="md" bg="var(--mantine-color-body)">
-					<Group justify="space-between" mb="xs">
-						<TimerIcon
-							size={14}
-							color="var(--mantine-primary-color-6)"
-							style={{ opacity: 0.7 }}
-						/>
-						<ActionIcon
-							variant="subtle"
-							size="xs"
-							color="gray"
-							onClick={() => onRemove(timer.id)}
-							aria-label="Remove timer"
-						>
-							<X size={14} />
-						</ActionIcon>
-					</Group>
+				{formatTime(displaySeconds)}
+			</Text>
 
-					<Text
-						size="xl"
-						fw={700}
-						ff="monospace"
-						c="var(--mantine-primary-color-6)"
-						ta="center"
-						mb="xs"
-					>
-						{formatTime(displaySeconds)}
-					</Text>
-
-					<Group justify="center" gap="xs">
-						<ActionIcon
-							variant="subtle"
-							size="sm"
-							color="gray"
-							onClick={handlePlayPause}
-							aria-label={isActive ? "Pause timer" : "Start timer"}
-						>
-							{isActive ? <Pause size={14} /> : <Play size={14} />}
-						</ActionIcon>
-						<ActionIcon
-							variant="subtle"
-							size="sm"
-							color="gray"
-							onClick={handleReset}
-							aria-label="Reset timer"
-						>
-							<RotateCcw size={14} />
-						</ActionIcon>
-					</Group>
-				</Paper>
-			</Box>
-		</Draggable>
+			<Group justify="center" gap="xs">
+				<ActionIcon
+					variant="subtle"
+					size="sm"
+					color="gray"
+					onClick={handlePlayPause}
+					aria-label={isActive ? "Pause timer" : "Start timer"}
+				>
+					{isActive ? <Pause size={14} /> : <Play size={14} />}
+				</ActionIcon>
+				<ActionIcon
+					variant="subtle"
+					size="sm"
+					color="gray"
+					onClick={handleReset}
+					aria-label="Reset timer"
+				>
+					<RotateCcw size={14} />
+				</ActionIcon>
+			</Group>
+		</FloatingWindow>
 	);
 };
 
