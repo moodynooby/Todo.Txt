@@ -1,40 +1,40 @@
-import { BookOpen, FilePlus, Paperclip } from "lucide-react";
+import { BookOpen, LogIn, Play } from "lucide-react";
 import { useMemo } from "react";
 import type { QuickAction } from "../types/ui";
 
 interface UseQuickActionsProps {
-	onNewFile: () => void;
-	onOpenFile: () => void;
+	onStart: () => void;
+	onConnect: () => void;
 }
 
 export const useQuickActions = ({
-	onNewFile,
-	onOpenFile,
+	onStart,
+	onConnect,
 }: UseQuickActionsProps): QuickAction[] =>
 	useMemo(
 		() => [
 			{
-				id: "new-file",
-				icon: FilePlus,
-				title: "New File",
-				description: "Create a new todo.txt file",
-				action: onNewFile,
+				id: "start",
+				icon: Play,
+				title: "Start Writing",
+				description: "Begin editing your todo list",
+				action: onStart,
 			},
 			{
-				id: "open-repo",
-				icon: Paperclip,
-				title: "Open File",
-				description: "Open an existing todo.txt file",
-				action: onOpenFile,
+				id: "connect",
+				icon: LogIn,
+				title: "Sign in with Google",
+				description: "Sync your todos across devices",
+				action: onConnect,
 			},
 			{
 				id: "help",
 				icon: BookOpen,
-				title: "Documentation",
-				description: "Learn about todo.txt format",
+				title: "Help",
+				description: "Learn about the todo.txt format",
 				action: () =>
 					window.open("https://github.com/todotxt/todo.txt", "_blank"),
 			},
 		],
-		[onNewFile, onOpenFile],
+		[onStart, onConnect],
 	);

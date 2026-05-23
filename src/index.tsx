@@ -1,6 +1,7 @@
 import "@mantine/core/styles.css";
 import "@mantine/tiptap/styles.css";
 import { useLocalStorage } from "@mantine/hooks";
+import { useCallback } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import Timer from "./components/Timer/Timer";
@@ -21,6 +22,22 @@ function RootComponent() {
 	});
 	const { timers, addTimer, removeTimer, updateTimer } = useTimers();
 
+	const handleStateChange = useCallback(
+		(
+			id: number,
+			elapsed: number,
+			isActive: boolean,
+			startTime: number | null,
+		) => updateTimer(id, { elapsed, isActive, startTime }),
+		[updateTimer],
+	);
+
+	const handlePositionChange = useCallback(
+		(id: number, position: { top: number; left: number }) =>
+			updateTimer(id, { position }),
+		[updateTimer],
+	);
+
 	return (
 		<MantineProvider>
 			<ViewModeContext.Provider value={{ viewMode, setViewMode, addTimer }}>
@@ -30,10 +47,8 @@ function RootComponent() {
 						key={timer.id}
 						timer={timer}
 						onRemove={removeTimer}
-						onStateChange={(id, elapsed, isActive, startTime) =>
-							updateTimer(id, { elapsed, isActive, startTime })
-						}
-						onPositionChange={(id, position) => updateTimer(id, { position })}
+						onStateChange={handleStateChange}
+						onPositionChange={handlePositionChange}
 					/>
 				))}
 			</ViewModeContext.Provider>

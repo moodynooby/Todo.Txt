@@ -1,4 +1,4 @@
-import { Divider, Group, Kbd, Menu, Tooltip } from "@mantine/core";
+import { Divider, Group, Menu, Tooltip } from "@mantine/core";
 import { RichTextEditor } from "@mantine/tiptap";
 import {
 	ChevronDown,
@@ -101,21 +101,18 @@ export const EditorToolbar = () => {
 					<Menu.Dropdown>
 						<Menu.Item
 							leftSection={<FileText size={14} />}
-							rightSection={<Kbd size="xs">M</Kbd>}
 							onClick={() => onSave("markdown")}
 						>
 							Markdown
 						</Menu.Item>
 						<Menu.Item
 							leftSection={<FileIcon size={14} />}
-							rightSection={<Kbd size="xs">T</Kbd>}
 							onClick={() => onSave("text")}
 						>
 							Text
 						</Menu.Item>
 						<Menu.Item
 							leftSection={<Code size={14} />}
-							rightSection={<Kbd size="xs">H</Kbd>}
 							onClick={() => onSave("html")}
 						>
 							HTML

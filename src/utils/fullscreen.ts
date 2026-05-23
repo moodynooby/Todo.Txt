@@ -7,6 +7,8 @@ export const toggleFullscreen = (): void => {
 	}
 
 	if (document.exitFullscreen) {
-		document.exitFullscreen();
+		document.exitFullscreen().catch((err) => {
+			console.error(`Error exiting fullscreen: ${err.message}`);
+		});
 	}
 };

@@ -10,8 +10,10 @@ const manifest = {
 	scope: ".",
 	display: "standalone",
 	display_override: ["window-controls-overlay", "standalone", "fullscreen"],
-	background_color: "#ffffff",
+	background_color: "#1a1b1e",
 	theme_color: "#2EC6FE",
+	categories: ["productivity", "utilities"],
+	orientation: "portrait-primary",
 	icons: [
 		{
 			src: "icon192.png",
@@ -30,6 +32,22 @@ const manifest = {
 			purpose: "maskable",
 		},
 	],
+	share_target: {
+		action: "/",
+		method: "POST",
+		enctype: "multipart/form-data",
+		params: {
+			title: "title",
+			text: "text",
+			url: "url",
+			files: [
+				{
+					name: "file",
+					accept: [".txt", "text/plain"],
+				},
+			],
+		},
+	},
 };
 
 export default defineConfig({

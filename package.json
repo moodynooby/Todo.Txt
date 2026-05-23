@@ -1,45 +1,45 @@
 {
-	"name": "todo.txt_2",
-	"version": "1.0.1",
-	"description": "A todo.txt-compatible plain text todo app built with React and Mantine",
-	"private": true,
-	"type": "module",
-	"scripts": {
-		"dev": "vite",
-		"build": "vite build",
-		"preview": "vite preview",
-		"lint": "biome check --write .",
-		"typecheck": "tsc --noEmit",
-		"format": "biome format --write .",
-		"check": "biome check --write . && tsc --noEmit"
-	},
-	"dependencies": {
-		"@ai-sdk/groq": "^3.0.39",
-		"@excalidraw/excalidraw": "0.18.1",
-		"@mantine/code-highlight": "^9.2.1",
-		"@mantine/core": "^9.2.1",
-		"@mantine/hooks": "^9.2.1",
-		"@mantine/tiptap": "^9.2.1",
-		"@tiptap/core": "^3.23.5",
-		"@tiptap/extension-placeholder": "^3.23.5",
-		"@tiptap/markdown": "^3.23.5",
-		"@tiptap/react": "^3.23.5",
-		"@tiptap/starter-kit": "^3.23.5",
-		"ai": "^6.0.188",
-		"file-saver": "^2.0.5",
-		"lucide-react": "^1.16.0",
-		"react": "^19.2.6",
-		"react-dom": "^19.2.6",
-		"react-draggable": "^4.5.0"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.4.15",
-		"@types/file-saver": "^2.0.7",
-		"@types/react": "^19.2.15",
-		"@types/react-dom": "^19.2.3",
-		"@vitejs/plugin-react": "^6.0.2",
-		"typescript": "^6.0.3",
-		"vite": "^8.0.14",
-		"vite-plugin-pwa": "^1.3.0"
-	}
+  "name": "todo.txt_2",
+  "version": "1.0.1",
+  "description": "A todo.txt-compatible plain text todo app built with React and Mantine",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "format": "biome format --write .",
+    "check": "biome check --write . && tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/groq": "^3.0.39",
+    "@excalidraw/excalidraw": "0.18.1",
+    "@mantine/code-highlight": "^9.2.1",
+    "@mantine/core": "^9.2.1",
+    "@mantine/hooks": "^9.2.1",
+    "@mantine/tiptap": "^9.2.1",
+    "@tiptap/core": "^3.23.6",
+    "@tiptap/extension-placeholder": "^3.23.6",
+    "@tiptap/markdown": "^3.23.6",
+    "@tiptap/react": "^3.23.6",
+    "@tiptap/starter-kit": "^3.23.6",
+    "ai": "^6.0.190",
+    "file-saver": "^2.0.5",
+    "firebase": "^12.13.0",
+    "lucide-react": "^1.16.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.15",
+    "@types/file-saver": "^2.0.7",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14",
+    "vite-plugin-pwa": "^1.3.0"
+  }
 }

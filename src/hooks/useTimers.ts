@@ -3,17 +3,17 @@ import { computeElapsed } from "../utils/formatTime";
 
 const STORAGE_KEY = "timers";
 
-const BASE_X = 20;
-const BASE_Y = 100;
-const X_OFFSET = 20;
-const Y_OFFSET = 30;
+const BASE_TOP = 100;
+const BASE_LEFT = 20;
+const TOP_OFFSET = 30;
+const LEFT_OFFSET = 20;
 
 export interface TimerState {
 	id: number;
 	elapsed: number;
 	isActive: boolean;
 	startTime: number | null;
-	position: { x: number; y: number };
+	position: { top: number; left: number };
 }
 
 function loadTimers(): TimerState[] {
@@ -64,8 +64,8 @@ export const useTimers = () => {
 			isActive: false,
 			startTime: null,
 			position: {
-				x: BASE_X + (id % 5) * X_OFFSET,
-				y: BASE_Y + (id % 10) * Y_OFFSET,
+				top: BASE_TOP + (id % 10) * TOP_OFFSET,
+				left: BASE_LEFT + (id % 5) * LEFT_OFFSET,
 			},
 		};
 		setTimers((prev) => [...prev, newTimer]);
