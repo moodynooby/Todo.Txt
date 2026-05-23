@@ -1,10 +1,11 @@
-import { Divider, Group, Kbd, Menu, Text, Tooltip } from "@mantine/core";
+import { Divider, Group, Kbd, Menu, Tooltip } from "@mantine/core";
 import { RichTextEditor } from "@mantine/tiptap";
 import {
 	ChevronDown,
 	Code,
 	File as FileIcon,
 	FileText,
+	Filter,
 	FolderOpen,
 	Save,
 	Sparkles,
@@ -14,12 +15,16 @@ interface EditorToolbarProps {
 	onSave: (format: "markdown" | "text" | "html") => void;
 	onOpen: () => void;
 	onAiTools: () => void;
+	sidebarCollapsed?: boolean;
+	onToggleSidebar?: () => void;
 }
 
 export const EditorToolbar = ({
 	onSave,
 	onOpen,
 	onAiTools,
+	sidebarCollapsed,
+	onToggleSidebar,
 }: EditorToolbarProps) => {
 	return (
 		<RichTextEditor.Toolbar sticky stickyOffset={60}>
@@ -50,7 +55,6 @@ export const EditorToolbar = ({
 			<RichTextEditor.ControlsGroup>
 				<RichTextEditor.Blockquote />
 				<RichTextEditor.Code />
-				<RichTextEditor.CodeBlock />
 			</RichTextEditor.ControlsGroup>
 
 			<Divider orientation="vertical" />
@@ -71,6 +75,21 @@ export const EditorToolbar = ({
 			<Divider orientation="vertical" />
 
 			<RichTextEditor.ControlsGroup>
+				{onToggleSidebar && (
+					<RichTextEditor.Control
+						onClick={onToggleSidebar}
+						active={false}
+						aria-label={sidebarCollapsed ? "Show filters" : "Hide filters"}
+					>
+						<Tooltip
+							label={sidebarCollapsed ? "Show filters" : "Hide filters"}
+							position="top"
+						>
+							<Filter size={16} />
+						</Tooltip>
+					</RichTextEditor.Control>
+				)}
+
 				<RichTextEditor.Control
 					onClick={onOpen}
 					active={false}
@@ -84,9 +103,8 @@ export const EditorToolbar = ({
 				<Menu shadow="md" width={180} position="bottom-end">
 					<Menu.Target>
 						<RichTextEditor.Control active={false} aria-label="Save as">
-							<Group gap={6} wrap="nowrap">
+							<Group gap={4} wrap="nowrap">
 								<Save size={14} />
-								<Text size="xs">Save</Text>
 								<ChevronDown size={10} />
 							</Group>
 						</RichTextEditor.Control>

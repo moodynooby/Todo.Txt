@@ -12,6 +12,8 @@ interface TextModeContentProps {
 	onSave: (format: "markdown" | "text" | "html") => void;
 	onOpen: () => void;
 	onAiTools: () => void;
+	sidebarCollapsed?: boolean;
+	onToggleSidebar?: () => void;
 }
 
 const TextModeContent = ({
@@ -21,6 +23,8 @@ const TextModeContent = ({
 	onSave,
 	onOpen,
 	onAiTools,
+	sidebarCollapsed,
+	onToggleSidebar,
 }: TextModeContentProps) => {
 	return (
 		<Box>
@@ -32,6 +36,8 @@ const TextModeContent = ({
 						onSave={onSave}
 						onOpen={onOpen}
 						onAiTools={onAiTools}
+						sidebarCollapsed={sidebarCollapsed}
+						onToggleSidebar={onToggleSidebar}
 					/>
 					<RichTextEditor.Content />
 				</RichTextEditor>

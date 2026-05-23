@@ -134,9 +134,6 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 					viewMode={viewMode}
 					setViewMode={setViewMode}
 					onAddTimer={onAddTimer}
-					onAiTools={handleAiTools}
-					onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-					sidebarCollapsed={sidebarCollapsed}
 				/>
 			</AppShell.Header>
 
@@ -187,6 +184,8 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 						onSave={handleSave}
 						onOpen={handleOpenRepo}
 						onAiTools={handleAiTools}
+						sidebarCollapsed={sidebarCollapsed}
+						onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
 					/>
 				)}
 			</AppShell.Main>

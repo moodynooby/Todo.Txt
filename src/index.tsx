@@ -1,5 +1,4 @@
 import "@mantine/core/styles.css";
-import "@mantine/notifications/styles.css";
 import "@mantine/tiptap/styles.css";
 import { useLocalStorage } from "@mantine/hooks";
 import ReactDOM from "react-dom/client";

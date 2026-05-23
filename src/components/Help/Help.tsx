@@ -28,7 +28,7 @@ const Help = () => {
 					<Group justify="center">
 						<DescriptionSvg />
 					</Group>
-					<Stack gap="xs" align="center">
+					<Group justify="center">
 						<Anchor
 							href="https://github.com/todotxt/todo.txt"
 							target="_blank"
@@ -38,16 +38,7 @@ const Help = () => {
 								Learn more about Todo.txt Format
 							</Button>
 						</Anchor>
-						<Anchor
-							href="https://www.markdownguide.org/cheat-sheet/"
-							target="_blank"
-							rel="noreferrer"
-						>
-							<Button leftSection={<BookOpen size={16} />} variant="light">
-								Learn more about Markdown Format
-							</Button>
-						</Anchor>
-					</Stack>
+					</Group>
 				</Stack>
 			</Modal>
 		</>

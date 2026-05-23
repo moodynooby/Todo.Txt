@@ -5,7 +5,6 @@ import {
 	Card,
 	Group,
 	Image,
-	Paper,
 	SimpleGrid,
 	Stack,
 	Text,
@@ -13,7 +12,6 @@ import {
 } from "@mantine/core";
 import { ArrowRight } from "lucide-react";
 import type { QuickAction } from "../../types/ui";
-import { DescriptionSvg } from "../Assets/DescriptionSvg";
 
 interface WelcomeScreenProps {
 	quickActions: QuickAction[];
@@ -78,15 +76,6 @@ const WelcomeScreen = ({ quickActions }: WelcomeScreenProps) => {
 					);
 				})}
 			</SimpleGrid>
-
-			<Paper withBorder p="lg" radius="md" maw={600} w="100%">
-				<Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="sm">
-					Basic Info
-				</Text>
-				<Paper p="md" radius="sm">
-					<DescriptionSvg />
-				</Paper>
-			</Paper>
 		</Stack>
 	);
 };

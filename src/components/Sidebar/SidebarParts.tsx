@@ -4,7 +4,6 @@ import {
 	Collapse,
 	Group,
 	NavLink,
-	Paper,
 	Stack,
 	Text,
 	ThemeIcon,
@@ -166,11 +165,9 @@ export const FilteredTasks = ({
 			</Button>
 		</Group>
 		{filteredTasks.map((task) => (
-			<Paper key={task.id} p="xs" withBorder>
-				<Text size="xs" ff="monospace">
-					{task.raw}
-				</Text>
-			</Paper>
+			<Text key={task.id} size="xs" ff="monospace" px="xs">
+				{task.raw}
+			</Text>
 		))}
 	</Stack>
 );
