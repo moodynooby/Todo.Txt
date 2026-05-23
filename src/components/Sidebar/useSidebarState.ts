@@ -14,8 +14,10 @@ export const useSidebarState = ({
 	onFilterChange,
 }: UseSidebarStateParams) => {
 	const [expandedSections, setExpandedSections] = useState<Set<string>>(
-		new Set(["priorities", "projects", "contexts"]),
+		new Set(["priorities", "projects", "contexts", "dueDates"]),
 	);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [showCompleted, setShowCompleted] = useState(false);
 
 	const toggleSection = (section: string): void => {
 		setExpandedSections((prev) => {
@@ -37,14 +39,34 @@ export const useSidebarState = ({
 		onFilterChange(null);
 	};
 
+	const visibleTasks = useMemo(
+		() => (showCompleted ? tasks : tasks.filter((t) => !t.completed)),
+		[tasks, showCompleted],
+	);
+
+	const searchedTasks = useMemo(
+		() =>
+			searchQuery
+				? visibleTasks.filter((t) =>
+						t.text.toLowerCase().includes(searchQuery.toLowerCase()),
+					)
+				: visibleTasks,
+		[visibleTasks, searchQuery],
+	);
+
 	const completedCount = useMemo(
-		() => tasks.filter((task) => task.text.startsWith("x ")).length,
+		() => tasks.filter((task) => task.completed).length,
 		[tasks],
 	);
+
 	const filteredTasks = useMemo(
-		() => applyFilter(tasks, activeFilter),
-		[tasks, activeFilter],
+		() => applyFilter(searchedTasks, activeFilter),
+		[searchedTasks, activeFilter],
 	);
+
+	const toggleShowCompleted = (): void => {
+		setShowCompleted((prev) => !prev);
+	};
 
 	return {
 		expandedSections,
@@ -53,5 +75,9 @@ export const useSidebarState = ({
 		clearFilter,
 		completedCount,
 		filteredTasks,
+		searchQuery,
+		setSearchQuery,
+		showCompleted,
+		toggleShowCompleted,
 	};
 };

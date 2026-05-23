@@ -13,7 +13,7 @@ export const useDocumentSave = (editor: Editor | null, htmlContent: string) => {
 	return useCallback(
 		(format: SaveFormat) => {
 			const saveActions: Record<SaveFormat, () => void> = {
-				markdown: () => saveAsMarkdown(editor?.getMarkdown() || ""),
+				markdown: () => saveAsMarkdown(editor?.getHTML() || ""),
 				text: () => saveAsText(editor?.getText() || ""),
 				html: () => saveAsHtml(htmlContent),
 			};

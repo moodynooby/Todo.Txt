@@ -5,30 +5,18 @@ import {
 	useComputedColorScheme,
 	useMantineColorScheme,
 } from "@mantine/core";
-import {
-	Download,
-	Maximize,
-	Minimize,
-	Moon,
-	Sun,
-	Wifi,
-	WifiOff,
-} from "lucide-react";
+import { Download, Maximize, Minimize, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useInstallPrompt } from "../../hooks/useInstallPrompt";
-import { useNetworkStatus } from "../../hooks/useNetworkStatus";
-import { useEditor } from "../../providers/EditorContext";
 import { toggleFullscreen } from "../../utils/fullscreen";
-import Help from "../Help/Help";
+import ConnectionButton from "./ConnectionButton";
 
 const HeaderActions = () => {
 	const { setColorScheme } = useMantineColorScheme();
 	const computedColorScheme = useComputedColorScheme("light");
 	const [isFullscreen, setIsFullscreen] = useState(false);
 
-	const { syncStatus, isSynced, onConnect, onDisconnectSync } = useEditor();
 	const { isInstallable, install } = useInstallPrompt();
-	const { isOnline } = useNetworkStatus();
 
 	const isDark = computedColorScheme === "dark";
 
@@ -46,58 +34,9 @@ const HeaderActions = () => {
 		};
 	}, []);
 
-	const syncIcon = () => {
-		if (!isOnline) return <WifiOff size={14} />;
-		switch (syncStatus) {
-			case "connecting":
-				return <Wifi size={14} />;
-			case "synced":
-				return <Wifi size={14} />;
-			case "error":
-				return <WifiOff size={14} />;
-			default:
-				return <WifiOff size={14} />;
-		}
-	};
-
-	const syncColor = () => {
-		if (!isOnline) return "red";
-		switch (syncStatus) {
-			case "connecting":
-				return "yellow";
-			case "synced":
-				return "green";
-			case "error":
-				return "red";
-			default:
-				return "gray";
-		}
-	};
-
 	return (
 		<Group gap="xs">
-			{syncStatus !== "disconnected" && (
-				<Tooltip
-					label={
-						isSynced
-							? "Synced. Click to disconnect"
-							: syncStatus === "connecting"
-								? "Connecting..."
-								: "Sync error. Click to reconnect"
-					}
-					position="bottom"
-				>
-					<ActionIcon
-						variant="subtle"
-						size="lg"
-						c={syncColor()}
-						onClick={isSynced ? onDisconnectSync : onConnect}
-						aria-label={isSynced ? "Disconnect sync" : "Reconnect sync"}
-					>
-						{syncIcon()}
-					</ActionIcon>
-				</Tooltip>
-			)}
+			<ConnectionButton />
 
 			{isInstallable && (
 				<Tooltip label="Install app" position="bottom">
@@ -136,8 +75,6 @@ const HeaderActions = () => {
 					{isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
 				</ActionIcon>
 			</Tooltip>
-
-			<Help />
 		</Group>
 	);
 };

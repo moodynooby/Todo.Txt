@@ -33,6 +33,7 @@ interface FirestoreSyncOptions {
 interface FirestoreSyncReturn {
 	isConnected: boolean;
 	syncStatus: SyncStatus;
+	user: { photoURL: string | null; displayName: string | null } | null;
 	connect: () => Promise<void>;
 	disconnect: () => Promise<void>;
 }
@@ -235,6 +236,9 @@ export const useFirestoreSync = ({
 	return {
 		isConnected,
 		syncStatus,
+		user: user
+			? { photoURL: user.photoURL, displayName: user.displayName }
+			: null,
 		connect,
 		disconnect,
 	};

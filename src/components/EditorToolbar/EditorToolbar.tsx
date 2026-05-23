@@ -1,6 +1,7 @@
 import { Divider, Group, Menu, Tooltip } from "@mantine/core";
 import { RichTextEditor } from "@mantine/tiptap";
 import {
+	CheckSquare,
 	ChevronDown,
 	Code,
 	File as FileIcon,
@@ -13,8 +14,14 @@ import {
 import { useEditor } from "../../providers/EditorContext";
 
 export const EditorToolbar = () => {
-	const { onSave, onOpen, onAiTools, sidebarCollapsed, onToggleSidebar } =
-		useEditor();
+	const {
+		onSave,
+		onOpen,
+		onAiTools,
+		sidebarCollapsed,
+		onToggleSidebar,
+		editor,
+	} = useEditor();
 
 	return (
 		<RichTextEditor.Toolbar sticky stickyOffset={60}>
@@ -65,6 +72,16 @@ export const EditorToolbar = () => {
 			<Divider orientation="vertical" />
 
 			<RichTextEditor.ControlsGroup>
+				<RichTextEditor.Control
+					onClick={() => editor?.chain().focus().insertContent("[ ] ").run()}
+					active={false}
+					aria-label="Insert checkbox"
+				>
+					<Tooltip label="Insert [ ] checkbox" position="top">
+						<CheckSquare size={16} />
+					</Tooltip>
+				</RichTextEditor.Control>
+
 				<RichTextEditor.Control
 					onClick={onToggleSidebar}
 					active={false}

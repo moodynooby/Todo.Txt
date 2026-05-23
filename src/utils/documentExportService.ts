@@ -1,5 +1,11 @@
 import { saveAs } from "file-saver";
 
+const stripHtmlTags = (html: string): string =>
+	html
+		.replace(/<[^>]*>/g, "")
+		.replace(/\n{3,}/g, "\n\n")
+		.trim();
+
 interface SaveFormatConfig {
 	filename: string;
 	mimeType: string;
@@ -15,7 +21,7 @@ const SAVE_FORMATS: Record<string, SaveFormatConfig> = {
 	text: {
 		filename: "todo.txt",
 		mimeType: "text/plain",
-		transform: (content) => content,
+		transform: (content) => stripHtmlTags(content),
 	},
 	html: {
 		filename: "todo.html",

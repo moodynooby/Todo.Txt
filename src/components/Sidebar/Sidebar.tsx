@@ -1,5 +1,6 @@
 import {
 	ActionIcon,
+	Box,
 	Divider,
 	Group,
 	Paper,
@@ -16,9 +17,11 @@ import {
 import type { Filter, ParsedTodoContent } from "../../types/todo";
 import {
 	CollapsedPriorityButton,
+	CompletionToggle,
 	FilterButton,
 	FilteredTasks,
 	PRIORITY_CONFIG,
+	SearchInput,
 	SidebarSection,
 } from "./SidebarParts";
 import { useSidebarState } from "./useSidebarState";
@@ -44,7 +47,7 @@ const Sidebar = ({
 	activeFilter,
 	onFilterChange,
 }: SidebarProps) => {
-	const { tasks, priorities, projects, contexts } = taskData;
+	const { tasks, priorities, projects, contexts, dueDates } = taskData;
 	const {
 		expandedSections,
 		toggleSection,
@@ -52,6 +55,10 @@ const Sidebar = ({
 		clearFilter,
 		completedCount,
 		filteredTasks,
+		searchQuery,
+		setSearchQuery,
+		showCompleted,
+		toggleShowCompleted,
 	} = useSidebarState({
 		tasks,
 		activeFilter,
@@ -126,6 +133,9 @@ const Sidebar = ({
 								`Priority ${activeFilter.value}`}
 							{activeFilter.type === "project" && `+${activeFilter.value}`}
 							{activeFilter.type === "context" && `@${activeFilter.value}`}
+							{activeFilter.type === "due" && `Due: ${activeFilter.value}`}
+							{activeFilter.type === "completion" &&
+								(activeFilter.value === "done" ? "Done" : "Pending")}
 						</Text>
 						<ActionIcon variant="subtle" size="xs" onClick={clearFilter}>
 							<X size={14} />
@@ -142,6 +152,15 @@ const Sidebar = ({
 					{completedCount} done
 				</Text>
 			</Group>
+			<Divider />
+
+			<Box px="md" py="xs">
+				<SearchInput value={searchQuery} onChange={setSearchQuery} />
+				<CompletionToggle
+					showCompleted={showCompleted}
+					onToggle={toggleShowCompleted}
+				/>
+			</Box>
 			<Divider />
 
 			<ScrollArea style={{ flex: 1 }} p="sm">
@@ -220,6 +239,27 @@ const Sidebar = ({
 									onClick={() => handleFilterClick("context", context)}
 									prefix="@"
 									label={context}
+								/>
+							))}
+						</SidebarSection>
+
+						<SidebarSection
+							title="Due Dates"
+							id="dueDates"
+							expandedSections={expandedSections}
+							onToggle={toggleSection}
+							isEmpty={Object.keys(dueDates).length === 0}
+							emptyMessage="No due dates found"
+						>
+							{Object.entries(dueDates).map(([due, items]) => (
+								<FilterButton
+									key={due}
+									type="due"
+									value={due}
+									label={due}
+									count={items.length}
+									isActive={isFilterActive(activeFilter, "due", due)}
+									onClick={() => handleFilterClick("due", due)}
 								/>
 							))}
 						</SidebarSection>

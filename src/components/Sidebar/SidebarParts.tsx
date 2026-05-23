@@ -5,10 +5,12 @@ import {
 	Group,
 	NavLink,
 	Stack,
+	Switch,
 	Text,
+	TextInput,
 	ThemeIcon,
 } from "@mantine/core";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Search, X } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Task } from "../../types/todo";
 
@@ -170,4 +172,51 @@ export const FilteredTasks = ({
 			</Text>
 		))}
 	</Stack>
+);
+
+interface SearchInputProps {
+	value: string;
+	onChange: (value: string) => void;
+}
+
+export const SearchInput = ({ value, onChange }: SearchInputProps) => (
+	<TextInput
+		placeholder="Search tasks..."
+		leftSection={<Search size={14} />}
+		rightSection={
+			value ? (
+				<Button
+					variant="subtle"
+					size="compact-xs"
+					onClick={() => onChange("")}
+					px={4}
+				>
+					<X size={14} />
+				</Button>
+			) : null
+		}
+		value={value}
+		onChange={(e) => onChange(e.currentTarget.value)}
+		size="xs"
+		mb="xs"
+	/>
+);
+
+interface CompletionToggleProps {
+	showCompleted: boolean;
+	onToggle: () => void;
+}
+
+export const CompletionToggle = ({
+	showCompleted,
+	onToggle,
+}: CompletionToggleProps) => (
+	<Switch
+		label="Show completed"
+		size="xs"
+		checked={showCompleted}
+		onChange={onToggle}
+		px="md"
+		mb="xs"
+	/>
 );

@@ -1,7 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import { createContext, useContext } from "react";
 import type { SyncStatus } from "../hooks/useFirestoreSync";
-import type { QuickAction } from "../types/ui";
 
 export interface EditorContextValue {
 	editor: Editor | null;
@@ -10,9 +9,9 @@ export interface EditorContextValue {
 	onAiTools: () => void;
 	sidebarCollapsed: boolean;
 	onToggleSidebar: () => void;
-	quickActions: QuickAction[];
 	syncStatus: SyncStatus;
 	isSynced: boolean;
+	user: { photoURL: string | null; displayName: string | null } | null;
 	onConnect: () => void;
 	onDisconnectSync: () => void;
 }

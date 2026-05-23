@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Paper, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Group, Image, Paper, Title, Tooltip } from "@mantine/core";
 import { Plus, Timer as TimerIcon } from "lucide-react";
 import { useViewMode } from "../../providers/ViewModeContext";
 import HeaderActions from "../Header/HeaderActions";
@@ -19,7 +19,8 @@ const AppHeader = () => {
 			}}
 		>
 			<Group h="100%" justify="space-between" px="md" wrap="nowrap">
-				<Group gap="md">
+				<Group gap="sm">
+					<Image src="/todotxt2.svg" alt="Logo" w={28} h={28} />
 					<Title order={4} c="var(--mantine-primary-color-6)">
 						T0do.Txt
 					</Title>

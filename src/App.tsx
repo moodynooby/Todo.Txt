@@ -18,7 +18,6 @@ import { useDocumentSave } from "./hooks/useDocumentSave";
 import { useDueNotifications } from "./hooks/useDueNotifications";
 import { useFileHandler } from "./hooks/useFileHandler";
 import { useFirestoreSync } from "./hooks/useFirestoreSync";
-import { useQuickActions } from "./hooks/useQuickActions";
 import { useTipTap } from "./hooks/useTipTap";
 import { EditorContext } from "./providers/EditorContext";
 import { LAYOUT } from "./providers/layout";
@@ -36,10 +35,6 @@ const ExcalidrawPage = lazy(
 	() => import("./components/ExcalidrawPage/ExcalidrawPage.tsx"),
 );
 
-const isEmptyContent = (content: string): boolean => {
-	return !content || content.trim() === "" || content === "<p></p>";
-};
-
 const App = () => {
 	const { viewMode, setViewMode } = useViewMode();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -54,8 +49,6 @@ const App = () => {
 	const [groqApiKey, setGroqApiKey] = useState(
 		() => localStorage.getItem("groq_api_key") || "",
 	);
-
-	const showWelcome = isEmptyContent(rteContent);
 
 	const isRemoteUpdate = useRef(false);
 	const isFirstMount = useRef(true);
@@ -95,6 +88,7 @@ const App = () => {
 	const {
 		syncStatus,
 		isConnected: isSynced,
+		user,
 		connect: connectSync,
 		disconnect: disconnectSync,
 	} = useFirestoreSync({
@@ -110,10 +104,6 @@ const App = () => {
 		},
 		[setRteContentState],
 	);
-
-	const handleStartWriting = useCallback(() => {
-		setRteContentState("<p><br></p>");
-	}, [setRteContentState]);
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -179,11 +169,6 @@ const App = () => {
 		setIsAiDialogOpen(false);
 	};
 
-	const quickActions = useQuickActions({
-		onStart: handleStartWriting,
-		onConnect: connectSync,
-	});
-
 	const editorContextValue = useMemo(
 		() => ({
 			editor,
@@ -192,9 +177,9 @@ const App = () => {
 			onAiTools: handleAiTools,
 			sidebarCollapsed,
 			onToggleSidebar: handleToggleSidebar,
-			quickActions,
 			syncStatus,
 			isSynced,
+			user,
 			onConnect: connectSync,
 			onDisconnectSync: disconnectSync,
 		}),
@@ -205,9 +190,9 @@ const App = () => {
 			handleAiTools,
 			sidebarCollapsed,
 			handleToggleSidebar,
-			quickActions,
 			syncStatus,
 			isSynced,
+			user,
 			connectSync,
 			disconnectSync,
 		],
@@ -270,7 +255,7 @@ const App = () => {
 							<ExcalidrawPage />
 						</Suspense>
 					)}
-					{viewMode === "text" && <TextModeContent showWelcome={showWelcome} />}
+					{viewMode === "text" && <TextModeContent />}
 				</AppShell.Main>
 			</AppShell>
 		</EditorContext.Provider>

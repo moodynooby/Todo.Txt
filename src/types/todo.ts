@@ -1,4 +1,9 @@
-export type FilterType = "priority" | "project" | "context";
+export type FilterType =
+	| "priority"
+	| "project"
+	| "context"
+	| "due"
+	| "completion";
 
 export interface Filter {
 	type: FilterType;
@@ -9,6 +14,7 @@ export interface Task {
 	id: number;
 	text: string;
 	raw: string;
+	completed: boolean;
 	priority?: string;
 	projects?: string[];
 	contexts?: string[];
@@ -20,4 +26,5 @@ export interface ParsedTodoContent {
 	priorities: Record<string, Task[]>;
 	projects: Record<string, Task[]>;
 	contexts: Record<string, Task[]>;
+	dueDates: Record<string, Task[]>;
 }
