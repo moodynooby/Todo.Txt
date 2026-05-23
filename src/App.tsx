@@ -18,7 +18,9 @@ import { useDueNotifications } from "./hooks/useDueNotifications";
 import { useFileHandler } from "./hooks/useFileHandler";
 import { useQuickActions } from "./hooks/useQuickActions";
 import { useTipTap } from "./hooks/useTipTap";
+import { EditorContext } from "./providers/EditorContext";
 import { LAYOUT } from "./providers/layout";
+import { useViewMode } from "./providers/ViewModeContext";
 import type { Filter, ParsedTodoContent } from "./types/todo";
 import { parseTodoContent } from "./utils/todoParser";
 
@@ -28,17 +30,12 @@ const ExcalidrawPage = lazy(
 	() => import("./components/ExcalidrawPage/ExcalidrawPage.tsx"),
 );
 
-interface AppProps {
-	viewMode: string;
-	setViewMode: (mode: string) => void;
-	onAddTimer: () => void;
-}
-
 const isEmptyContent = (content: string): boolean => {
 	return !content || content.trim() === "" || content === "<p></p>";
 };
 
-const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
+const App = () => {
+	const { viewMode } = useViewMode();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
@@ -116,6 +113,16 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 		onOpenFile: handleOpenRepo,
 	});
 
+	const editorContextValue = {
+		editor,
+		onSave: handleSave,
+		onOpen: handleOpenRepo,
+		onAiTools: handleAiTools,
+		sidebarCollapsed,
+		onToggleSidebar: () => setSidebarCollapsed(!sidebarCollapsed),
+		quickActions,
+	};
+
 	return (
 		<AppShell
 			header={{ height: LAYOUT.HEADER_HEIGHT }}
@@ -130,11 +137,7 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 			padding="md"
 		>
 			<AppShell.Header>
-				<AppHeader
-					viewMode={viewMode}
-					setViewMode={setViewMode}
-					onAddTimer={onAddTimer}
-				/>
+				<AppHeader />
 			</AppShell.Header>
 
 			{viewMode === "text" && (
@@ -149,46 +152,37 @@ const App = ({ viewMode, setViewMode, onAddTimer }: AppProps) => {
 				</AppShell.Aside>
 			)}
 
-			<AppShell.Main>
-				<AiToolsDialog
-					isOpen={isAiDialogOpen}
-					onClose={() => setIsAiDialogOpen(false)}
-					initialContent={
-						editor?.state.selection.empty
-							? editor?.getText() || ""
-							: editor?.state.doc.textBetween(
-									editor.state.selection.from,
-									editor.state.selection.to,
-									"\n",
-								) || ""
-					}
-					onInsert={handleAiInsert}
-				/>
-				<input
-					type="file"
-					ref={fileInputRef}
-					className="file-input"
-					accept=".txt"
-					onChange={handleFileChange}
-				/>
-				{viewMode === "excalidraw" && (
-					<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
-						<ExcalidrawPage />
-					</Suspense>
-				)}
-				{viewMode === "text" && (
-					<TextModeContent
-						editor={editor}
-						showWelcome={showWelcome}
-						quickActions={quickActions}
-						onSave={handleSave}
-						onOpen={handleOpenRepo}
-						onAiTools={handleAiTools}
-						sidebarCollapsed={sidebarCollapsed}
-						onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+			<EditorContext.Provider value={editorContextValue}>
+				<AppShell.Main>
+					<AiToolsDialog
+						isOpen={isAiDialogOpen}
+						onClose={() => setIsAiDialogOpen(false)}
+						initialContent={
+							editor?.state.selection.empty
+								? editor?.getText() || ""
+								: editor?.state.doc.textBetween(
+										editor.state.selection.from,
+										editor.state.selection.to,
+										"\n",
+									) || ""
+						}
+						onInsert={handleAiInsert}
 					/>
-				)}
-			</AppShell.Main>
+					<input
+						type="file"
+						ref={fileInputRef}
+						className="file-input"
+						accept=".txt"
+						onChange={handleFileChange}
+					/>
+					{viewMode === "excalidraw" && (
+						<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
+							<ExcalidrawPage />
+						</Suspense>
+					)}
+					{viewMode === "text" && <TextModeContent showWelcome={showWelcome} />}
+				</AppShell.Main>
+			</EditorContext.Provider>
 		</AppShell>
 	);
 };

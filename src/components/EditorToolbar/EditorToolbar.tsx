@@ -10,22 +10,12 @@ import {
 	Save,
 	Sparkles,
 } from "lucide-react";
+import { useEditor } from "../../providers/EditorContext";
 
-interface EditorToolbarProps {
-	onSave: (format: "markdown" | "text" | "html") => void;
-	onOpen: () => void;
-	onAiTools: () => void;
-	sidebarCollapsed?: boolean;
-	onToggleSidebar?: () => void;
-}
+export const EditorToolbar = () => {
+	const { onSave, onOpen, onAiTools, sidebarCollapsed, onToggleSidebar } =
+		useEditor();
 
-export const EditorToolbar = ({
-	onSave,
-	onOpen,
-	onAiTools,
-	sidebarCollapsed,
-	onToggleSidebar,
-}: EditorToolbarProps) => {
 	return (
 		<RichTextEditor.Toolbar sticky stickyOffset={60}>
 			<RichTextEditor.ControlsGroup>
@@ -75,20 +65,18 @@ export const EditorToolbar = ({
 			<Divider orientation="vertical" />
 
 			<RichTextEditor.ControlsGroup>
-				{onToggleSidebar && (
-					<RichTextEditor.Control
-						onClick={onToggleSidebar}
-						active={false}
-						aria-label={sidebarCollapsed ? "Show filters" : "Hide filters"}
+				<RichTextEditor.Control
+					onClick={onToggleSidebar}
+					active={false}
+					aria-label={sidebarCollapsed ? "Show filters" : "Hide filters"}
+				>
+					<Tooltip
+						label={sidebarCollapsed ? "Show filters" : "Hide filters"}
+						position="top"
 					>
-						<Tooltip
-							label={sidebarCollapsed ? "Show filters" : "Hide filters"}
-							position="top"
-						>
-							<Filter size={16} />
-						</Tooltip>
-					</RichTextEditor.Control>
-				)}
+						<Filter size={16} />
+					</Tooltip>
+				</RichTextEditor.Control>
 
 				<RichTextEditor.Control
 					onClick={onOpen}
