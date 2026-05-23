@@ -1,5 +1,5 @@
 {
-  "name": "todo.txt_2",
+  "name": "todo.txt",
   "version": "1.0.1",
   "description": "A todo.txt-compatible plain text todo app built with React and Mantine",
   "private": true,
