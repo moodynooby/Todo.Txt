@@ -6,14 +6,23 @@ const STORAGE_KEY = "groq_api_key";
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 
 export const useAiGroq = () => {
-	const [apiKey, setApiKeyState] = useState<string>(
-		() => localStorage.getItem(STORAGE_KEY) || "",
-	);
+	const [apiKey, setApiKeyState] = useState<string>(() => {
+		try {
+			return localStorage.getItem(STORAGE_KEY) || "";
+		} catch (e) {
+			console.warn("Failed to read API key from localStorage:", e);
+			return "";
+		}
+	});
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const saveApiKey = (key: string) => {
-		localStorage.setItem(STORAGE_KEY, key);
+		try {
+			localStorage.setItem(STORAGE_KEY, key);
+		} catch (e) {
+			console.error("Failed to save API key to localStorage:", e);
+		}
 		setApiKeyState(key);
 	};
 

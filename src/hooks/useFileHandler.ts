@@ -31,7 +31,11 @@ export const useFileHandler = ({
 				try {
 					const html = marked.parse(result, { async: false }) as string;
 					setRteContent(html);
-				} catch {
+				} catch (e) {
+					console.warn(
+						"Failed to parse markdown, falling back to plain text:",
+						e,
+					);
 					setRteContent(
 						result
 							.split("\n")

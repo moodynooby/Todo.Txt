@@ -25,7 +25,7 @@ import {
 	TextCursorInput,
 	WrapText,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAiGroq } from "../../hooks/useAiGroq";
 
 interface AiToolsDialogProps {
@@ -101,11 +101,18 @@ const AiToolsDialog = ({
 		error: apiError,
 	} = useAiGroq();
 
+	const mountedRef = useRef(true);
 	const [view, setView] = useState<"tools" | "settings">("tools");
 	const [keyInput, setKeyInput] = useState(apiKey);
 	const [customPrompt, setCustomPrompt] = useState("");
 	const [result, setResult] = useState("");
 	const [activeTool, setActiveTool] = useState<string | null>(null);
+
+	useEffect(() => {
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
 
 	const handleSaveKey = () => {
 		saveApiKey(keyInput);
@@ -116,14 +123,14 @@ const AiToolsDialog = ({
 		setActiveTool(toolId);
 		const fullPrompt = `${promptTemplate}\n\nCONTENT:\n${initialContent}`;
 		const output = await generate(fullPrompt);
-		if (output) setResult(output);
+		if (output && mountedRef.current) setResult(output);
 	};
 
 	const handleCustomPrompt = async () => {
 		if (!customPrompt.trim()) return;
 		const fullPrompt = `${customPrompt}\n\nCONTENT:\n${initialContent}`;
 		const output = await generate(fullPrompt);
-		if (output) setResult(output);
+		if (output && mountedRef.current) setResult(output);
 	};
 
 	const handleClose = () => {

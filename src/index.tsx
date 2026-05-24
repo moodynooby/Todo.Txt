@@ -1,9 +1,10 @@
 import "@mantine/core/styles.css";
 import "@mantine/tiptap/styles.css";
 import { useLocalStorage } from "@mantine/hooks";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { ErrorBoundary } from "./components/ErrorBoundary/ErrorBoundary";
 import Timer from "./components/Timer/Timer";
 import { useTimers } from "./hooks/useTimers";
 import { MantineProvider } from "./providers/MantineProvider";
@@ -21,6 +22,34 @@ function RootComponent() {
 		defaultValue: "text",
 	});
 	const { timers, addTimer, removeTimer, updateTimer } = useTimers();
+
+	useEffect(() => {
+		if (!("serviceWorker" in navigator)) return;
+
+		let refreshing = false;
+		navigator.serviceWorker.addEventListener("controllerchange", () => {
+			if (refreshing) return;
+			refreshing = true;
+			window.location.reload();
+		});
+
+		const checkForUpdates = async () => {
+			try {
+				const reg = await navigator.serviceWorker.getRegistration();
+				if (reg) await reg.update();
+			} catch (e) {
+				console.warn("Service worker update check failed:", e);
+			}
+		};
+
+		const intervalId = setInterval(checkForUpdates, 30 * 60 * 1000);
+		window.addEventListener("focus", checkForUpdates);
+
+		return () => {
+			clearInterval(intervalId);
+			window.removeEventListener("focus", checkForUpdates);
+		};
+	}, []);
 
 	const handleStateChange = useCallback(
 		(
@@ -41,7 +70,9 @@ function RootComponent() {
 	return (
 		<MantineProvider>
 			<ViewModeContext.Provider value={{ viewMode, setViewMode, addTimer }}>
-				<App />
+				<ErrorBoundary>
+					<App />
+				</ErrorBoundary>
 				{timers.map((timer) => (
 					<Timer
 						key={timer.id}

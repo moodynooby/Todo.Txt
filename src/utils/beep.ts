@@ -14,7 +14,7 @@ export const playBeep = (duration = 200, frequency = 880, volume = 0.3) => {
 		gain.connect(ctx.destination);
 		osc.start();
 		osc.stop(ctx.currentTime + duration / 1000);
-	} catch {
-		// Audio context not available
+	} catch (e) {
+		console.warn("Audio context not available:", e);
 	}
 };

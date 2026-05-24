@@ -148,7 +148,8 @@ function loadExcalidrawData(): ExcalidrawData | null {
 	try {
 		const data = localStorage.getItem(EXCALIDRAW_KEY);
 		return data ? JSON.parse(data) : null;
-	} catch {
+	} catch (e) {
+		console.error("Failed to load Excalidraw sync data:", e);
 		return null;
 	}
 }
