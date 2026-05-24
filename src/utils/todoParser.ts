@@ -6,15 +6,20 @@ const stripHtml = (html: string, replacement = "\n"): string => {
 	return html.replace(/<[^>]*>/g, replacement);
 };
 
-const parseRelativeDate = (value: string): string | undefined => {
+const parseRelativeDate = (
+	value: string,
+	today: string,
+	tomorrow: string,
+	yesterday: string,
+): string | undefined => {
 	if (value === "today") {
-		return getToday();
+		return today;
 	}
 	if (value === "tomorrow") {
-		return getTomorrow();
+		return tomorrow;
 	}
 	if (value === "yesterday") {
-		return getYesterday();
+		return yesterday;
 	}
 	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
 		return value;
@@ -41,11 +46,23 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 	const contexts: Record<string, Task[]> = {};
 	const dueDates: Record<string, Task[]> = {};
 
+	/**
+	 * BOLT OPTIMIZATION:
+	 * 1. Pre-calculate dates to avoid redundant Date object creations and formatting inside the loop.
+	 * 2. Use .push() instead of .concat() to avoid O(N^2) complexity when building category lists.
+	 *
+	 * Expected Impact: Reduces parsing time from O(N^2) to O(N).
+	 * For a file with 1000 tasks, this avoids creating ~1000 temporary arrays.
+	 */
+	const todayStr = getToday();
+	const tomorrowStr = getTomorrow();
+	const yesterdayStr = getYesterday();
+
 	const categorizeDueDate = (due: string): string => {
 		if (/^\d{4}-\d{2}-\d{2}$/.test(due)) {
-			if (due < getToday()) return "overdue";
-			if (due === getToday()) return "today";
-			if (due === getTomorrow()) return "tomorrow";
+			if (due < todayStr) return "overdue";
+			if (due === todayStr) return "today";
+			if (due === tomorrowStr) return "tomorrow";
 		}
 		return due;
 	};
@@ -82,7 +99,10 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		if (projectMatches) {
 			task.projects = projectMatches.map((p: string) => p.slice(1));
 			task.projects.forEach((p: string) => {
-				projects[p] = (projects[p] || []).concat(task);
+				if (!projects[p]) {
+					projects[p] = [];
+				}
+				projects[p].push(task);
 			});
 		}
 
@@ -90,17 +110,23 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		if (contextMatches) {
 			task.contexts = contextMatches.map((c: string) => c.slice(1));
 			task.contexts.forEach((c: string) => {
-				contexts[c] = (contexts[c] || []).concat(task);
+				if (!contexts[c]) {
+					contexts[c] = [];
+				}
+				contexts[c].push(task);
 			});
 		}
 
 		const dueMatch = cleanText.match(/due:([\w-]+)/);
 		if (dueMatch) {
 			const value = dueMatch[1].toLowerCase();
-			task.due = parseRelativeDate(value);
+			task.due = parseRelativeDate(value, todayStr, tomorrowStr, yesterdayStr);
 			if (task.due) {
 				const category = categorizeDueDate(task.due);
-				dueDates[category] = (dueDates[category] || []).concat(task);
+				if (!dueDates[category]) {
+					dueDates[category] = [];
+				}
+				dueDates[category].push(task);
 			}
 		}
 
