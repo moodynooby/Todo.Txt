@@ -154,12 +154,8 @@ const AiToolsDialog = ({
 			<Stack gap="md">
 				{view === "settings" ? (
 					<Stack gap="md" py="md">
-						<Text ta="center" size="sm" c="dimmed">
-							Enter your Groq Cloud API key to enable AI tools. Your key is
-							stored locally.
-						</Text>
 						<PasswordInput
-							label="API Key"
+							label="Groq API Key"
 							placeholder="gsk_..."
 							value={keyInput}
 							onChange={(e) => setKeyInput(e.currentTarget.value)}
@@ -171,20 +167,38 @@ const AiToolsDialog = ({
 									rel="noreferrer"
 									size="xs"
 								>
-									Get one at console.groq.com
+									Get a key at console.groq.com
 								</Text>
 							}
 						/>
 						<Button onClick={handleSaveKey} fullWidth>
-							Save & Continue
+							{apiKey ? "Update & Continue" : "Save & Continue"}
 						</Button>
 					</Stack>
 				) : (
 					<>
-						{!apiKey && (
+						{apiKey ? (
+							<Group justify="space-between">
+								<Group gap="xs">
+									<ThemeIcon variant="light" color="green" size="sm">
+										<Check size={14} />
+									</ThemeIcon>
+									<Text size="sm" c="green">
+										API key configured
+									</Text>
+								</Group>
+								<Button
+									variant="subtle"
+									size="compact-sm"
+									onClick={() => setView("settings")}
+								>
+									Change key
+								</Button>
+							</Group>
+						) : (
 							<Alert
 								color="yellow"
-								title="Missing API Key"
+								title="API Key Required"
 								withCloseButton
 								onClose={() => setView("settings")}
 							>
