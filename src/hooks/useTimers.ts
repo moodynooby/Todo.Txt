@@ -33,8 +33,8 @@ function loadTimers(): TimerState[] {
 				return t;
 			});
 		}
-	} catch {
-		// Invalid stored data
+	} catch (e) {
+		console.error("Failed to load timers from localStorage:", e);
 	}
 	return [];
 }
@@ -42,8 +42,8 @@ function loadTimers(): TimerState[] {
 function saveTimers(timers: TimerState[]) {
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
-	} catch {
-		// Storage full or unavailable
+	} catch (e) {
+		console.error("Failed to save timers to localStorage:", e);
 	}
 }
 

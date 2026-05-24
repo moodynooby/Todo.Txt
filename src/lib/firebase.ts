@@ -30,7 +30,9 @@ try {
 	app = initializeApp(firebaseConfig);
 	auth = getAuth(app);
 	db = getFirestore(app);
-	setPersistence(auth, browserLocalPersistence).catch(() => {});
+	setPersistence(auth, browserLocalPersistence).catch((err) => {
+		console.error("Failed to set auth persistence:", err);
+	});
 } catch (e) {
 	initError = e instanceof Error ? e.message : "Failed to initialize Firebase";
 }
@@ -89,7 +91,8 @@ export const handleRedirectResult = async (): Promise<boolean> => {
 		const a = getFirebaseAuth();
 		const result = await getRedirectResult(a);
 		return !!result;
-	} catch {
+	} catch (e) {
+		console.error("Redirect result error:", e);
 		return false;
 	}
 };

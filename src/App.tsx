@@ -12,6 +12,7 @@ import {
 } from "react";
 import AiToolsDialog from "./components/AiTools/AiToolsDialog";
 import AppHeader from "./components/AppHeader/AppHeader";
+import { ErrorBoundary } from "./components/ErrorBoundary/ErrorBoundary";
 import Sidebar from "./components/Sidebar/Sidebar";
 import TextModeContent from "./components/TextModeContent/TextModeContent";
 import { useDocumentSave } from "./hooks/useDocumentSave";
@@ -46,9 +47,14 @@ const App = () => {
 		defaultValue: "",
 	});
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
-	const [groqApiKey, setGroqApiKey] = useState(
-		() => localStorage.getItem("groq_api_key") || "",
-	);
+	const [groqApiKey, setGroqApiKey] = useState(() => {
+		try {
+			return localStorage.getItem("groq_api_key") || "";
+		} catch (e) {
+			console.warn("Failed to read API key from localStorage:", e);
+			return "";
+		}
+	});
 
 	const isRemoteUpdate = useRef(false);
 	const isFirstMount = useRef(true);
@@ -70,7 +76,11 @@ const App = () => {
 				typeof prefs.groqApiKey === "string" &&
 				prefs.groqApiKey !== groqApiKey
 			) {
-				localStorage.setItem("groq_api_key", prefs.groqApiKey);
+				try {
+					localStorage.setItem("groq_api_key", prefs.groqApiKey);
+				} catch (e) {
+					console.error("Failed to save remote API key:", e);
+				}
 				setGroqApiKey(prefs.groqApiKey);
 			}
 			if (typeof prefs.viewMode === "string" && prefs.viewMode !== viewMode) {
@@ -229,33 +239,35 @@ const App = () => {
 				)}
 
 				<AppShell.Main>
-					<AiToolsDialog
-						isOpen={isAiDialogOpen}
-						onClose={() => setIsAiDialogOpen(false)}
-						initialContent={
-							editor?.state.selection.empty
-								? editor?.getText() || ""
-								: editor?.state.doc.textBetween(
-										editor.state.selection.from,
-										editor.state.selection.to,
-										"\n",
-									) || ""
-						}
-						onInsert={handleAiInsert}
-					/>
-					<input
-						type="file"
-						ref={fileInputRef}
-						className="file-input"
-						accept=".txt,.md,.html"
-						onChange={handleFileChange}
-					/>
-					{viewMode === "excalidraw" && (
-						<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
-							<ExcalidrawPage />
-						</Suspense>
-					)}
-					{viewMode === "text" && <TextModeContent />}
+					<ErrorBoundary>
+						<AiToolsDialog
+							isOpen={isAiDialogOpen}
+							onClose={() => setIsAiDialogOpen(false)}
+							initialContent={
+								editor?.state.selection.empty
+									? (editor?.getText() ?? "")
+									: (editor?.state.doc.textBetween(
+											editor.state.selection.from,
+											editor.state.selection.to,
+											"\n",
+										) ?? "")
+							}
+							onInsert={handleAiInsert}
+						/>
+						<input
+							type="file"
+							ref={fileInputRef}
+							className="file-input"
+							accept=".txt,.md,.html"
+							onChange={handleFileChange}
+						/>
+						{viewMode === "excalidraw" && (
+							<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
+								<ExcalidrawPage />
+							</Suspense>
+						)}
+						{viewMode === "text" && <TextModeContent />}
+					</ErrorBoundary>
 				</AppShell.Main>
 			</AppShell>
 		</EditorContext.Provider>

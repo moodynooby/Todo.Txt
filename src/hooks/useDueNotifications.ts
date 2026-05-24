@@ -47,19 +47,29 @@ export const useDueNotifications = (tasks: Task[]) => {
 			if (dueTasks.length === 0) return;
 
 			dueTasks.forEach((task) => {
-				new Notification("Todo Due Today", {
-					body: task.text,
-					icon: "/icon192.png",
-				});
+				try {
+					new Notification("Todo Due Today", {
+						body: task.text,
+						icon: "/icon192.png",
+					});
+				} catch (e) {
+					console.warn("Failed to show notification:", e);
+				}
 				notifiedTaskIds.push(task.id);
 			});
 
 			playBeep();
 
-			localStorage.setItem(storageKey, JSON.stringify(notifiedTaskIds));
+			try {
+				localStorage.setItem(storageKey, JSON.stringify(notifiedTaskIds));
+			} catch (e) {
+				console.error("Failed to save notified task IDs:", e);
+			}
 		};
 
-		checkDueTasks();
+		checkDueTasks().catch((e) =>
+			console.error("Due notification check failed:", e),
+		);
 
 		return () => {
 			cancelled = true;

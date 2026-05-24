@@ -144,14 +144,16 @@ export const useFirestoreSync = ({
 						}
 						setSyncStatus("synced");
 					},
-					() => {
+					(err) => {
+						console.error("Firestore snapshot error:", err);
 						setSyncStatus("error");
 					},
 				);
 
 				setIsConnected(true);
 				setSyncStatus("synced");
-			} catch {
+			} catch (e) {
+				console.error("Firestore setup error:", e);
 				setSyncStatus("error");
 			}
 		},
@@ -208,7 +210,8 @@ export const useFirestoreSync = ({
 			.then(() => {
 				setSyncStatus("synced");
 			})
-			.catch(() => {
+			.catch((e) => {
+				console.error("Firestore write error:", e);
 				setSyncStatus("error");
 			});
 	}, [content, preferences, isConnected, user]);
@@ -228,8 +231,8 @@ export const useFirestoreSync = ({
 		teardownFirestore();
 		try {
 			await signOutUser();
-		} catch {
-			/* noop */
+		} catch (e) {
+			console.error("Sign out error:", e);
 		}
 	}, [teardownFirestore]);
 

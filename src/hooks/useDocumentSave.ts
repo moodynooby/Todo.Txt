@@ -12,9 +12,10 @@ type SaveFormat = "markdown" | "text" | "html";
 export const useDocumentSave = (editor: Editor | null, htmlContent: string) => {
 	return useCallback(
 		(format: SaveFormat) => {
+			if (format !== "html" && !editor) return;
 			const saveActions: Record<SaveFormat, () => void> = {
-				markdown: () => saveAsMarkdown(editor?.getHTML() || ""),
-				text: () => saveAsText(editor?.getText() || ""),
+				markdown: () => saveAsMarkdown(editor ? editor.getHTML() : ""),
+				text: () => saveAsText(editor ? editor.getText() : ""),
 				html: () => saveAsHtml(htmlContent),
 			};
 

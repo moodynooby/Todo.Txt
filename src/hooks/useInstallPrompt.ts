@@ -44,7 +44,13 @@ export const useInstallPrompt = (): InstallPromptReturn => {
 
 	const install = useCallback(async () => {
 		if (!deferredPrompt) return;
-		deferredPrompt.prompt();
+		try {
+			await deferredPrompt.prompt();
+		} catch (e) {
+			console.error("Install prompt failed:", e);
+			setDeferredPrompt(null);
+			return;
+		}
 		const { outcome } = await deferredPrompt.userChoice;
 		if (outcome === "accepted") {
 			setIsInstalled(true);
