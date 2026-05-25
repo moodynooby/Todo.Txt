@@ -35,7 +35,9 @@ export class ErrorBoundary extends Component<Props, State> {
 					<Stack align="center" gap="md">
 						<Title order={2}>Something went wrong</Title>
 						<Text c="dimmed" size="sm" maw={400} ta="center">
-							{this.state.error?.message || "An unexpected error occurred"}
+							{/* Security: Display generic error message to prevent leaking internal details or environment info */}
+							An unexpected error occurred. Please try again or refresh the
+							page.
 						</Text>
 						<Button onClick={this.handleReset}>Try Again</Button>
 					</Stack>

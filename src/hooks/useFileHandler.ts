@@ -1,4 +1,5 @@
 import { type RefObject, useRef } from "react";
+import { escapeHtml } from "../utils/htmlUtils";
 
 interface UseFileHandlerProps {
 	onFileLoaded: (content: string) => void;
@@ -34,7 +35,7 @@ export const useFileHandler = ({
 				onFileLoaded(
 					result
 						.split("\n")
-						.map((line) => `<p>${line}</p>`)
+						.map((line) => `<p>${escapeHtml(line)}</p>`)
 						.join(""),
 				);
 			}
