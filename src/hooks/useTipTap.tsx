@@ -22,6 +22,8 @@ export const useTipTap = ({
 			placeholder: "Start writing your todos...",
 		}),
 		content: initialContent,
+		contentType: "markdown",
+		shouldRerenderOnTransaction: true,
 		editorProps: {
 			attributes: {
 				class: "tiptap-editor-content",

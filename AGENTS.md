@@ -1,5 +1,5 @@
 # Agent Guidelines for Todo.Txt
-
+Check Docs in /LLMS.TXT/
 ## Commands
 
 | Action | Command |

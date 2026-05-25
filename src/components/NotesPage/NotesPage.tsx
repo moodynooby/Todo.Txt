@@ -1,10 +1,10 @@
 import {
 	ActionIcon,
+	Affix,
 	Box,
 	Card,
 	Collapse,
 	Group,
-	Paper,
 	Stack,
 	Text,
 	Textarea,
@@ -17,7 +17,6 @@ import { useEditor } from "@tiptap/react";
 import {
 	Archive,
 	ArchiveRestore,
-	Check,
 	ChevronDown,
 	ChevronRight,
 	Pin,
@@ -97,6 +96,8 @@ function NoteCardEditor({
 			placeholder: "Take a note...",
 		}),
 		content: content || "",
+		contentType: "markdown",
+		shouldRerenderOnTransaction: true,
 		onUpdate: ({ editor: currentEditor }) => {
 			const md = currentEditor.getMarkdown();
 			lastMarkdownRef.current = md;
@@ -176,7 +177,7 @@ function NoteCard({
 				/>
 				{!note.archived && (
 					<ActionIcon
-						variant="subtle"
+						variant="default"
 						size="sm"
 						onClick={() => onTogglePin(note.id)}
 						aria-label={note.pinned ? "Unpin note" : "Pin note"}
@@ -198,7 +199,7 @@ function NoteCard({
 				/>
 				<Group gap={2} wrap="nowrap">
 					<ActionIcon
-						variant="subtle"
+						variant="default"
 						size="sm"
 						onClick={() => onArchive(note.id)}
 						aria-label={note.archived ? "Restore" : "Archive"}
@@ -210,7 +211,7 @@ function NoteCard({
 						)}
 					</ActionIcon>
 					<ActionIcon
-						variant="subtle"
+						variant="default"
 						size="sm"
 						onClick={() => onDelete(note.id)}
 						aria-label="Delete"
@@ -241,13 +242,8 @@ const NotesPage = ({
 	setNoteColor,
 }: NotesPageProps) => {
 	const [search, setSearch] = useState("");
-	const [expanded, setExpanded] = useState(false);
 	const [showArchived, setShowArchived] = useState(false);
-	const [draftTitle, setDraftTitle] = useState("");
-	const [draftContent, setDraftContent] = useState("");
-	const [draftColor, setDraftColor] = useState<NoteColor>(NOTE_COLORS[0]);
 	const [debouncedSearch] = useDebouncedValue(search, 200);
-	const draftTitleRef = useRef<HTMLTextAreaElement>(null);
 
 	const activeNotes = useMemo(() => {
 		let result = notes.filter((n) => !n.archived);
@@ -276,37 +272,9 @@ const NotesPage = ({
 		[activeNotes],
 	);
 
-	const cancelDraft = useCallback(() => {
-		setDraftTitle("");
-		setDraftContent("");
-		setDraftColor(NOTE_COLORS[0]);
-		setExpanded(false);
-	}, []);
-
-	const handleCreateNote = useCallback(() => {
-		if (!draftTitle.trim() && !draftContent.trim()) {
-			cancelDraft();
-			return;
-		}
-		const note = createNote({
-			title: draftTitle.trim(),
-			content: draftContent.trim(),
-			color: draftColor,
-		});
-		upsertNote(note);
-		setDraftTitle("");
-		setDraftContent("");
-		setDraftColor(NOTE_COLORS[0]);
-		setExpanded(false);
-	}, [draftTitle, draftContent, draftColor, upsertNote, cancelDraft]);
-
-	const handleDraftKeyDown = useCallback(
-		(e: React.KeyboardEvent) => {
-			if (e.key === "Escape") {
-				cancelDraft();
-			}
-		},
-		[cancelDraft],
+	const handleAddNote = useCallback(
+		() => upsertNote(createNote()),
+		[upsertNote],
 	);
 
 	const handleUpdateNote = useCallback(
@@ -315,14 +283,6 @@ const NotesPage = ({
 		},
 		[upsertNote],
 	);
-
-	useEffect(() => {
-		if (expanded) {
-			setTimeout(() => draftTitleRef.current?.focus(), 50);
-		}
-	}, [expanded]);
-
-	const draftTextColor = "#000";
 
 	const hasContent = pinned.length > 0 || unpinned.length > 0;
 	const hasArchived = archivedNotes.length > 0;
@@ -350,79 +310,18 @@ const NotesPage = ({
 					onChange={(e) => setSearch(e.currentTarget.value)}
 				/>
 
-				{!expanded ? (
-					<Paper
-						maw={600}
-						w="100%"
-						shadow="sm"
-						radius="md"
-						p="sm"
-						onClick={() => setExpanded(true)}
+				<Affix position={{ bottom: 24, right: 24 }}>
+					<ActionIcon
+						size="xl"
+						radius="xl"
+						variant="filled"
+						color="blue"
+						onClick={handleAddNote}
+						aria-label="Add note"
 					>
-						<Text c="dimmed" size="sm">
-							Take a note...
-						</Text>
-					</Paper>
-				) : (
-					<Paper
-						maw={600}
-						w="100%"
-						shadow="sm"
-						radius="md"
-						p="sm"
-						style={{
-							backgroundColor: draftColor,
-							color: draftTextColor,
-							"--note-textarea-color": draftTextColor,
-						}}
-					>
-						<Textarea
-							ref={draftTitleRef}
-							placeholder="Title"
-							value={draftTitle}
-							onChange={(e) => setDraftTitle(e.currentTarget.value)}
-							onKeyDown={handleDraftKeyDown}
-							variant="unstyled"
-							autosize
-							minRows={1}
-							maxRows={3}
-							classNames={{ input: "NotesPage-draft-title" }}
-						/>
-						<Textarea
-							placeholder="Take a note..."
-							value={draftContent}
-							onChange={(e) => setDraftContent(e.currentTarget.value)}
-							onKeyDown={handleDraftKeyDown}
-							variant="unstyled"
-							autosize
-							minRows={3}
-							classNames={{ input: "NotesPage-draft-content" }}
-							mt={4}
-						/>
-						<Group maw={600} w="100%" justify="flex-end" gap="xs">
-							<ColorDots selected={draftColor} onChange={setDraftColor} />
-							<Group gap={4} wrap="nowrap">
-								<ActionIcon
-									variant="subtle"
-									size="sm"
-									onClick={cancelDraft}
-									aria-label="Cancel"
-								>
-									<X size={16} />
-								</ActionIcon>
-								<ActionIcon
-									variant="filled"
-									size="sm"
-									color="blue"
-									onClick={handleCreateNote}
-									aria-label="Add note"
-								>
-									<Check size={16} />
-								</ActionIcon>
-							</Group>
-						</Group>
-					</Paper>
-				)}
+						<Plus size={22} />
+					</ActionIcon>
+				</Affix>
 			</Stack>
 
 			<Box style={{ flex: 1, overflowY: "auto" }} p="md">
@@ -482,7 +381,7 @@ const NotesPage = ({
 						) : (
 							<>
 								<Plus size={40} />
-								<Text size="sm">No notes yet. Start writing above!</Text>
+								<Text size="sm">No notes yet. Tap + to create one!</Text>
 							</>
 						)}
 					</Stack>
