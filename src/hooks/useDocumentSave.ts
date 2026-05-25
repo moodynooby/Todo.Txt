@@ -14,7 +14,7 @@ export const useDocumentSave = (editor: Editor | null, htmlContent: string) => {
 		(format: SaveFormat) => {
 			if (format !== "html" && !editor) return;
 			const saveActions: Record<SaveFormat, () => void> = {
-				markdown: () => saveAsMarkdown(editor ? editor.getHTML() : ""),
+				markdown: () => saveAsMarkdown(editor ? editor.getMarkdown() : ""),
 				text: () => saveAsText(editor ? editor.getText() : ""),
 				html: () => saveAsHtml(htmlContent),
 			};

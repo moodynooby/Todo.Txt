@@ -92,14 +92,10 @@ export const SidebarSection = ({
 			justify="space-between"
 			rightSection={<ChevronRight size={14} />}
 			onClick={() => onToggle(id)}
-			styles={{
-				root: {
-					textTransform: "uppercase",
-					fontSize: "var(--mantine-font-size-xs)",
-					fontWeight: 700,
-					letterSpacing: "0.05em",
-				},
-			}}
+			tt="uppercase"
+			size="xs"
+			fw={700}
+			style={{ letterSpacing: "0.05em" }}
 		>
 			{title}
 		</Button>
@@ -139,7 +135,6 @@ export const CollapsedPriorityButton = ({
 			size="lg"
 			radius="md"
 			onClick={onClick}
-			style={{ cursor: "pointer" }}
 		>
 			<Text fw={700} size="sm">
 				{priority}

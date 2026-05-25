@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Task } from "../types/todo";
 import { playBeep } from "../utils/beep";
 import { getToday } from "../utils/dateUtils";
+import { safeGetItem, safeSetItem } from "../utils/storage";
 
 const STORAGE_KEY_PREFIX = "todo-notifications-";
 
@@ -28,15 +29,7 @@ export const useDueNotifications = (tasks: Task[]) => {
 
 			const storageKey = `${STORAGE_KEY_PREFIX}${today}`;
 
-			let notifiedTaskIds: number[] = [];
-			try {
-				const stored = localStorage.getItem(storageKey);
-				if (stored) {
-					notifiedTaskIds = JSON.parse(stored);
-				}
-			} catch (e) {
-				console.error("Failed to parse notified tasks", e);
-			}
+			const notifiedTaskIds: number[] = safeGetItem<number[]>(storageKey, []);
 
 			if (cancelled) return;
 
@@ -60,11 +53,7 @@ export const useDueNotifications = (tasks: Task[]) => {
 
 			playBeep();
 
-			try {
-				localStorage.setItem(storageKey, JSON.stringify(notifiedTaskIds));
-			} catch (e) {
-				console.error("Failed to save notified task IDs:", e);
-			}
+			safeSetItem(storageKey, notifiedTaskIds);
 		};
 
 		checkDueTasks().catch((e) =>

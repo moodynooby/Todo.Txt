@@ -16,7 +16,6 @@
 	"dependencies": {
 		"@ai-sdk/groq": "^3.0.39",
 		"@excalidraw/excalidraw": "0.18.1",
-		"@mantine/code-highlight": "^9.2.1",
 		"@mantine/core": "^9.2.1",
 		"@mantine/hooks": "^9.2.1",
 		"@mantine/tiptap": "^9.2.1",

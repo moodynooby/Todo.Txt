@@ -2,7 +2,7 @@ import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import { useEffect, useMemo } from "react";
 import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
-import { useComputedColorScheme } from "@mantine/core";
+import { Box, useComputedColorScheme } from "@mantine/core";
 import {
 	createExcalidrawSaver,
 	loadExcalidrawData,
@@ -34,7 +34,7 @@ const ExcalidrawPage = () => {
 	}, []);
 
 	return (
-		<div className="ExcalidrawPage">
+		<Box className="ExcalidrawPage">
 			<Excalidraw
 				theme={excalidrawTheme}
 				// @ts-expect-error - Excalidraw UIOptions type is overly strict
@@ -54,7 +54,7 @@ const ExcalidrawPage = () => {
 					</MainMenu.Item>
 				</MainMenu>
 			</Excalidraw>
-		</div>
+		</Box>
 	);
 };
 

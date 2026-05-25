@@ -15,6 +15,7 @@ import {
 	signInWithGoogle,
 	signOutUser,
 } from "../lib/firebase";
+import type { Note } from "../types/notes";
 
 export type SyncStatus =
 	| "disconnected"
@@ -28,6 +29,8 @@ interface FirestoreSyncOptions {
 	onRemoteContent: (content: string) => void;
 	preferences?: Record<string, unknown>;
 	onRemotePreferences?: (prefs: Record<string, unknown>) => void;
+	notes?: Note[];
+	onRemoteNotes?: (notes: Note[]) => void;
 }
 
 interface FirestoreSyncReturn {
@@ -43,6 +46,8 @@ export const useFirestoreSync = ({
 	onRemoteContent,
 	preferences,
 	onRemotePreferences,
+	notes,
+	onRemoteNotes,
 }: FirestoreSyncOptions): FirestoreSyncReturn => {
 	const [user, setUser] = useState<User | null>(null);
 	const [isConnected, setIsConnected] = useState(false);
@@ -50,14 +55,12 @@ export const useFirestoreSync = ({
 
 	const unsubFirestoreRef = useRef<(() => void) | null>(null);
 	const unsubAuthRef = useRef<(() => void) | null>(null);
-	const isRemoteUpdateRef = useRef(false);
 	const lastSyncedContentRef = useRef("");
-	const lastSyncedPrefsRef = useRef("");
+	const lastSyncedPrefsRef = useRef("{}");
+	const lastSyncedNotesRef = useRef("[]");
 	const contentRef = useRef(content);
-	const preferencesRef = useRef(preferences);
 
 	contentRef.current = content;
-	preferencesRef.current = preferences;
 
 	const teardownFirestore = useCallback(() => {
 		unsubFirestoreRef.current?.();
@@ -76,6 +79,38 @@ export const useFirestoreSync = ({
 
 			await handleRedirectResult();
 
+			const processRemoteData = (
+				data: Record<string, unknown>,
+				checkLastSyncedForContent: boolean,
+			) => {
+				if (data.content) {
+					const content = data.content as string;
+					const isNewContent = checkLastSyncedForContent
+						? content !== lastSyncedContentRef.current &&
+							content !== contentRef.current
+						: content !== contentRef.current;
+					if (isNewContent) {
+						onRemoteContent(content);
+						lastSyncedContentRef.current = content;
+					}
+				}
+				if (data.notes && onRemoteNotes) {
+					const notesStr = JSON.stringify(data.notes);
+					if (notesStr !== lastSyncedNotesRef.current) {
+						onRemoteNotes(data.notes as Note[]);
+						lastSyncedNotesRef.current = notesStr;
+					}
+				}
+				if (data.preferences && onRemotePreferences) {
+					const prefs = data.preferences as Record<string, unknown>;
+					const prefsStr = JSON.stringify(prefs);
+					if (prefsStr !== lastSyncedPrefsRef.current) {
+						onRemotePreferences(prefs);
+						lastSyncedPrefsRef.current = prefsStr;
+					}
+				}
+			};
+
 			try {
 				const docSnap = await getDoc(docRef);
 				if (!docSnap.exists()) {
@@ -87,28 +122,7 @@ export const useFirestoreSync = ({
 					});
 				} else {
 					const data = docSnap.data();
-					let hasRemoteUpdate = false;
-
-					if (data.content && data.content !== contentRef.current) {
-						isRemoteUpdateRef.current = true;
-						onRemoteContent(data.content);
-						lastSyncedContentRef.current = data.content;
-						hasRemoteUpdate = true;
-					}
-
-					if (data.preferences && onRemotePreferences) {
-						const prefsStr = JSON.stringify(data.preferences);
-						if (prefsStr !== lastSyncedPrefsRef.current) {
-							onRemotePreferences(data.preferences);
-							lastSyncedPrefsRef.current = prefsStr;
-						}
-					}
-
-					if (hasRemoteUpdate) {
-						setTimeout(() => {
-							isRemoteUpdateRef.current = false;
-						}, 200);
-					}
+					processRemoteData(data, false);
 				}
 
 				unsubFirestoreRef.current = onSnapshot(
@@ -116,32 +130,7 @@ export const useFirestoreSync = ({
 					(snap) => {
 						if (!snap.exists()) return;
 						const data = snap.data();
-						let hasRemoteUpdate = false;
-
-						if (
-							data.content &&
-							data.content !== lastSyncedContentRef.current &&
-							data.content !== contentRef.current
-						) {
-							isRemoteUpdateRef.current = true;
-							onRemoteContent(data.content);
-							lastSyncedContentRef.current = data.content;
-							hasRemoteUpdate = true;
-						}
-
-						if (data.preferences && onRemotePreferences) {
-							const prefsStr = JSON.stringify(data.preferences);
-							if (prefsStr !== lastSyncedPrefsRef.current) {
-								onRemotePreferences(data.preferences);
-								lastSyncedPrefsRef.current = prefsStr;
-							}
-						}
-
-						if (hasRemoteUpdate) {
-							setTimeout(() => {
-								isRemoteUpdateRef.current = false;
-							}, 200);
-						}
+						processRemoteData(data, true);
 						setSyncStatus("synced");
 					},
 					(err) => {
@@ -157,7 +146,7 @@ export const useFirestoreSync = ({
 				setSyncStatus("error");
 			}
 		},
-		[onRemoteContent, onRemotePreferences],
+		[onRemoteContent, onRemotePreferences, onRemoteNotes],
 	);
 
 	useEffect(() => {
@@ -182,11 +171,12 @@ export const useFirestoreSync = ({
 	}, [setupFirestore, teardownFirestore]);
 
 	useEffect(() => {
+		if (!isConnected || !user || !isFirebaseConfigured()) return;
+
 		if (
-			!isConnected ||
-			!user ||
-			isRemoteUpdateRef.current ||
-			!isFirebaseConfigured()
+			content === lastSyncedContentRef.current &&
+			JSON.stringify(preferences ?? {}) === lastSyncedPrefsRef.current &&
+			JSON.stringify(notes ?? []) === lastSyncedNotesRef.current
 		)
 			return;
 
@@ -206,6 +196,11 @@ export const useFirestoreSync = ({
 			lastSyncedPrefsRef.current = JSON.stringify(preferences);
 		}
 
+		if (notes) {
+			data.notes = notes;
+			lastSyncedNotesRef.current = JSON.stringify(notes);
+		}
+
 		setDoc(docRef, data, { merge: true })
 			.then(() => {
 				setSyncStatus("synced");
@@ -214,7 +209,7 @@ export const useFirestoreSync = ({
 				console.error("Firestore write error:", e);
 				setSyncStatus("error");
 			});
-	}, [content, preferences, isConnected, user]);
+	}, [content, preferences, notes, isConnected, user]);
 
 	const connect = useCallback(async () => {
 		setSyncStatus("connecting");

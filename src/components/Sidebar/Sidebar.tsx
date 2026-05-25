@@ -67,14 +67,7 @@ const Sidebar = ({
 
 	if (isCollapsed) {
 		return (
-			<Paper
-				component="aside"
-				shadow="sm"
-				radius={0}
-				style={{
-					height: "100%",
-				}}
-			>
+			<Paper component="aside" shadow="sm" radius={0} h="100%">
 				<Group justify="center" py="sm">
 					<ActionIcon variant="subtle" size="sm" onClick={onToggle}>
 						<ChevronRight size={16} />
@@ -101,11 +94,8 @@ const Sidebar = ({
 			component="aside"
 			shadow="sm"
 			radius={0}
-			style={{
-				height: "100%",
-				display: "flex",
-				flexDirection: "column",
-			}}
+			h="100%"
+			style={{ display: "flex", flexDirection: "column" }}
 		>
 			<Group justify="space-between" px="md" py="sm">
 				<Group gap="xs">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { computeElapsed } from "../utils/formatTime";
+import { safeGetItem, safeSetItem } from "../utils/storage";
 
 const STORAGE_KEY = "timers";
 
@@ -17,34 +18,22 @@ export interface TimerState {
 }
 
 function loadTimers(): TimerState[] {
-	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
-		if (stored) {
-			const timers: TimerState[] = JSON.parse(stored);
-			const now = Date.now();
-			return timers.map((t) => {
-				if (t.isActive && t.startTime !== null) {
-					return {
-						...t,
-						elapsed: computeElapsed(t.elapsed, t.startTime),
-						startTime: now,
-					};
-				}
-				return t;
-			});
+	const stored = safeGetItem<TimerState[]>(STORAGE_KEY, []);
+	const now = Date.now();
+	return stored.map((t) => {
+		if (t.isActive && t.startTime !== null) {
+			return {
+				...t,
+				elapsed: computeElapsed(t.elapsed, t.startTime),
+				startTime: now,
+			};
 		}
-	} catch (e) {
-		console.error("Failed to load timers from localStorage:", e);
-	}
-	return [];
+		return t;
+	});
 }
 
 function saveTimers(timers: TimerState[]) {
-	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
-	} catch (e) {
-		console.error("Failed to save timers to localStorage:", e);
-	}
+	safeSetItem(STORAGE_KEY, timers);
 }
 
 let nextId = Date.now();

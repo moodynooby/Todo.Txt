@@ -2,7 +2,7 @@ import { marked } from "marked";
 import { type RefObject, useRef } from "react";
 
 interface UseFileHandlerProps {
-	setRteContent: (content: string) => void;
+	onFileLoaded: (content: string) => void;
 }
 
 interface UseFileHandlerReturn {
@@ -12,7 +12,7 @@ interface UseFileHandlerReturn {
 }
 
 export const useFileHandler = ({
-	setRteContent,
+	onFileLoaded,
 }: UseFileHandlerProps): UseFileHandlerReturn => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,13 +30,13 @@ export const useFileHandler = ({
 			if (file.name.endsWith(".md")) {
 				try {
 					const html = marked.parse(result, { async: false }) as string;
-					setRteContent(html);
+					onFileLoaded(html);
 				} catch (e) {
 					console.warn(
 						"Failed to parse markdown, falling back to plain text:",
 						e,
 					);
-					setRteContent(
+					onFileLoaded(
 						result
 							.split("\n")
 							.map((line) => `<p>${line}</p>`)
@@ -44,9 +44,9 @@ export const useFileHandler = ({
 					);
 				}
 			} else if (file.name.endsWith(".html")) {
-				setRteContent(result);
+				onFileLoaded(result);
 			} else {
-				setRteContent(
+				onFileLoaded(
 					result
 						.split("\n")
 						.map((line) => `<p>${line}</p>`)

@@ -54,7 +54,6 @@ const ConnectionButton = () => {
 						src={user.photoURL}
 						alt={user.displayName ?? "User"}
 						size="md"
-						style={{ cursor: "pointer" }}
 					>
 						{user.displayName?.charAt(0).toUpperCase() ?? "U"}
 					</Avatar>

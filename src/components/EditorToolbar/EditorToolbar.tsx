@@ -12,7 +12,6 @@ import {
 	Sparkles,
 } from "lucide-react";
 import { useEditor } from "../../providers/EditorContext";
-
 export const EditorToolbar = () => {
 	const {
 		onSave,
@@ -24,7 +23,7 @@ export const EditorToolbar = () => {
 	} = useEditor();
 
 	return (
-		<RichTextEditor.Toolbar sticky stickyOffset={60}>
+		<RichTextEditor.Toolbar>
 			<RichTextEditor.ControlsGroup>
 				<RichTextEditor.H1 />
 				<RichTextEditor.H2 />

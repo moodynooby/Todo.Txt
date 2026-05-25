@@ -8,21 +8,17 @@
 	src: url(/ZillaSlab-Regular.ttf);
 }
 
+:root {
+	--sidebar-width: 280px;
+	--sidebar-collapsed-width: 60px;
+}
+
 .file-input {
 	display: none;
 }
 
-.tiptap-container {
-	min-height: 70vh;
-}
-
-.mantine-AppShell-main {
-	position: relative;
-}
-
-.mantine-AppShell-main:has(.ExcalidrawPage) {
-	padding: 0 !important;
-	overflow: hidden;
+.tiptap-container .ProseMirror {
+	min-height: 100%;
 }
 
 .tiptap-container ul:has(li > input[type="checkbox"]) {

@@ -13,7 +13,8 @@ import {
 import AiToolsDialog from "./components/AiTools/AiToolsDialog";
 import AppHeader from "./components/AppHeader/AppHeader";
 import { ErrorBoundary } from "./components/ErrorBoundary/ErrorBoundary";
-import Sidebar from "./components/Sidebar/Sidebar";
+import NotesPage from "./components/NotesPage/NotesPage";
+
 import TextModeContent from "./components/TextModeContent/TextModeContent";
 import { useDocumentSave } from "./hooks/useDocumentSave";
 import { useDueNotifications } from "./hooks/useDueNotifications";
@@ -21,23 +22,24 @@ import { useFileHandler } from "./hooks/useFileHandler";
 import { useFirestoreSync } from "./hooks/useFirestoreSync";
 import { useTipTap } from "./hooks/useTipTap";
 import { EditorContext } from "./providers/EditorContext";
-import { LAYOUT } from "./providers/layout";
 import { useViewMode } from "./providers/ViewModeContext";
+import type { Note } from "./types/notes";
 import type { Filter, ParsedTodoContent } from "./types/todo";
 import {
 	syncExcalidrawToText,
 	syncTextToExcalidraw,
-} from "./utils/excalidrawSync";
+} from "./utils/excalidrawStorageService";
+import { useNotes } from "./utils/notesStorage";
 import { parseTodoContent } from "./utils/todoParser";
 
 const DEBOUNCE_DELAY = 1000;
 
 const ExcalidrawPage = lazy(
-	() => import("./components/ExcalidrawPage/ExcalidrawPage.tsx"),
+	() => import("./components/ExcalidrawPage/ExcalidrawPage"),
 );
 
 const App = () => {
-	const { viewMode, setViewMode } = useViewMode();
+	const { viewMode } = useViewMode();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
@@ -47,52 +49,81 @@ const App = () => {
 		defaultValue: "",
 	});
 	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
-	const [groqApiKey, setGroqApiKey] = useState(() => {
-		try {
-			return localStorage.getItem("groq_api_key") || "";
-		} catch (e) {
-			console.warn("Failed to read API key from localStorage:", e);
-			return "";
-		}
-	});
+	const rteContentRef = useRef(rteContent);
 
-	const isRemoteUpdate = useRef(false);
-	const isFirstMount = useRef(true);
+	useEffect(() => {
+		rteContentRef.current = rteContent;
+	}, [rteContent]);
 
-	const handleRemoteContent = useCallback(
+	const prevViewMode = useRef(viewMode);
+
+	const handleContentChange = useCallback(
 		(content: string) => {
-			isRemoteUpdate.current = true;
 			setRteContentState(content);
-			setTimeout(() => {
-				isRemoteUpdate.current = false;
-			}, 200);
 		},
 		[setRteContentState],
 	);
 
-	const handleRemotePreferences = useCallback(
-		(prefs: Record<string, unknown>) => {
-			if (
-				typeof prefs.groqApiKey === "string" &&
-				prefs.groqApiKey !== groqApiKey
-			) {
-				try {
-					localStorage.setItem("groq_api_key", prefs.groqApiKey);
-				} catch (e) {
-					console.error("Failed to save remote API key:", e);
-				}
-				setGroqApiKey(prefs.groqApiKey);
+	const { editor, setExternalContent } = useTipTap({
+		initialContent: rteContent,
+		onContentChange: handleContentChange,
+	});
+
+	useEffect(() => {
+		const prev = prevViewMode.current;
+		prevViewMode.current = viewMode;
+
+		if (viewMode === prev) return;
+
+		if (viewMode === "excalidraw") {
+			syncTextToExcalidraw(rteContentRef.current);
+		} else if (viewMode === "text" && prev === "excalidraw") {
+			const excalidrawHtml = syncExcalidrawToText();
+			if (excalidrawHtml) {
+				setExternalContent(excalidrawHtml);
+				setRteContentState(excalidrawHtml);
 			}
-			if (typeof prefs.viewMode === "string" && prefs.viewMode !== viewMode) {
-				setViewMode(prefs.viewMode);
-			}
+		}
+	}, [viewMode, setExternalContent, setRteContentState]);
+
+	const handleRemoteContent = useCallback(
+		(content: string) => {
+			setExternalContent(content);
+			setRteContentState(content);
 		},
-		[groqApiKey, viewMode, setViewMode],
+		[setExternalContent, setRteContentState],
 	);
 
-	const preferences = useMemo(
-		() => ({ groqApiKey, viewMode }),
-		[groqApiKey, viewMode],
+	const {
+		notes,
+		setNotes,
+		upsertNote,
+		deleteNote,
+		archiveNote,
+		togglePin,
+		setNoteColor,
+	} = useNotes();
+	const [debouncedNotes, setDebouncedNotes] = useState(notes);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedRteContent(rteContent);
+		}, DEBOUNCE_DELAY);
+		return () => clearTimeout(timer);
+	}, [rteContent]);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedNotes(notes);
+		}, DEBOUNCE_DELAY * 2);
+		return () => clearTimeout(timer);
+	}, [notes]);
+
+	const handleRemoteNotes = useCallback(
+		(remoteNotes: Note[]) => {
+			setNotes(remoteNotes);
+		},
+		[setNotes],
 	);
 
 	const {
@@ -104,54 +135,25 @@ const App = () => {
 	} = useFirestoreSync({
 		content: debouncedRteContent,
 		onRemoteContent: handleRemoteContent,
-		preferences,
-		onRemotePreferences: handleRemotePreferences,
+		notes: debouncedNotes,
+		onRemoteNotes: handleRemoteNotes,
 	});
 
-	const handleContentChange = useCallback(
-		(content: string) => {
-			setRteContentState(content);
+	const handleFileLoaded = useCallback(
+		(html: string) => {
+			setExternalContent(html);
+			setRteContentState(html);
 		},
-		[setRteContentState],
+		[setExternalContent, setRteContentState],
 	);
 
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedRteContent(rteContent);
-		}, DEBOUNCE_DELAY);
-		return () => clearTimeout(timer);
-	}, [rteContent]);
-
-	useEffect(() => {
-		if (isFirstMount.current) {
-			isFirstMount.current = false;
-			return;
-		}
-
-		if (viewMode === "excalidraw") {
-			syncTextToExcalidraw(rteContent);
-		} else if (viewMode === "text") {
-			const excalidrawHtml = syncExcalidrawToText();
-			if (excalidrawHtml) {
-				setRteContentState((prev: string) => prev + excalidrawHtml);
-			}
-		}
-	}, [viewMode, rteContent, setRteContentState]);
-
-	const { editor } = useTipTap({
-		viewMode,
-		activeFilter,
-		initialContent: rteContent,
-		onContentChange: handleContentChange,
-	});
-
 	const { fileInputRef, handleOpenRepo, handleFileChange } = useFileHandler({
-		setRteContent: setRteContentState,
+		onFileLoaded: handleFileLoaded,
 	});
 
 	const taskData: ParsedTodoContent = useMemo(
-		() => parseTodoContent(debouncedRteContent),
-		[debouncedRteContent],
+		() => parseTodoContent(rteContent),
+		[rteContent],
 	);
 
 	useDueNotifications(taskData.tasks);
@@ -210,35 +212,20 @@ const App = () => {
 
 	return (
 		<EditorContext.Provider value={editorContextValue}>
-			<AppShell
-				header={{ height: LAYOUT.HEADER_HEIGHT }}
-				aside={{
-					width: LAYOUT.SIDEBAR_WIDTH,
-					collapsed: {
-						mobile: true,
-						desktop: sidebarCollapsed || viewMode === "excalidraw",
-					},
-					breakpoint: "sm",
-				}}
-				padding="md"
-			>
+			<AppShell header={{ height: 38 }} padding={0}>
 				<AppShell.Header>
 					<AppHeader />
 				</AppShell.Header>
 
-				{viewMode === "text" && (
-					<AppShell.Aside>
-						<Sidebar
-							isCollapsed={sidebarCollapsed}
-							onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-							taskData={taskData}
-							activeFilter={activeFilter}
-							onFilterChange={setActiveFilter}
-						/>
-					</AppShell.Aside>
-				)}
-
-				<AppShell.Main>
+				<AppShell.Main
+					pos="relative"
+					style={{
+						overflow: "hidden",
+						...(viewMode === "text"
+							? { display: "flex", flexDirection: "column" }
+							: {}),
+					}}
+				>
 					<ErrorBoundary>
 						<AiToolsDialog
 							isOpen={isAiDialogOpen}
@@ -266,7 +253,23 @@ const App = () => {
 								<ExcalidrawPage />
 							</Suspense>
 						)}
-						{viewMode === "text" && <TextModeContent />}
+						{viewMode === "notes" && (
+							<NotesPage
+								notes={notes}
+								upsertNote={upsertNote}
+								deleteNote={deleteNote}
+								archiveNote={archiveNote}
+								togglePin={togglePin}
+								setNoteColor={setNoteColor}
+							/>
+						)}
+						{viewMode === "text" && (
+							<TextModeContent
+								taskData={taskData}
+								activeFilter={activeFilter}
+								onFilterChange={setActiveFilter}
+							/>
+						)}
 					</ErrorBoundary>
 				</AppShell.Main>
 			</AppShell>

@@ -1,6 +1,4 @@
 import {
-	ActionIcon,
-	Alert,
 	Badge,
 	Button,
 	Divider,
@@ -102,21 +100,29 @@ const AiToolsDialog = ({
 	} = useAiGroq();
 
 	const mountedRef = useRef(true);
-	const [view, setView] = useState<"tools" | "settings">("tools");
+	const [showKeyInput, setShowKeyInput] = useState(false);
 	const [keyInput, setKeyInput] = useState(apiKey);
 	const [customPrompt, setCustomPrompt] = useState("");
 	const [result, setResult] = useState("");
 	const [activeTool, setActiveTool] = useState<string | null>(null);
 
 	useEffect(() => {
+		mountedRef.current = true;
 		return () => {
 			mountedRef.current = false;
 		};
 	}, []);
 
+	useEffect(() => {
+		if (isOpen) {
+			setKeyInput(apiKey);
+			setShowKeyInput(!apiKey);
+		}
+	}, [isOpen, apiKey]);
+
 	const handleSaveKey = () => {
 		saveApiKey(keyInput);
-		setView("tools");
+		setShowKeyInput(false);
 	};
 
 	const handleToolClick = async (promptTemplate: string, toolId: string) => {
@@ -152,8 +158,8 @@ const AiToolsDialog = ({
 			size="lg"
 		>
 			<Stack gap="md">
-				{view === "settings" ? (
-					<Stack gap="md" py="md">
+				{showKeyInput ? (
+					<Stack gap="sm">
 						<PasswordInput
 							label="Groq API Key"
 							placeholder="gsk_..."
@@ -171,179 +177,174 @@ const AiToolsDialog = ({
 								</Text>
 							}
 						/>
-						<Button onClick={handleSaveKey} fullWidth>
-							{apiKey ? "Update & Continue" : "Save & Continue"}
-						</Button>
-					</Stack>
-				) : (
-					<>
-						{apiKey ? (
-							<Group justify="space-between">
-								<Group gap="xs">
-									<ThemeIcon variant="light" color="green" size="sm">
-										<Check size={14} />
-									</ThemeIcon>
-									<Text size="sm" c="green">
-										API key configured
-									</Text>
-								</Group>
+						<Group justify="flex-end">
+							{apiKey && (
 								<Button
 									variant="subtle"
-									size="compact-sm"
-									onClick={() => setView("settings")}
+									size="sm"
+									onClick={() => setShowKeyInput(false)}
 								>
-									Change key
+									Cancel
 								</Button>
-							</Group>
-						) : (
-							<Alert
-								color="yellow"
-								title="API Key Required"
-								withCloseButton
-								onClose={() => setView("settings")}
-							>
-								Please configure your Groq API key to use AI tools.
-							</Alert>
-						)}
-
-						<Grid>
-							{AI_TOOLS.map((tool) => {
-								const Icon = tool.icon;
-								const isActive = activeTool === tool.id;
-								return (
-									<Grid.Col key={tool.id} span={{ base: 6, sm: 4 }}>
-										<Paper
-											p="md"
-											withBorder
-											style={{
-												cursor: apiKey ? "pointer" : "not-allowed",
-												opacity: apiKey ? 1 : 0.6,
-											}}
-											onClick={() =>
-												apiKey &&
-												!isLoading &&
-												handleToolClick(tool.prompt, tool.id)
-											}
-										>
-											<Stack align="center" gap="xs">
-												<ThemeIcon
-													variant={isActive ? "filled" : "light"}
-													size="lg"
-													color={isActive ? "primary" : "gray"}
-												>
-													<Icon size={20} />
-												</ThemeIcon>
-												<Text size="xs" fw={500}>
-													{tool.label}
-												</Text>
-											</Stack>
-										</Paper>
-									</Grid.Col>
-								);
-							})}
-						</Grid>
-
-						<Paper p="md" withBorder>
-							<Stack gap="sm">
-								<Text size="sm" fw={600}>
-									Custom Prompt
-								</Text>
-								<Group gap="sm">
-									<TextInput
-										flex={1}
-										placeholder="e.g., Translate to Spanish, extract dates..."
-										value={customPrompt}
-										onChange={(e) => setCustomPrompt(e.currentTarget.value)}
-										onKeyDown={(e) => e.key === "Enter" && handleCustomPrompt()}
-										disabled={!apiKey || isLoading}
-									/>
-									<ActionIcon
-										variant="filled"
-										size="lg"
-										onClick={handleCustomPrompt}
-										disabled={!apiKey || isLoading || !customPrompt.trim()}
-									>
-										{isLoading ? <Loader size={18} /> : <Sparkles size={18} />}
-									</ActionIcon>
-								</Group>
-							</Stack>
-						</Paper>
-
-						{(result || isLoading || apiError) && (
-							<Stack gap="sm">
-								<Group justify="space-between">
-									<Text size="sm" fw={600} tt="uppercase" c="dimmed">
-										Result Preview
-									</Text>
-									{isLoading && (
-										<Badge color="violet" leftSection={<Loader size={10} />}>
-											Processing
-										</Badge>
-									)}
-								</Group>
-
-								{apiError && (
-									<Alert color="red" title="Error">
-										{apiError}
-									</Alert>
-								)}
-
-								{result && (
-									<Paper
-										p="md"
-										withBorder
-										style={{
-											position: "relative",
-											maxHeight: 240,
-											overflow: "auto",
-										}}
-									>
-										<Text
-											component="pre"
-											size="sm"
-											style={{
-												fontFamily: "monospace",
-												whiteSpace: "pre-wrap",
-												margin: 0,
-											}}
-										>
-											{result}
-										</Text>
-										<Group gap="xs" mt="sm">
-											<Button
-												size="xs"
-												onClick={() => onInsert(result, "replace")}
-											>
-												Replace
-											</Button>
-											<Button
-												size="xs"
-												variant="light"
-												onClick={() => onInsert(result, "append")}
-											>
-												Append
-											</Button>
-										</Group>
-									</Paper>
-								)}
-							</Stack>
-						)}
-
-						<Divider />
-
-						<Group justify="flex-end">
-							<Button variant="subtle" onClick={handleClose}>
-								Cancel
-							</Button>
-							<Button
-								disabled={!result}
-								onClick={() => onInsert(result, "replace")}
-							>
-								Apply Changes
+							)}
+							<Button size="sm" onClick={handleSaveKey}>
+								{apiKey ? "Update" : "Save"}
 							</Button>
 						</Group>
-					</>
+					</Stack>
+				) : (
+					<Group justify="space-between">
+						<Group gap="xs">
+							<ThemeIcon variant="light" color="green" size="sm">
+								<Check size={14} />
+							</ThemeIcon>
+							<Text size="sm" c="green">
+								API key configured
+							</Text>
+						</Group>
+						<Button
+							variant="subtle"
+							size="compact-sm"
+							onClick={() => setShowKeyInput(true)}
+						>
+							Change key
+						</Button>
+					</Group>
 				)}
+
+				<Grid>
+					{AI_TOOLS.map((tool) => {
+						const Icon = tool.icon;
+						const isActive = activeTool === tool.id;
+						return (
+							<Grid.Col key={tool.id} span={{ base: 6, sm: 4 }}>
+								<Paper
+									p="md"
+									withBorder
+									style={{
+										cursor: apiKey ? "pointer" : "not-allowed",
+										opacity: apiKey ? 1 : 0.6,
+									}}
+									onClick={() =>
+										apiKey &&
+										!isLoading &&
+										handleToolClick(tool.prompt, tool.id)
+									}
+								>
+									<Stack align="center" gap="xs">
+										<ThemeIcon
+											variant={isActive ? "filled" : "light"}
+											size="lg"
+											color={isActive ? "primary" : "gray"}
+										>
+											<Icon size={20} />
+										</ThemeIcon>
+										<Text size="xs" fw={500}>
+											{tool.label}
+										</Text>
+									</Stack>
+								</Paper>
+							</Grid.Col>
+						);
+					})}
+				</Grid>
+
+				<Paper p="md" withBorder>
+					<Stack gap="sm">
+						<Text size="sm" fw={600}>
+							Custom Prompt
+						</Text>
+						<Group gap="sm">
+							<TextInput
+								flex={1}
+								placeholder="e.g., Translate to Spanish, extract dates..."
+								value={customPrompt}
+								onChange={(e) => setCustomPrompt(e.currentTarget.value)}
+								onKeyDown={(e) => e.key === "Enter" && handleCustomPrompt()}
+								disabled={!apiKey || isLoading}
+							/>
+							<Button
+								variant="filled"
+								size="sm"
+								onClick={handleCustomPrompt}
+								disabled={!apiKey || isLoading || !customPrompt.trim()}
+							>
+								{isLoading ? <Loader size={16} /> : <Sparkles size={16} />}
+							</Button>
+						</Group>
+					</Stack>
+				</Paper>
+
+				{(result || isLoading || apiError) && (
+					<Stack gap="sm">
+						<Group justify="space-between">
+							<Text size="sm" fw={600} tt="uppercase" c="dimmed">
+								Result Preview
+							</Text>
+							{isLoading && (
+								<Badge color="violet" leftSection={<Loader size={10} />}>
+									Processing
+								</Badge>
+							)}
+						</Group>
+
+						{apiError && (
+							<Text size="sm" c="red">
+								{apiError}
+							</Text>
+						)}
+
+						{result && (
+							<Paper
+								p="md"
+								withBorder
+								style={{
+									position: "relative",
+									maxHeight: 240,
+									overflow: "auto",
+								}}
+							>
+								<Text
+									component="pre"
+									size="sm"
+									style={{
+										fontFamily: "monospace",
+										whiteSpace: "pre-wrap",
+										margin: 0,
+									}}
+								>
+									{result}
+								</Text>
+								<Group gap="xs" mt="sm">
+									<Button size="xs" onClick={() => onInsert(result, "replace")}>
+										Replace
+									</Button>
+									<Button
+										size="xs"
+										variant="light"
+										onClick={() => onInsert(result, "append")}
+									>
+										Append
+									</Button>
+								</Group>
+							</Paper>
+						)}
+					</Stack>
+				)}
+
+				<Divider />
+
+				<Group justify="flex-end">
+					<Button variant="subtle" onClick={handleClose}>
+						Cancel
+					</Button>
+					<Button
+						disabled={!result}
+						onClick={() => onInsert(result, "replace")}
+					>
+						Apply Changes
+					</Button>
+				</Group>
 			</Stack>
 		</Modal>
 	);
