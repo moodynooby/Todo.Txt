@@ -63,3 +63,20 @@
 	color: var(--note-text-color, inherit);
 	opacity: 0.5;
 }
+
+.NotesPage-noteCard-title {
+	font-weight: 600;
+	font-size: 14px;
+	color: var(--note-textarea-color);
+}
+
+.NotesPage-draft-title {
+	font-weight: 600;
+	font-size: 14px;
+	color: var(--note-textarea-color);
+}
+
+.NotesPage-draft-content {
+	font-size: 13px;
+	color: var(--note-textarea-color);
+}

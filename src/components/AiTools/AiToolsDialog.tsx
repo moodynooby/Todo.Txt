@@ -235,7 +235,7 @@ const AiToolsDialog = ({
 										<ThemeIcon
 											variant={isActive ? "filled" : "light"}
 											size="lg"
-											color={isActive ? "primary" : "gray"}
+											color={isActive ? "blue" : "gray"}
 										>
 											<Icon size={20} />
 										</ThemeIcon>
@@ -267,9 +267,10 @@ const AiToolsDialog = ({
 								variant="filled"
 								size="sm"
 								onClick={handleCustomPrompt}
-								disabled={!apiKey || isLoading || !customPrompt.trim()}
+								disabled={!apiKey || !customPrompt.trim()}
+								loading={isLoading}
 							>
-								{isLoading ? <Loader size={16} /> : <Sparkles size={16} />}
+								<Sparkles size={16} />
 							</Button>
 						</Group>
 					</Stack>

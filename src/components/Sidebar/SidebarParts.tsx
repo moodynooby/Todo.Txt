@@ -1,4 +1,5 @@
 import {
+	ActionIcon,
 	Badge,
 	Button,
 	Collapse,
@@ -180,14 +181,9 @@ export const SearchInput = ({ value, onChange }: SearchInputProps) => (
 		leftSection={<Search size={14} />}
 		rightSection={
 			value ? (
-				<Button
-					variant="subtle"
-					size="compact-xs"
-					onClick={() => onChange("")}
-					px={4}
-				>
+				<ActionIcon variant="subtle" size="xs" onClick={() => onChange("")}>
 					<X size={14} />
-				</Button>
+				</ActionIcon>
 			) : null
 		}
 		value={value}

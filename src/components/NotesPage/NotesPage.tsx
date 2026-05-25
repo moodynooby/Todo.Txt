@@ -156,6 +156,7 @@ function NoteCard({
 			style={{
 				backgroundColor: note.color,
 				color: textColor,
+				"--note-textarea-color": textColor,
 				...(note.pinned ? { borderColor: "rgba(0, 0, 0, 0.12)" } : {}),
 			}}
 		>
@@ -168,9 +169,7 @@ function NoteCard({
 					variant="unstyled"
 					autosize
 					minRows={1}
-					styles={{
-						input: { fontWeight: 600, color: textColor, fontSize: 14 },
-					}}
+					classNames={{ input: "NotesPage-noteCard-title" }}
 				/>
 				{!note.archived && (
 					<ActionIcon
@@ -369,7 +368,11 @@ const NotesPage = ({
 						shadow="sm"
 						radius="md"
 						p="sm"
-						style={{ backgroundColor: draftColor, color: draftTextColor }}
+						style={{
+							backgroundColor: draftColor,
+							color: draftTextColor,
+							"--note-textarea-color": draftTextColor,
+						}}
 					>
 						<Textarea
 							ref={draftTitleRef}
@@ -380,9 +383,7 @@ const NotesPage = ({
 							variant="filled"
 							autosize
 							minRows={1}
-							styles={{
-								input: { fontWeight: 600, color: draftTextColor, fontSize: 14 },
-							}}
+							classNames={{ input: "NotesPage-draft-title" }}
 						/>
 						<Textarea
 							placeholder="Take a note..."
@@ -392,7 +393,7 @@ const NotesPage = ({
 							variant="unstyled"
 							autosize
 							minRows={3}
-							styles={{ input: { fontSize: 13, color: draftTextColor } }}
+							classNames={{ input: "NotesPage-draft-content" }}
 							mt={4}
 						/>
 						<Group maw={600} w="100%" justify="flex-end" gap="xs">

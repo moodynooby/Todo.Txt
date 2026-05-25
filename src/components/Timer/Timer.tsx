@@ -1,5 +1,12 @@
-import { ActionIcon, FloatingWindow, Group, Text } from "@mantine/core";
-import { Pause, Play, RotateCcw, Timer as TimerIcon, X } from "lucide-react";
+import {
+	ActionIcon,
+	FloatingWindow,
+	Group,
+	RingProgress,
+	Stack,
+	Text,
+} from "@mantine/core";
+import { Pause, Play, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TimerState } from "../../hooks/useTimers";
 import { playBeep } from "../../utils/beep";
@@ -8,27 +15,22 @@ import { computeElapsed, formatTime } from "../../utils/formatTime";
 interface TimerProps {
 	timer: TimerState;
 	onRemove: (id: number) => void;
-	onStateChange: (
-		id: number,
-		elapsed: number,
-		isActive: boolean,
-		startTime: number | null,
-	) => void;
-	onPositionChange: (
-		id: number,
-		position: { top: number; left: number },
-	) => void;
+	onUpdate: (id: number, updates: Partial<Omit<TimerState, "id">>) => void;
 }
 
-const Timer = ({
-	timer,
-	onRemove,
-	onStateChange,
-	onPositionChange,
-}: TimerProps) => {
+const getTimerColor = (seconds: number) => {
+	if (seconds < 600) return "teal";
+	if (seconds < 1800) return "yellow";
+	return "red";
+};
+
+const Timer = ({ timer, onRemove, onUpdate }: TimerProps) => {
+	const initialPos = useRef({
+		top: timer.position.top,
+		left: timer.position.left,
+	});
 	const startTimeRef = useRef(timer.startTime);
 	const baseElapsedRef = useRef(timer.elapsed);
-	const [isActive, setIsActive] = useState(timer.isActive);
 	const [displaySeconds, setDisplaySeconds] = useState(() => {
 		if (timer.isActive && timer.startTime !== null) {
 			return computeElapsed(timer.elapsed, timer.startTime);
@@ -37,7 +39,7 @@ const Timer = ({
 	});
 
 	useEffect(() => {
-		if (!isActive) return;
+		if (!timer.isActive) return;
 		const tick = () => {
 			if (startTimeRef.current !== null) {
 				setDisplaySeconds(
@@ -48,31 +50,37 @@ const Timer = ({
 		tick();
 		const interval = setInterval(tick, 1000);
 		return () => clearInterval(interval);
-	}, [isActive]);
+	}, [timer.isActive]);
 
 	const handlePositionChange = useCallback(
 		(pos: { x: number; y: number }) => {
-			onPositionChange(timer.id, { top: pos.y, left: pos.x });
+			onUpdate(timer.id, { position: { top: pos.y, left: pos.x } });
 		},
-		[timer.id, onPositionChange],
+		[timer.id, onUpdate],
 	);
 
 	const handlePlayPause = () => {
 		const startTime = startTimeRef.current;
-		if (isActive && startTime !== null) {
+		if (timer.isActive && startTime !== null) {
 			const currentElapsed = computeElapsed(baseElapsedRef.current, startTime);
 			baseElapsedRef.current = currentElapsed;
 			startTimeRef.current = null;
 			setDisplaySeconds(currentElapsed);
-			setIsActive(false);
 			playBeep(100, 660);
-			onStateChange(timer.id, currentElapsed, false, null);
-		} else if (!isActive) {
+			onUpdate(timer.id, {
+				elapsed: currentElapsed,
+				isActive: false,
+				startTime: null,
+			});
+		} else if (!timer.isActive) {
 			const now = Date.now();
 			startTimeRef.current = now;
-			setIsActive(true);
 			playBeep(100, 880);
-			onStateChange(timer.id, baseElapsedRef.current, true, now);
+			onUpdate(timer.id, {
+				elapsed: baseElapsedRef.current,
+				isActive: true,
+				startTime: now,
+			});
 		}
 	};
 
@@ -80,72 +88,74 @@ const Timer = ({
 		baseElapsedRef.current = 0;
 		startTimeRef.current = null;
 		setDisplaySeconds(0);
-		setIsActive(false);
 		playBeep();
-		onStateChange(timer.id, 0, false, null);
+		onUpdate(timer.id, {
+			elapsed: 0,
+			isActive: false,
+			startTime: null,
+		});
 	};
+
+	const progress =
+		displaySeconds > 0 ? Math.min((displaySeconds / 3600) * 100, 100) : 0;
+	const color = getTimerColor(displaySeconds);
 
 	return (
 		<FloatingWindow
-			w={160}
+			w={190}
 			p="sm"
 			withBorder
 			shadow="md"
-			dragHandleSelector=".timer-drag-handle"
 			excludeDragHandleSelector="button"
-			initialPosition={{ top: timer.position.top, left: timer.position.left }}
+			initialPosition={initialPos.current}
 			constrainToViewport
 			onPositionChange={handlePositionChange}
 			style={{ cursor: "move", touchAction: "none" }}
 		>
-			<Group justify="space-between" mb="xs" className="timer-drag-handle">
-				<TimerIcon
-					size={14}
-					color="var(--mantine-primary-color-6)"
-					style={{ opacity: 0.7 }}
+			<Stack align="center" gap="xs">
+				<RingProgress
+					size={120}
+					thickness={10}
+					roundCaps
+					transitionDuration={500}
+					sections={[{ value: progress, color }]}
+					rootColor="var(--mantine-color-dark-4)"
+					label={
+						<Text c={color} ff="monospace" fw={700} size="xl" ta="center">
+							{formatTime(displaySeconds)}
+						</Text>
+					}
 				/>
-				<ActionIcon
-					variant="subtle"
-					size="xs"
-					color="gray"
-					onClick={() => onRemove(timer.id)}
-					aria-label="Remove timer"
-				>
-					<X size={14} />
-				</ActionIcon>
-			</Group>
-
-			<Text
-				size="xl"
-				fw={700}
-				ff="monospace"
-				c="var(--mantine-primary-color-6)"
-				ta="center"
-				mb="xs"
-			>
-				{formatTime(displaySeconds)}
-			</Text>
-
-			<Group justify="center" gap="xs">
-				<ActionIcon
-					variant="subtle"
-					size="sm"
-					color="gray"
-					onClick={handlePlayPause}
-					aria-label={isActive ? "Pause timer" : "Start timer"}
-				>
-					{isActive ? <Pause size={14} /> : <Play size={14} />}
-				</ActionIcon>
-				<ActionIcon
-					variant="subtle"
-					size="sm"
-					color="gray"
-					onClick={handleReset}
-					aria-label="Reset timer"
-				>
-					<RotateCcw size={14} />
-				</ActionIcon>
-			</Group>
+				<Group gap="xs">
+					<ActionIcon
+						variant="subtle"
+						size="sm"
+						color="gray"
+						onClick={handlePlayPause}
+						aria-label={timer.isActive ? "Pause timer" : "Start timer"}
+					>
+						{timer.isActive ? <Pause size={16} /> : <Play size={16} />}
+					</ActionIcon>
+					<ActionIcon
+						variant="subtle"
+						size="sm"
+						color="gray"
+						onClick={handleReset}
+						aria-label="Reset timer"
+					>
+						<RotateCcw size={16} />
+					</ActionIcon>
+					<ActionIcon
+						variant="subtle"
+						size="sm"
+						color="gray"
+						onClick={() => onRemove(timer.id)}
+						aria-label="Remove timer"
+					>
+						<X size={16} />
+					</ActionIcon>
+				</Group>
+			</Stack>
 		</FloatingWindow>
 	);
 };

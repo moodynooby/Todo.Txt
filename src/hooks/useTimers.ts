@@ -36,7 +36,8 @@ function saveTimers(timers: TimerState[]) {
 	safeSetItem(STORAGE_KEY, timers);
 }
 
-let nextId = Date.now();
+const MAX_TIMERS = 5;
+let nextId = 0;
 
 export const useTimers = () => {
 	const [timers, setTimers] = useState<TimerState[]>(loadTimers);
@@ -46,18 +47,21 @@ export const useTimers = () => {
 	}, [timers]);
 
 	const addTimer = useCallback(() => {
-		const id = nextId++;
-		const newTimer: TimerState = {
-			id,
-			elapsed: 0,
-			isActive: false,
-			startTime: null,
-			position: {
-				top: BASE_TOP + (id % 10) * TOP_OFFSET,
-				left: BASE_LEFT + (id % 5) * LEFT_OFFSET,
-			},
-		};
-		setTimers((prev) => [...prev, newTimer]);
+		setTimers((prev) => {
+			if (prev.length >= MAX_TIMERS) return prev;
+			const id = Date.now() + nextId++;
+			const newTimer: TimerState = {
+				id,
+				elapsed: 0,
+				isActive: false,
+				startTime: null,
+				position: {
+					top: BASE_TOP + (id % 10) * TOP_OFFSET,
+					left: BASE_LEFT + (id % 5) * LEFT_OFFSET,
+				},
+			};
+			return [...prev, newTimer];
+		});
 	}, []);
 
 	const removeTimer = useCallback((id: number) => {

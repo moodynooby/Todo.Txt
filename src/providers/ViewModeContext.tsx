@@ -3,7 +3,6 @@ import { createContext, useContext } from "react";
 interface ViewModeContextValue {
 	viewMode: string;
 	setViewMode: (mode: string) => void;
-	addTimer: () => void;
 }
 
 export const ViewModeContext = createContext<ViewModeContextValue | null>(null);

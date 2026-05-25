@@ -38,7 +38,11 @@ const ExcalidrawPage = lazy(
 	() => import("./components/ExcalidrawPage/ExcalidrawPage"),
 );
 
-const App = () => {
+interface AppProps {
+	addTimer: () => void;
+}
+
+const App = ({ addTimer }: AppProps) => {
 	const { viewMode } = useViewMode();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
@@ -184,6 +188,7 @@ const App = () => {
 	const editorContextValue = useMemo(
 		() => ({
 			editor,
+			addTimer,
 			onSave: handleSave,
 			onOpen: handleOpenRepo,
 			onAiTools: handleAiTools,
@@ -197,6 +202,7 @@ const App = () => {
 		}),
 		[
 			editor,
+			addTimer,
 			handleSave,
 			handleOpenRepo,
 			handleAiTools,

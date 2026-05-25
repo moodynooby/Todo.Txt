@@ -1,7 +1,7 @@
 import "@mantine/core/styles.css";
 import "@mantine/tiptap/styles.css";
 import { useLocalStorage } from "@mantine/hooks";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary/ErrorBoundary";
@@ -51,37 +51,20 @@ function RootComponent() {
 		};
 	}, []);
 
-	const handleStateChange = useCallback(
-		(
-			id: number,
-			elapsed: number,
-			isActive: boolean,
-			startTime: number | null,
-		) => updateTimer(id, { elapsed, isActive, startTime }),
-		[updateTimer],
-	);
-
-	const handlePositionChange = useCallback(
-		(id: number, position: { top: number; left: number }) =>
-			updateTimer(id, { position }),
-		[updateTimer],
-	);
-
 	return (
 		<MantineProvider>
-			<ViewModeContext.Provider value={{ viewMode, setViewMode, addTimer }}>
+			<ViewModeContext.Provider value={{ viewMode, setViewMode }}>
 				<ErrorBoundary>
-					<App />
+					<App addTimer={addTimer} />
+					{timers.map((timer) => (
+						<Timer
+							key={timer.id}
+							timer={timer}
+							onRemove={removeTimer}
+							onUpdate={updateTimer}
+						/>
+					))}
 				</ErrorBoundary>
-				{timers.map((timer) => (
-					<Timer
-						key={timer.id}
-						timer={timer}
-						onRemove={removeTimer}
-						onStateChange={handleStateChange}
-						onPositionChange={handlePositionChange}
-					/>
-				))}
 			</ViewModeContext.Provider>
 		</MantineProvider>
 	);

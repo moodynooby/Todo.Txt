@@ -4,6 +4,7 @@ import type { SyncStatus } from "../hooks/useFirestoreSync";
 
 export interface EditorContextValue {
 	editor: Editor | null;
+	addTimer: () => void;
 	onSave: (format: "markdown" | "text" | "html") => void;
 	onOpen: () => void;
 	onAiTools: () => void;
