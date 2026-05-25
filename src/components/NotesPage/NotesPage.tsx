@@ -1,6 +1,7 @@
 import {
 	ActionIcon,
 	Box,
+	Card,
 	Collapse,
 	Group,
 	Paper,
@@ -29,6 +30,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
+import { marked } from "marked";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Note, NoteColor } from "../../types/notes";
 import { NOTE_COLORS, NOTE_TEXT_COLORS } from "../../types/notes";
@@ -54,8 +56,8 @@ function ColorDots({
 						backgroundColor: c,
 						...(c === selected
 							? {
-									border: "2px solid currentColor",
-									boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
+									border: "2px solid rgba(0,0,0,0.45)",
+									boxShadow: "0 0 0 2px rgba(255,255,255,0.7)",
 								}
 							: { border: "1px solid rgba(0,0,0,0.12)" }),
 					}}
@@ -64,6 +66,22 @@ function ColorDots({
 				/>
 			))}
 		</Group>
+	);
+}
+
+function SectionHeading({ children, mt }: { children: string; mt?: string }) {
+	return (
+		<Text
+			size="xs"
+			fw={700}
+			tt="uppercase"
+			c="dimmed"
+			mb="xs"
+			mt={mt}
+			style={{ letterSpacing: "0.05em" }}
+		>
+			{children}
+		</Text>
 	);
 }
 
@@ -93,6 +111,16 @@ function NoteCardEditor({
 			onChange(currentEditor.getHTML());
 		},
 		immediatelyRender: false,
+		shouldRerenderOnTransaction: true,
+		editorProps: {
+			transformPastedText: (text) => {
+				try {
+					return marked.parse(text, { async: false }) as string;
+				} catch {
+					return text;
+				}
+			},
+		},
 	});
 
 	useEffect(() => {
@@ -145,14 +173,15 @@ function NoteCard({
 	onTogglePin: (id: string) => void;
 	onColorChange: (id: string, color: NoteColor) => void;
 }) {
-	const titleRef = useRef<HTMLTextAreaElement>(null);
 	const textColor = NOTE_TEXT_COLORS[note.color] ?? "#000";
 
 	return (
-		<Paper
+		<Card
 			radius="md"
 			withBorder
 			shadow="sm"
+			padding="xs"
+			className="NotesPage-noteCard"
 			style={{
 				backgroundColor: note.color,
 				color: textColor,
@@ -160,15 +189,15 @@ function NoteCard({
 				...(note.pinned ? { borderColor: "rgba(0, 0, 0, 0.12)" } : {}),
 			}}
 		>
-			<Group justify="space-between" p="xs" pb={0}>
+			<Group justify="space-between">
 				<Textarea
-					ref={titleRef}
 					value={note.title}
 					onChange={(e) => onUpdate(note.id, { title: e.currentTarget.value })}
 					placeholder="Title"
 					variant="unstyled"
 					autosize
 					minRows={1}
+					maxRows={3}
 					classNames={{ input: "NotesPage-noteCard-title" }}
 				/>
 				{!note.archived && (
@@ -182,12 +211,14 @@ function NoteCard({
 					</ActionIcon>
 				)}
 			</Group>
-			<NoteCardEditor
-				content={note.content}
-				onChange={(html) => onUpdate(note.id, { content: html })}
-				textColor={textColor}
-			/>
-			<Group justify="space-between" p={4}>
+			<Card.Section>
+				<NoteCardEditor
+					content={note.content}
+					onChange={(html) => onUpdate(note.id, { content: html })}
+					textColor={textColor}
+				/>
+			</Card.Section>
+			<Group justify="space-between">
 				<ColorDots
 					selected={note.color}
 					onChange={(c) => onColorChange(note.id, c)}
@@ -215,7 +246,7 @@ function NoteCard({
 					</ActionIcon>
 				</Group>
 			</Group>
-		</Paper>
+		</Card>
 	);
 }
 
@@ -241,9 +272,8 @@ const NotesPage = ({
 	const [showArchived, setShowArchived] = useState(false);
 	const [draftTitle, setDraftTitle] = useState("");
 	const [draftContent, setDraftContent] = useState("");
-	const [draftColor, setDraftColor] = useState<NoteColor>("#fff475");
+	const [draftColor, setDraftColor] = useState<NoteColor>(NOTE_COLORS[0]);
 	const [debouncedSearch] = useDebouncedValue(search, 200);
-	const addCardRef = useRef<HTMLDivElement>(null);
 	const draftTitleRef = useRef<HTMLTextAreaElement>(null);
 
 	const activeNotes = useMemo(() => {
@@ -276,7 +306,7 @@ const NotesPage = ({
 	const cancelDraft = useCallback(() => {
 		setDraftTitle("");
 		setDraftContent("");
-		setDraftColor("#fff475");
+		setDraftColor(NOTE_COLORS[0]);
 		setExpanded(false);
 	}, []);
 
@@ -293,7 +323,7 @@ const NotesPage = ({
 		upsertNote(note);
 		setDraftTitle("");
 		setDraftContent("");
-		setDraftColor("#fff475");
+		setDraftColor(NOTE_COLORS[0]);
 		setExpanded(false);
 	}, [draftTitle, draftContent, draftColor, upsertNote, cancelDraft]);
 
@@ -362,7 +392,6 @@ const NotesPage = ({
 					</Paper>
 				) : (
 					<Paper
-						ref={addCardRef}
 						maw={600}
 						w="100%"
 						shadow="sm"
@@ -380,9 +409,10 @@ const NotesPage = ({
 							value={draftTitle}
 							onChange={(e) => setDraftTitle(e.currentTarget.value)}
 							onKeyDown={handleDraftKeyDown}
-							variant="filled"
+							variant="unstyled"
 							autosize
 							minRows={1}
+							maxRows={3}
 							classNames={{ input: "NotesPage-draft-title" }}
 						/>
 						<Textarea
@@ -425,16 +455,7 @@ const NotesPage = ({
 			<Box style={{ flex: 1, overflowY: "auto" }} p="md">
 				{pinned.length > 0 && (
 					<div>
-						<Text
-							size="xs"
-							fw={700}
-							tt="uppercase"
-							c="dimmed"
-							mb="xs"
-							style={{ letterSpacing: "0.05em" }}
-						>
-							Pinned
-						</Text>
+						<SectionHeading>Pinned</SectionHeading>
 						<div className="NotesPage-masonry">
 							{pinned.map((note) => (
 								<NoteCard
@@ -452,17 +473,7 @@ const NotesPage = ({
 				)}
 
 				{pinned.length > 0 && unpinned.length > 0 && (
-					<Text
-						size="xs"
-						fw={700}
-						tt="uppercase"
-						c="dimmed"
-						mb="xs"
-						mt="md"
-						style={{ letterSpacing: "0.05em" }}
-					>
-						Others
-					</Text>
+					<SectionHeading mt="md">Others</SectionHeading>
 				)}
 
 				{unpinned.length > 0 && (

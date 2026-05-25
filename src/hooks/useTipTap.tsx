@@ -46,6 +46,7 @@ export const useTipTap = ({
 			onContentChange(currentEditor.getHTML());
 		},
 		immediatelyRender: false,
+		shouldRerenderOnTransaction: true,
 	});
 
 	const setExternalContent = useCallback(
