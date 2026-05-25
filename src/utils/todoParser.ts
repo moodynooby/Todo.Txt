@@ -6,22 +6,6 @@ const stripHtml = (html: string, replacement = "\n"): string => {
 	return html.replace(/<[^>]*>/g, replacement);
 };
 
-const parseRelativeDate = (value: string): string | undefined => {
-	if (value === "today") {
-		return getToday();
-	}
-	if (value === "tomorrow") {
-		return getTomorrow();
-	}
-	if (value === "yesterday") {
-		return getYesterday();
-	}
-	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-		return value;
-	}
-	return undefined;
-};
-
 export const parseTodoContent = (content: string): ParsedTodoContent => {
 	if (!content)
 		return {
@@ -32,6 +16,28 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 			dueDates: {},
 		};
 
+	// Performance optimization: Hoist date calculations out of the loop
+	const today = getToday();
+	const tomorrow = getTomorrow();
+	const yesterday = getYesterday();
+
+	const parseRelativeDate = (value: string): string | undefined => {
+		if (value === "today") return today;
+		if (value === "tomorrow") return tomorrow;
+		if (value === "yesterday") return yesterday;
+		if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+		return undefined;
+	};
+
+	const categorizeDueDate = (due: string): string => {
+		if (/^\d{4}-\d{2}-\d{2}$/.test(due)) {
+			if (due < today) return "overdue";
+			if (due === today) return "today";
+			if (due === tomorrow) return "tomorrow";
+		}
+		return due;
+	};
+
 	const text = stripHtml(content, "\n");
 	const lines = text.split("\n").filter((line) => line.trim());
 
@@ -40,15 +46,6 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 	const projects: Record<string, Task[]> = {};
 	const contexts: Record<string, Task[]> = {};
 	const dueDates: Record<string, Task[]> = {};
-
-	const categorizeDueDate = (due: string): string => {
-		if (/^\d{4}-\d{2}-\d{2}$/.test(due)) {
-			if (due < getToday()) return "overdue";
-			if (due === getToday()) return "today";
-			if (due === getTomorrow()) return "tomorrow";
-		}
-		return due;
-	};
 
 	lines.forEach((line, index) => {
 		const trimmed = line.trim();
@@ -82,7 +79,9 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		if (projectMatches) {
 			task.projects = projectMatches.map((p: string) => p.slice(1));
 			task.projects.forEach((p: string) => {
-				projects[p] = (projects[p] || []).concat(task);
+				// Optimization: Use push instead of concat to avoid O(N^2)
+				if (!projects[p]) projects[p] = [];
+				projects[p].push(task);
 			});
 		}
 
@@ -90,7 +89,9 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		if (contextMatches) {
 			task.contexts = contextMatches.map((c: string) => c.slice(1));
 			task.contexts.forEach((c: string) => {
-				contexts[c] = (contexts[c] || []).concat(task);
+				// Optimization: Use push instead of concat to avoid O(N^2)
+				if (!contexts[c]) contexts[c] = [];
+				contexts[c].push(task);
 			});
 		}
 
@@ -100,7 +101,9 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 			task.due = parseRelativeDate(value);
 			if (task.due) {
 				const category = categorizeDueDate(task.due);
-				dueDates[category] = (dueDates[category] || []).concat(task);
+				// Optimization: Use push instead of concat to avoid O(N^2)
+				if (!dueDates[category]) dueDates[category] = [];
+				dueDates[category].push(task);
 			}
 		}
 
