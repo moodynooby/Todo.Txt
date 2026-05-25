@@ -162,7 +162,7 @@ const App = ({ addTimer }: AppProps) => {
 
 	useDueNotifications(taskData.tasks);
 
-	const handleSave = useDocumentSave(editor, rteContent);
+	const handleSave = useDocumentSave(editor);
 
 	const handleAiTools = useCallback((): void => {
 		setIsAiDialogOpen(true);

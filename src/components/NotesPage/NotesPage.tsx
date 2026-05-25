@@ -13,10 +13,7 @@ import {
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { RichTextEditor } from "@mantine/tiptap";
-import Placeholder from "@tiptap/extension-placeholder";
-import { Markdown } from "@tiptap/markdown";
 import { useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import {
 	Archive,
 	ArchiveRestore,
@@ -30,10 +27,10 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { marked } from "marked";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Note, NoteColor } from "../../types/notes";
-import { NOTE_COLORS, NOTE_TEXT_COLORS } from "../../types/notes";
+import { NOTE_COLORS } from "../../types/notes";
+import { getEditorExtensions } from "../../utils/editorExtensions";
 import { createNote } from "../../utils/notesStorage";
 import "./NotesPage.css";
 
@@ -88,43 +85,29 @@ function SectionHeading({ children, mt }: { children: string; mt?: string }) {
 function NoteCardEditor({
 	content,
 	onChange,
-	textColor,
 }: {
 	content: string;
-	onChange: (html: string) => void;
-	textColor: string;
+	onChange: (md: string) => void;
 }) {
+	const lastMarkdownRef = useRef(content);
+
 	const editor = useEditor({
-		extensions: [
-			StarterKit.configure({
-				heading: { levels: [1, 2, 3] },
-			}),
-			Placeholder.configure({
-				placeholder: "Take a note...",
-			}),
-			Markdown.configure({
-				markedOptions: { gfm: true, breaks: true },
-			}),
-		],
+		extensions: getEditorExtensions({
+			headingLevels: [1, 2, 3],
+			placeholder: "Take a note...",
+		}),
 		content: content || "",
 		onUpdate: ({ editor: currentEditor }) => {
-			onChange(currentEditor.getHTML());
+			const md = currentEditor.getMarkdown();
+			lastMarkdownRef.current = md;
+			onChange(md);
 		},
 		immediatelyRender: false,
-		shouldRerenderOnTransaction: true,
-		editorProps: {
-			transformPastedText: (text) => {
-				try {
-					return marked.parse(text, { async: false }) as string;
-				} catch {
-					return text;
-				}
-			},
-		},
 	});
 
 	useEffect(() => {
-		if (editor && content !== editor.getHTML()) {
+		if (editor && content !== lastMarkdownRef.current) {
+			lastMarkdownRef.current = content;
 			editor.commands.setContent(content || "");
 		}
 	}, [content, editor]);
@@ -133,7 +116,7 @@ function NoteCardEditor({
 		<RichTextEditor
 			editor={editor}
 			className="NotesPage-noteCard-editor"
-			style={{ "--note-text-color": textColor } as React.CSSProperties}
+			style={{ "--note-text-color": "#000" } as React.CSSProperties}
 		>
 			<RichTextEditor.Toolbar>
 				<RichTextEditor.ControlsGroup>
@@ -156,14 +139,7 @@ function NoteCard({
 	onTogglePin,
 	onColorChange,
 }: {
-	note: {
-		id: string;
-		title: string;
-		content: string;
-		color: NoteColor;
-		pinned: boolean;
-		archived: boolean;
-	};
+	note: Note;
 	onUpdate: (
 		id: string,
 		partial: Partial<{ title: string; content: string }>,
@@ -173,8 +149,6 @@ function NoteCard({
 	onTogglePin: (id: string) => void;
 	onColorChange: (id: string, color: NoteColor) => void;
 }) {
-	const textColor = NOTE_TEXT_COLORS[note.color] ?? "#000";
-
 	return (
 		<Card
 			radius="md"
@@ -184,8 +158,8 @@ function NoteCard({
 			className="NotesPage-noteCard"
 			style={{
 				backgroundColor: note.color,
-				color: textColor,
-				"--note-textarea-color": textColor,
+				color: "#000",
+				"--note-textarea-color": "#000",
 				...(note.pinned ? { borderColor: "rgba(0, 0, 0, 0.12)" } : {}),
 			}}
 		>
@@ -214,8 +188,7 @@ function NoteCard({
 			<Card.Section>
 				<NoteCardEditor
 					content={note.content}
-					onChange={(html) => onUpdate(note.id, { content: html })}
-					textColor={textColor}
+					onChange={(md) => onUpdate(note.id, { content: md })}
 				/>
 			</Card.Section>
 			<Group justify="space-between">
@@ -349,7 +322,7 @@ const NotesPage = ({
 		}
 	}, [expanded]);
 
-	const draftTextColor = NOTE_TEXT_COLORS[draftColor] ?? "#000";
+	const draftTextColor = "#000";
 
 	const hasContent = pinned.length > 0 || unpinned.length > 0;
 	const hasArchived = archivedNotes.length > 0;

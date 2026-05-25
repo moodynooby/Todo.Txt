@@ -54,12 +54,12 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		const trimmed = line.trim();
 		if (!trimmed) return;
 
-		const hasCheckboxMarker = /^\[.?\]\s/.test(trimmed);
-		const isChecked = /^\[x\]\s/i.test(trimmed);
+		const hasCheckboxMarker = /^-?\[.?\]\s/.test(trimmed);
+		const isChecked = /^-?\[x\]\s/i.test(trimmed);
 		const hasXPrefix = /^x\s/i.test(trimmed);
 
 		const cleanText = hasCheckboxMarker
-			? trimmed.replace(/^\[.?\]\s/, "")
+			? trimmed.replace(/^-?\[.?\]\s/, "")
 			: trimmed;
 
 		const task: Task = {

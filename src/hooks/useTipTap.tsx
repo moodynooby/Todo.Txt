@@ -1,9 +1,7 @@
 import type { Editor } from "@tiptap/core";
-import Placeholder from "@tiptap/extension-placeholder";
-import { Markdown } from "@tiptap/markdown";
 import { useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { useCallback } from "react";
+import { getEditorExtensions } from "../utils/editorExtensions";
 
 interface UseTipTapProps {
 	initialContent: string;
@@ -20,22 +18,9 @@ export const useTipTap = ({
 	onContentChange,
 }: UseTipTapProps): UseTipTapReturn => {
 	const editor = useEditor({
-		extensions: [
-			StarterKit.configure({
-				heading: {
-					levels: [1, 2, 3, 4, 5, 6],
-				},
-			}),
-			Placeholder.configure({
-				placeholder: "Start writing your todos...",
-			}),
-			Markdown.configure({
-				markedOptions: {
-					gfm: true,
-					breaks: true,
-				},
-			}),
-		],
+		extensions: getEditorExtensions({
+			placeholder: "Start writing your todos...",
+		}),
 		content: initialContent,
 		editorProps: {
 			attributes: {
@@ -43,10 +28,9 @@ export const useTipTap = ({
 			},
 		},
 		onUpdate: ({ editor: currentEditor }) => {
-			onContentChange(currentEditor.getHTML());
+			onContentChange(currentEditor.getMarkdown());
 		},
 		immediatelyRender: false,
-		shouldRerenderOnTransaction: true,
 	});
 
 	const setExternalContent = useCallback(

@@ -72,11 +72,11 @@ export const EditorToolbar = () => {
 
 			<RichTextEditor.ControlsGroup>
 				<RichTextEditor.Control
-					onClick={() => editor?.chain().focus().insertContent("[ ] ").run()}
-					active={false}
-					aria-label="Insert checkbox"
+					onClick={() => editor?.chain().focus().toggleTaskList().run()}
+					active={editor?.isActive("taskList") ?? false}
+					aria-label="Toggle task list"
 				>
-					<Tooltip label="Insert [ ] checkbox" position="top">
+					<Tooltip label="Toggle task list" position="top">
 						<CheckSquare size={16} />
 					</Tooltip>
 				</RichTextEditor.Control>

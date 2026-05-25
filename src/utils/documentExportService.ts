@@ -56,10 +56,10 @@ const saveToFile = (
 };
 
 export const saveAsMarkdown = (
-	htmlContent: string,
+	content: string,
 	filename: string | null = null,
 ): void => {
-	saveToFile(htmlContent, "markdown", filename);
+	saveToFile(content, "markdown", filename);
 };
 
 export const saveAsText = (

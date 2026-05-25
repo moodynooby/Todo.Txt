@@ -1,4 +1,3 @@
-import { marked } from "marked";
 import { type RefObject, useRef } from "react";
 
 interface UseFileHandlerProps {
@@ -28,21 +27,7 @@ export const useFileHandler = ({
 			const result = e.target?.result;
 			if (typeof result !== "string") return;
 			if (file.name.endsWith(".md")) {
-				try {
-					const html = marked.parse(result, { async: false }) as string;
-					onFileLoaded(html);
-				} catch (e) {
-					console.warn(
-						"Failed to parse markdown, falling back to plain text:",
-						e,
-					);
-					onFileLoaded(
-						result
-							.split("\n")
-							.map((line) => `<p>${line}</p>`)
-							.join(""),
-					);
-				}
+				onFileLoaded(result);
 			} else if (file.name.endsWith(".html")) {
 				onFileLoaded(result);
 			} else {
