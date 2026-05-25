@@ -170,7 +170,7 @@ const AiToolsDialog = ({
 									component="a"
 									href="https://console.groq.com/keys"
 									target="_blank"
-									rel="noreferrer"
+									rel="noopener noreferrer"
 									size="xs"
 								>
 									Get a key at console.groq.com
