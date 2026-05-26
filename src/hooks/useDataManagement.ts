@@ -129,7 +129,7 @@ export function useDataManagement(viewMode?: string) {
 				setRteContentState(html);
 			}
 		}
-	}, [viewMode, setExternalContent, setRteContentState]);
+	}, [viewMode, setExternalContent]);
 
 	const { syncStatus, isConnected, user, connect, disconnect } =
 		useFirestoreSync({
