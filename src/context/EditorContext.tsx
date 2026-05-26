@@ -12,9 +12,15 @@ export interface EditorContextValue {
 	onToggleSidebar: () => void;
 	syncStatus: SyncStatus;
 	isSynced: boolean;
-	user: { photoURL: string | null; displayName: string | null } | null;
+	user: {
+		photoURL: string | null;
+		displayName: string | null;
+		isAnonymous: boolean;
+	} | null;
 	onConnect: () => void;
 	onDisconnectSync: () => void;
+	groqApiKey: string;
+	onGroqApiKeyChange: (key: string) => void;
 }
 
 export const EditorContext = createContext<EditorContextValue | null>(null);

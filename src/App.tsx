@@ -1,6 +1,6 @@
 import "@/styles/App.css";
 import { AppShell, Box } from "@mantine/core";
-import { useLocalStorage } from "@mantine/hooks";
+import { useDebouncedValue } from "@mantine/hooks";
 import {
 	lazy,
 	Suspense,
@@ -17,13 +17,16 @@ import { useViewMode } from "@/context/ViewModeContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
 import TextModeContent from "@/features/editor/TextModeContent";
 import NotesPage from "@/features/notes/NotesPage";
+import Timer from "@/features/timer/Timer";
 import { useDocumentSave } from "@/hooks/useDocumentSave";
 import { useDueNotifications } from "@/hooks/useDueNotifications";
 import { useFileHandler } from "@/hooks/useFileHandler";
 import { useFirestoreSync } from "@/hooks/useFirestoreSync";
+import { type TimerData, useTimers } from "@/hooks/useTimers";
 import { useTipTap } from "@/hooks/useTipTap";
 import type { Note } from "@/types/notes";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
+import type { ExcalidrawData } from "@/utils/excalidrawStorageService";
 import {
 	syncExcalidrawToText,
 	syncTextToExcalidraw,
@@ -31,102 +34,133 @@ import {
 import { useNotes } from "@/utils/notesStorage";
 import { parseTodoContent } from "@/utils/todoParser";
 
-const DEBOUNCE_DELAY = 1000;
-
 const ExcalidrawPage = lazy(
 	() => import("@/features/excalidraw/ExcalidrawPage"),
 );
 
-interface AppProps {
-	addTimer: () => void;
-}
-
-const App = ({ addTimer }: AppProps) => {
+const App = () => {
 	const { viewMode } = useViewMode();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
-	const [rteContent, setRteContentState] = useLocalStorage({
-		key: "rteContent",
-		defaultValue: "",
-	});
-	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
+	const [rteContent, setRteContentState] = useState("");
 	const rteContentRef = useRef(rteContent);
 
 	useEffect(() => {
 		rteContentRef.current = rteContent;
 	}, [rteContent]);
 
+	const [debouncedRteContent] = useDebouncedValue(rteContent, 1000);
+
 	const prevViewMode = useRef(viewMode);
 
-	const handleContentChange = useCallback(
-		(content: string) => {
-			setRteContentState(content);
-		},
-		[setRteContentState],
-	);
+	const handleContentChange = useCallback((content: string) => {
+		setRteContentState(content);
+	}, []);
 
 	const { editor, setExternalContent } = useTipTap({
 		initialContent: rteContent,
 		onContentChange: handleContentChange,
 	});
 
+	const excalidrawDataRef = useRef<ExcalidrawData | null>(null);
+
+	const [excalidrawData, setExcalidrawData] = useState<ExcalidrawData | null>(
+		null,
+	);
+
+	excalidrawDataRef.current = excalidrawData;
+
 	useEffect(() => {
 		const prev = prevViewMode.current;
 		prevViewMode.current = viewMode;
-
 		if (viewMode === prev) return;
 
 		if (viewMode === "excalidraw") {
-			syncTextToExcalidraw(rteContentRef.current);
+			const current = excalidrawDataRef.current;
+			const result = syncTextToExcalidraw(
+				rteContentRef.current,
+				current?.elements ?? [],
+				(current?.appState as Record<string, unknown>) ?? {},
+			);
+			setExcalidrawData({
+				elements: result.elements,
+				appState: result.appState as ExcalidrawData["appState"],
+			});
 		} else if (viewMode === "text" && prev === "excalidraw") {
-			const excalidrawHtml = syncExcalidrawToText();
-			if (excalidrawHtml) {
-				setExternalContent(excalidrawHtml);
-				setRteContentState(excalidrawHtml);
+			const html = syncExcalidrawToText(
+				excalidrawDataRef.current?.elements ?? [],
+			);
+			if (html) {
+				setExternalContent(html);
+				setRteContentState(html);
 			}
 		}
-	}, [viewMode, setExternalContent, setRteContentState]);
+	}, [viewMode, setExternalContent]);
+
+	const handleRemoteExcalidraw = useCallback((data: ExcalidrawData | null) => {
+		setExcalidrawData(data);
+	}, []);
+
+	const [debouncedExcalidraw] = useDebouncedValue(excalidrawData, 3000);
 
 	const handleRemoteContent = useCallback(
 		(content: string) => {
 			setExternalContent(content);
 			setRteContentState(content);
 		},
-		[setExternalContent, setRteContentState],
+		[setExternalContent],
 	);
 
 	const {
 		notes,
-		setNotes,
+		setNotesFromRemote,
 		upsertNote,
 		deleteNote,
 		archiveNote,
 		togglePin,
 		setNoteColor,
 	} = useNotes();
-	const [debouncedNotes, setDebouncedNotes] = useState(notes);
 
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedRteContent(rteContent);
-		}, DEBOUNCE_DELAY);
-		return () => clearTimeout(timer);
-	}, [rteContent]);
-
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedNotes(notes);
-		}, DEBOUNCE_DELAY * 2);
-		return () => clearTimeout(timer);
-	}, [notes]);
+	const [debouncedNotes] = useDebouncedValue(notes, 2000);
 
 	const handleRemoteNotes = useCallback(
 		(remoteNotes: Note[]) => {
-			setNotes(remoteNotes);
+			setNotesFromRemote(remoteNotes);
 		},
-		[setNotes],
+		[setNotesFromRemote],
+	);
+
+	const [groqApiKey, setGroqApiKey] = useState("");
+
+	const handleRemoteGroqApiKey = useCallback((key: string) => {
+		setGroqApiKey(key);
+	}, []);
+
+	const handleGroqApiKeyChange = useCallback((key: string) => {
+		setGroqApiKey(key);
+	}, []);
+
+	const { timers, setTimersFromRemote, addTimer, removeTimer, updateTimer } =
+		useTimers();
+
+	const timerData = useMemo(
+		() =>
+			timers.map(({ id, elapsed, isActive, startTime }) => ({
+				id,
+				elapsed,
+				isActive,
+				startTime,
+			})),
+		[timers],
+	);
+
+	const handleRemoteTimers = useCallback(
+		(remote: TimerData[]) => {
+			setTimersFromRemote(remote);
+		},
+		[setTimersFromRemote],
 	);
 
 	const {
@@ -140,6 +174,12 @@ const App = ({ addTimer }: AppProps) => {
 		onRemoteContent: handleRemoteContent,
 		notes: debouncedNotes,
 		onRemoteNotes: handleRemoteNotes,
+		excalidraw: debouncedExcalidraw,
+		onRemoteExcalidraw: handleRemoteExcalidraw,
+		groqApiKey,
+		onRemoteGroqApiKey: handleRemoteGroqApiKey,
+		timers: timerData,
+		onRemoteTimers: handleRemoteTimers,
 	});
 
 	const handleFileLoaded = useCallback(
@@ -147,7 +187,7 @@ const App = ({ addTimer }: AppProps) => {
 			setExternalContent(html);
 			setRteContentState(html);
 		},
-		[setExternalContent, setRteContentState],
+		[setExternalContent],
 	);
 
 	const { fileInputRef, handleOpenRepo, handleFileChange } = useFileHandler({
@@ -198,6 +238,8 @@ const App = ({ addTimer }: AppProps) => {
 			user,
 			onConnect: connectSync,
 			onDisconnectSync: disconnectSync,
+			groqApiKey,
+			onGroqApiKeyChange: handleGroqApiKeyChange,
 		}),
 		[
 			editor,
@@ -212,6 +254,8 @@ const App = ({ addTimer }: AppProps) => {
 			user,
 			connectSync,
 			disconnectSync,
+			groqApiKey,
+			handleGroqApiKeyChange,
 		],
 	);
 
@@ -255,7 +299,10 @@ const App = ({ addTimer }: AppProps) => {
 						/>
 						{viewMode === "excalidraw" && (
 							<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
-								<ExcalidrawPage />
+								<ExcalidrawPage
+									initialData={excalidrawData}
+									onChange={(data) => setExcalidrawData(data)}
+								/>
 							</Suspense>
 						)}
 						{viewMode === "notes" && (
@@ -278,6 +325,15 @@ const App = ({ addTimer }: AppProps) => {
 					</ErrorBoundary>
 				</AppShell.Main>
 			</AppShell>
+
+			{timers.map((timer) => (
+				<Timer
+					key={timer.id}
+					timer={timer}
+					onRemove={removeTimer}
+					onUpdate={updateTimer}
+				/>
+			))}
 		</EditorContext.Provider>
 	);
 };

@@ -4,12 +4,17 @@ import {
 	browserLocalPersistence,
 	GoogleAuthProvider,
 	getAuth,
-	getRedirectResult,
+	linkWithPopup,
 	setPersistence,
+	signInAnonymously,
 	signInWithPopup,
 	signOut,
 } from "firebase/auth";
-import { type Firestore, getFirestore } from "firebase/firestore";
+import {
+	type Firestore,
+	enableMultiTabIndexedDbPersistence,
+	getFirestore,
+} from "firebase/firestore";
 
 const firebaseConfig = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -30,6 +35,9 @@ try {
 	app = initializeApp(firebaseConfig);
 	auth = getAuth(app);
 	db = getFirestore(app);
+	enableMultiTabIndexedDbPersistence(db).catch((err) => {
+		console.error("Failed to enable Firestore persistence:", err);
+	});
 	setPersistence(auth, browserLocalPersistence).catch((err) => {
 		console.error("Failed to set auth persistence:", err);
 	});
@@ -59,12 +67,21 @@ export const isFirebaseConfigured = (): boolean => {
 	);
 };
 
-const provider = new GoogleAuthProvider();
+export const loginAnonymously = async (): Promise<void> => {
+	const a = getFirebaseAuth();
+	await signInAnonymously(a);
+};
 
 export const signInWithGoogle = async (): Promise<void> => {
 	const a = getFirebaseAuth();
+	const provider = new GoogleAuthProvider();
+
 	try {
-		await signInWithPopup(a, provider);
+		if (a.currentUser?.isAnonymous) {
+			await linkWithPopup(a.currentUser, provider);
+		} else {
+			await signInWithPopup(a, provider);
+		}
 	} catch (error: unknown) {
 		if (error instanceof Error) {
 			const code = (error as { code?: string }).code;
@@ -83,17 +100,6 @@ export const signInWithGoogle = async (): Promise<void> => {
 			}
 		}
 		throw error;
-	}
-};
-
-export const handleRedirectResult = async (): Promise<boolean> => {
-	try {
-		const a = getFirebaseAuth();
-		const result = await getRedirectResult(a);
-		return !!result;
-	} catch (e) {
-		console.error("Redirect result error:", e);
-		return false;
 	}
 };
 

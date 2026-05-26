@@ -24,6 +24,7 @@ import {
 	WrapText,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useEditor } from "@/context/EditorContext";
 import { useAiGroq } from "@/hooks/useAiGroq";
 
 interface AiToolsDialogProps {
@@ -91,17 +92,12 @@ const AiToolsDialog = ({
 	initialContent,
 	onInsert,
 }: AiToolsDialogProps) => {
-	const {
-		apiKey,
-		saveApiKey,
-		generate,
-		isLoading,
-		error: apiError,
-	} = useAiGroq();
+	const { groqApiKey, onGroqApiKeyChange } = useEditor();
+	const { generate, isLoading, error: apiError } = useAiGroq(groqApiKey);
 
 	const mountedRef = useRef(true);
 	const [showKeyInput, setShowKeyInput] = useState(false);
-	const [keyInput, setKeyInput] = useState(apiKey);
+	const [keyInput, setKeyInput] = useState(groqApiKey);
 	const [customPrompt, setCustomPrompt] = useState("");
 	const [result, setResult] = useState("");
 	const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -115,13 +111,13 @@ const AiToolsDialog = ({
 
 	useEffect(() => {
 		if (isOpen) {
-			setKeyInput(apiKey);
-			setShowKeyInput(!apiKey);
+			setKeyInput(groqApiKey);
+			setShowKeyInput(!groqApiKey);
 		}
-	}, [isOpen, apiKey]);
+	}, [isOpen, groqApiKey]);
 
 	const handleSaveKey = () => {
-		saveApiKey(keyInput);
+		onGroqApiKeyChange(keyInput);
 		setShowKeyInput(false);
 	};
 
@@ -178,7 +174,7 @@ const AiToolsDialog = ({
 							}
 						/>
 						<Group justify="flex-end">
-							{apiKey && (
+							{groqApiKey && (
 								<Button
 									variant="subtle"
 									size="sm"
@@ -188,7 +184,7 @@ const AiToolsDialog = ({
 								</Button>
 							)}
 							<Button size="sm" onClick={handleSaveKey}>
-								{apiKey ? "Update" : "Save"}
+								{groqApiKey ? "Update" : "Save"}
 							</Button>
 						</Group>
 					</Stack>
@@ -222,11 +218,11 @@ const AiToolsDialog = ({
 									p="md"
 									withBorder
 									style={{
-										cursor: apiKey ? "pointer" : "not-allowed",
-										opacity: apiKey ? 1 : 0.6,
+										cursor: groqApiKey ? "pointer" : "not-allowed",
+										opacity: groqApiKey ? 1 : 0.6,
 									}}
 									onClick={() =>
-										apiKey &&
+										groqApiKey &&
 										!isLoading &&
 										handleToolClick(tool.prompt, tool.id)
 									}
@@ -261,13 +257,13 @@ const AiToolsDialog = ({
 								value={customPrompt}
 								onChange={(e) => setCustomPrompt(e.currentTarget.value)}
 								onKeyDown={(e) => e.key === "Enter" && handleCustomPrompt()}
-								disabled={!apiKey || isLoading}
+								disabled={!groqApiKey || isLoading}
 							/>
 							<Button
 								variant="filled"
 								size="sm"
 								onClick={handleCustomPrompt}
-								disabled={!apiKey || !customPrompt.trim()}
+								disabled={!groqApiKey || !customPrompt.trim()}
 								loading={isLoading}
 							>
 								<Sparkles size={16} />

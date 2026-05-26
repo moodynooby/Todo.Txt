@@ -1,81 +1,10 @@
 const SYNC_TAG = "__sync__";
 
 export interface ExcalidrawData {
-	elements: unknown[];
-	appState: {
-		collaborators?: unknown[] | Record<string, unknown>;
-		zenModeEnabled?: boolean;
-	};
+	elements: readonly unknown[];
+	appState: Record<string, unknown>;
 	scrollToContent?: boolean;
 }
-
-const EXCALIDRAW_STORAGE = {
-	key: "excalidraw-data",
-	delay: 1000,
-};
-
-type ExcalidrawSaver = ((elements: unknown[], appState: unknown) => void) & {
-	cancel: () => void;
-};
-
-export const createExcalidrawSaver = (
-	onSaveCallback?: (data: string) => void,
-): ExcalidrawSaver => {
-	let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-	const debouncedSave = ((elements: unknown[], appState: unknown): void => {
-		if (timeoutId) clearTimeout(timeoutId);
-		timeoutId = setTimeout(() => {
-			try {
-				const data = JSON.stringify({ elements, appState });
-				localStorage.setItem(EXCALIDRAW_STORAGE.key, data);
-				onSaveCallback?.(data);
-			} catch (error) {
-				console.error("Failed to save Excalidraw data:", error);
-			}
-		}, EXCALIDRAW_STORAGE.delay);
-	}) as ExcalidrawSaver;
-
-	debouncedSave.cancel = () => {
-		if (timeoutId) clearTimeout(timeoutId);
-	};
-
-	return debouncedSave;
-};
-
-export const loadExcalidrawData = (): ExcalidrawData | undefined => {
-	try {
-		const data = localStorage.getItem(EXCALIDRAW_STORAGE.key);
-		if (data) {
-			const parsedData = JSON.parse(data) as ExcalidrawData;
-			if (parsedData.appState) {
-				if (!parsedData.appState.collaborators) {
-					parsedData.appState.collaborators = [];
-				} else if (!Array.isArray(parsedData.appState.collaborators)) {
-					parsedData.appState.collaborators = Object.values(
-						parsedData.appState.collaborators,
-					);
-				}
-			} else {
-				parsedData.appState = { collaborators: [] };
-			}
-
-			return {
-				...parsedData,
-				appState: { ...parsedData.appState, zenModeEnabled: true },
-				scrollToContent: true,
-			};
-		}
-	} catch (error) {
-		console.error("Failed to load Excalidraw data:", error);
-	}
-
-	return {
-		elements: [],
-		appState: { zenModeEnabled: true },
-		scrollToContent: true,
-	};
-};
 
 function extractLinesFromHtml(html: string): string[] {
 	const text = html.replace(/<[^>]*>/g, "\n");
@@ -143,34 +72,17 @@ function createSyncTextElement(
 	};
 }
 
-function loadRawExcalidrawData() {
-	try {
-		const data = localStorage.getItem(EXCALIDRAW_STORAGE.key);
-		return data ? JSON.parse(data) : null;
-	} catch {
-		return null;
-	}
-}
-
-function saveRawExcalidrawData(data: unknown) {
-	try {
-		localStorage.setItem(EXCALIDRAW_STORAGE.key, JSON.stringify(data));
-	} catch (e) {
-		console.error("Failed to save Excalidraw data:", e);
-	}
-}
-
-export function syncTextToExcalidraw(htmlContent: string): void {
-	if (!htmlContent || isEmptyHtml(htmlContent)) return;
+export function syncTextToExcalidraw(
+	htmlContent: string,
+	elements: readonly unknown[],
+	appState: Record<string, unknown>,
+): { elements: readonly unknown[]; appState: Record<string, unknown> } {
+	if (!htmlContent || isEmptyHtml(htmlContent)) return { elements, appState };
 
 	const lines = extractLinesFromHtml(htmlContent);
-	if (lines.length === 0) return;
+	if (lines.length === 0) return { elements, appState };
 
-	const existing = loadRawExcalidrawData() as Record<string, unknown> | null;
-	const existingElements = (existing?.elements ?? []) as Record<
-		string,
-		unknown
-	>[];
+	const existingElements = elements as Record<string, unknown>[];
 
 	const nonSyncElements = existingElements.filter(
 		(el) => !(el.groupIds as string[])?.includes(SYNC_TAG),
@@ -188,27 +100,20 @@ export function syncTextToExcalidraw(htmlContent: string): void {
 		createSyncTextElement(line, now + i, 100, syncStartY + i * 40),
 	);
 
-	const combined = [...nonSyncElements, ...syncElements];
-
-	saveRawExcalidrawData({
-		elements: combined,
-		appState: existing?.appState ?? { zenModeEnabled: true },
-		scrollToContent: true,
-	});
+	return {
+		elements: [...nonSyncElements, ...syncElements],
+		appState: { ...appState, zenModeEnabled: true },
+	};
 }
 
-export function syncExcalidrawToText(): string | null {
-	const data = loadRawExcalidrawData() as Record<string, unknown> | null;
-	if (
-		!data?.elements ||
-		!Array.isArray(data.elements) ||
-		data.elements.length === 0
-	)
-		return null;
+export function syncExcalidrawToText(
+	elements: readonly unknown[],
+): string | null {
+	if (!elements || elements.length === 0) return null;
 
-	const elements = data.elements as Record<string, unknown>[];
+	const els = elements as Record<string, unknown>[];
 
-	const userTextElements = elements
+	const userTextElements = els
 		.filter(
 			(el) =>
 				el.type === "text" &&
