@@ -1,13 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-import { computeElapsed } from "@/utils/formatTime";
-import { safeGetItem, safeSetItem } from "@/utils/storage";
-
-const STORAGE_KEY = "timers";
-
-const BASE_TOP = 100;
-const BASE_LEFT = 20;
-const TOP_OFFSET = 30;
-const LEFT_OFFSET = 20;
+import { useCallback, useState } from "react";
 
 export interface TimerState {
 	id: number;
@@ -17,34 +8,34 @@ export interface TimerState {
 	position: { top: number; left: number };
 }
 
-function loadTimers(): TimerState[] {
-	const stored = safeGetItem<TimerState[]>(STORAGE_KEY, []);
-	const now = Date.now();
-	return stored.map((t) => {
-		if (t.isActive && t.startTime !== null) {
-			return {
-				...t,
-				elapsed: computeElapsed(t.elapsed, t.startTime),
-				startTime: now,
-			};
-		}
-		return t;
-	});
+export interface TimerData {
+	id: number;
+	elapsed: number;
+	isActive: boolean;
+	startTime: number | null;
 }
 
-function saveTimers(timers: TimerState[]) {
-	safeSetItem(STORAGE_KEY, timers);
-}
+const BASE_TOP = 100;
+const BASE_LEFT = 20;
+const TOP_OFFSET = 30;
+const LEFT_OFFSET = 20;
 
 const MAX_TIMERS = 5;
 let nextId = 0;
 
-export const useTimers = () => {
-	const [timers, setTimers] = useState<TimerState[]>(loadTimers);
+function generatePosition(id: number): { top: number; left: number } {
+	return {
+		top: BASE_TOP + (id % 10) * TOP_OFFSET,
+		left: BASE_LEFT + (id % 5) * LEFT_OFFSET,
+	};
+}
 
-	useEffect(() => {
-		saveTimers(timers);
-	}, [timers]);
+export const useTimers = () => {
+	const [timers, setTimers] = useState<TimerState[]>([]);
+
+	const setTimersFromRemote = useCallback((data: TimerData[]) => {
+		setTimers(data.map((t) => ({ ...t, position: generatePosition(t.id) })));
+	}, []);
 
 	const addTimer = useCallback(() => {
 		setTimers((prev) => {
@@ -55,10 +46,7 @@ export const useTimers = () => {
 				elapsed: 0,
 				isActive: false,
 				startTime: null,
-				position: {
-					top: BASE_TOP + (id % 10) * TOP_OFFSET,
-					left: BASE_LEFT + (id % 5) * LEFT_OFFSET,
-				},
+				position: generatePosition(id),
 			};
 			return [...prev, newTimer];
 		});
@@ -77,5 +65,11 @@ export const useTimers = () => {
 		[],
 	);
 
-	return { timers, addTimer, removeTimer, updateTimer };
+	return {
+		timers,
+		setTimersFromRemote,
+		addTimer,
+		removeTimer,
+		updateTimer,
+	};
 };

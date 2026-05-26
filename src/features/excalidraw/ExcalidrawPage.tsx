@@ -1,48 +1,46 @@
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
-import { useEffect, useMemo } from "react";
+import { useCallback, useRef } from "react";
 import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
 import { Box, useComputedColorScheme } from "@mantine/core";
-import {
-	createExcalidrawSaver,
-	loadExcalidrawData,
-} from "@/utils/excalidrawStorageService";
+import type { ExcalidrawData } from "@/utils/excalidrawStorageService";
 import { toggleFullscreen } from "@/utils/fullscreen";
 
 const EXCALIDRAW_UI_OPTIONS = {
-	canvasActions: {
-		export: false,
-		toggleTheme: false,
-	},
+	canvasActions: { export: false, toggleTheme: false },
 	welcomeScreen: false,
-};
+} as const;
 
-const ExcalidrawPage = () => {
+interface ExcalidrawPageProps {
+	initialData: ExcalidrawData | null;
+	onChange: (data: ExcalidrawData | null) => void;
+}
+
+const ExcalidrawPage = ({ initialData, onChange }: ExcalidrawPageProps) => {
 	const excalidrawTheme =
 		useComputedColorScheme("dark") === "dark" ? "dark" : "light";
+	const onChangeRef = useRef(onChange);
+	onChangeRef.current = onChange;
 
-	const onSave = useMemo(() => createExcalidrawSaver(), []);
-
-	useEffect(() => {
-		return () => {
-			onSave.cancel();
-		};
-	}, [onSave]);
-
-	const initialData = useMemo(() => {
-		return loadExcalidrawData();
-	}, []);
+	const handleChange = useCallback(
+		(elements: readonly unknown[], appState: unknown) => {
+			const data: ExcalidrawData = {
+				elements,
+				appState: appState as Record<string, unknown>,
+			};
+			onChangeRef.current(data);
+		},
+		[],
+	);
 
 	return (
 		<Box className="ExcalidrawPage">
 			<Excalidraw
 				theme={excalidrawTheme}
-				// @ts-expect-error - Excalidraw UIOptions type is overly strict
 				UIOptions={EXCALIDRAW_UI_OPTIONS}
-				// @ts-expect-error - Excalidraw onChange signature expects readonly arrays
-				onChange={onSave}
+				onChange={handleChange}
 				// @ts-expect-error - Excalidraw initialData type is overly strict
-				initialData={initialData}
+				initialData={initialData ?? undefined}
 			>
 				<MainMenu>
 					<MainMenu.DefaultItems.LoadScene />

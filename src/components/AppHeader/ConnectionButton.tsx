@@ -50,20 +50,31 @@ const ConnectionButton = () => {
 					size={12}
 					withBorder
 				>
-					<Avatar
-						src={user.photoURL}
-						alt={user.displayName ?? "User"}
-						size="md"
-					>
-						{user.displayName?.charAt(0).toUpperCase() ?? "U"}
-					</Avatar>
+					{user.isAnonymous ? (
+						<ActionIcon
+							variant="subtle"
+							size="lg"
+							aria-label="Signed in anonymously"
+						>
+							<User size={20} />
+						</ActionIcon>
+					) : (
+						<Avatar
+							src={user.photoURL}
+							alt={user.displayName ?? "User"}
+							size="md"
+						>
+							{user.displayName?.charAt(0).toUpperCase() ?? "U"}
+						</Avatar>
+					)}
 				</Indicator>
 			</Menu.Target>
-
 			<Menu.Dropdown>
 				<Menu.Label>
 					<Text size="sm" fw={600} truncate>
-						{user.displayName ?? "Signed in"}
+						{user.isAnonymous
+							? "Signed in anonymously"
+							: (user.displayName ?? "Signed in")}
 					</Text>
 				</Menu.Label>
 				<Menu.Divider />

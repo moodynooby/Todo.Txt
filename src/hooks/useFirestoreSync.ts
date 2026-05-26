@@ -10,12 +10,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	getFirebaseAuth,
 	getFirestoreDb,
-	handleRedirectResult,
 	isFirebaseConfigured,
+	loginAnonymously,
 	signInWithGoogle,
 	signOutUser,
 } from "@/lib/firebase";
 import type { Note } from "@/types/notes";
+import type { ExcalidrawData } from "@/utils/excalidrawStorageService";
+import type { TimerData } from "./useTimers";
 
 export type SyncStatus =
 	| "disconnected"
@@ -27,27 +29,41 @@ export type SyncStatus =
 interface FirestoreSyncOptions {
 	content: string;
 	onRemoteContent: (content: string) => void;
-	preferences?: Record<string, unknown>;
-	onRemotePreferences?: (prefs: Record<string, unknown>) => void;
 	notes?: Note[];
 	onRemoteNotes?: (notes: Note[]) => void;
+	excalidraw?: ExcalidrawData | null;
+	onRemoteExcalidraw?: (data: ExcalidrawData | null) => void;
+	groqApiKey?: string;
+	onRemoteGroqApiKey?: (key: string) => void;
+	timers?: TimerData[];
+	onRemoteTimers?: (timers: TimerData[]) => void;
 }
 
 interface FirestoreSyncReturn {
 	isConnected: boolean;
 	syncStatus: SyncStatus;
-	user: { photoURL: string | null; displayName: string | null } | null;
+	user: {
+		photoURL: string | null;
+		displayName: string | null;
+		isAnonymous: boolean;
+	} | null;
 	connect: () => Promise<void>;
 	disconnect: () => Promise<void>;
 }
 
+const MIGRATED_KEY = "migrated_v3";
+
 export const useFirestoreSync = ({
 	content,
 	onRemoteContent,
-	preferences,
-	onRemotePreferences,
 	notes,
 	onRemoteNotes,
+	excalidraw,
+	onRemoteExcalidraw,
+	groqApiKey,
+	onRemoteGroqApiKey,
+	timers,
+	onRemoteTimers,
 }: FirestoreSyncOptions): FirestoreSyncReturn => {
 	const [user, setUser] = useState<User | null>(null);
 	const [isConnected, setIsConnected] = useState(false);
@@ -55,18 +71,78 @@ export const useFirestoreSync = ({
 
 	const unsubFirestoreRef = useRef<(() => void) | null>(null);
 	const unsubAuthRef = useRef<(() => void) | null>(null);
-	const lastSyncedContentRef = useRef("");
-	const lastSyncedPrefsRef = useRef("{}");
-	const lastSyncedNotesRef = useRef("[]");
-	const contentRef = useRef(content);
-
-	contentRef.current = content;
+	const hasAttemptedAnonymousRef = useRef(false);
+	const setupRanRef = useRef(false);
 
 	const teardownFirestore = useCallback(() => {
 		unsubFirestoreRef.current?.();
 		unsubFirestoreRef.current = null;
 		setIsConnected(false);
 		setSyncStatus("disconnected");
+	}, []);
+
+	const migrateFromLocalStorage = useCallback(async (uid: string) => {
+		if (localStorage.getItem(MIGRATED_KEY)) return;
+
+		const db = getFirestoreDb();
+		const docRef = doc(db, "todos", `todo_${uid}`);
+
+		const data: Record<string, unknown> = {};
+
+		const rawContent = localStorage.getItem("rteContent");
+		if (rawContent) {
+			try {
+				data.content = JSON.parse(rawContent);
+			} catch {
+				data.content = rawContent;
+			}
+		}
+
+		const rawNotes = localStorage.getItem("notes-data");
+		if (rawNotes) {
+			try {
+				data.notes = JSON.parse(rawNotes);
+			} catch {
+				/* skip */
+			}
+		}
+
+		const rawExcalidraw = localStorage.getItem("excalidraw-data");
+		if (rawExcalidraw) {
+			try {
+				data.excalidraw = JSON.parse(rawExcalidraw);
+			} catch {
+				/* skip */
+			}
+		}
+
+		const rawGroqKey = localStorage.getItem("groq_api_key");
+		if (rawGroqKey) {
+			try {
+				data.groqApiKey = JSON.parse(rawGroqKey);
+			} catch {
+				/* skip */
+			}
+		}
+
+		const rawTimers = localStorage.getItem("timers");
+		if (rawTimers) {
+			try {
+				data.timers = JSON.parse(rawTimers);
+			} catch {
+				/* skip */
+			}
+		}
+
+		if (Object.keys(data).length > 0) {
+			try {
+				await setDoc(docRef, data, { merge: true });
+			} catch (e) {
+				console.error("Migration error:", e);
+			}
+		}
+
+		localStorage.setItem(MIGRATED_KEY, "true");
 	}, []);
 
 	const setupFirestore = useCallback(
@@ -77,60 +153,45 @@ export const useFirestoreSync = ({
 			const docId = `todo_${uid}`;
 			const docRef = doc(db, "todos", docId);
 
-			await handleRedirectResult();
-
-			const processRemoteData = (
-				data: Record<string, unknown>,
-				checkLastSyncedForContent: boolean,
-			) => {
-				if (data.content) {
-					const content = data.content as string;
-					const isNewContent = checkLastSyncedForContent
-						? content !== lastSyncedContentRef.current &&
-							content !== contentRef.current
-						: content !== contentRef.current;
-					if (isNewContent) {
-						onRemoteContent(content);
-						lastSyncedContentRef.current = content;
-					}
-				}
-				if (data.notes && onRemoteNotes) {
-					const notesStr = JSON.stringify(data.notes);
-					if (notesStr !== lastSyncedNotesRef.current) {
-						onRemoteNotes(data.notes as Note[]);
-						lastSyncedNotesRef.current = notesStr;
-					}
-				}
-				if (data.preferences && onRemotePreferences) {
-					const prefs = data.preferences as Record<string, unknown>;
-					const prefsStr = JSON.stringify(prefs);
-					if (prefsStr !== lastSyncedPrefsRef.current) {
-						onRemotePreferences(prefs);
-						lastSyncedPrefsRef.current = prefsStr;
-					}
-				}
-			};
-
 			try {
 				const docSnap = await getDoc(docRef);
 				if (!docSnap.exists()) {
 					await setDoc(docRef, {
 						content: "",
-						preferences: {},
 						createdAt: serverTimestamp(),
 						updatedAt: serverTimestamp(),
 					});
 				} else {
-					const data = docSnap.data();
-					processRemoteData(data, false);
+					const data = docSnap.data() as Record<string, unknown>;
+					if (data.content) onRemoteContent(data.content as string);
+					if (data.notes && onRemoteNotes) onRemoteNotes(data.notes as Note[]);
+					if (data.excalidraw && onRemoteExcalidraw)
+						onRemoteExcalidraw(data.excalidraw as ExcalidrawData);
+					if (data.groqApiKey !== undefined && onRemoteGroqApiKey)
+						onRemoteGroqApiKey(data.groqApiKey as string);
+					if (data.timers && onRemoteTimers)
+						onRemoteTimers(data.timers as TimerData[]);
 				}
+
+				await migrateFromLocalStorage(uid);
 
 				unsubFirestoreRef.current = onSnapshot(
 					docRef,
 					(snap) => {
 						if (!snap.exists()) return;
-						const data = snap.data();
-						processRemoteData(data, true);
+						if (snap.metadata.hasPendingWrites) return;
+
+						const data = snap.data() as Record<string, unknown>;
+						if (data.content !== undefined)
+							onRemoteContent(data.content as string);
+						if (data.notes !== undefined && onRemoteNotes)
+							onRemoteNotes(data.notes as Note[]);
+						if (data.excalidraw !== undefined && onRemoteExcalidraw)
+							onRemoteExcalidraw(data.excalidraw as ExcalidrawData);
+						if (data.groqApiKey !== undefined && onRemoteGroqApiKey)
+							onRemoteGroqApiKey(data.groqApiKey as string);
+						if (data.timers !== undefined && onRemoteTimers)
+							onRemoteTimers(data.timers as TimerData[]);
 						setSyncStatus("synced");
 					},
 					(err) => {
@@ -146,10 +207,20 @@ export const useFirestoreSync = ({
 				setSyncStatus("error");
 			}
 		},
-		[onRemoteContent, onRemotePreferences, onRemoteNotes],
+		[
+			onRemoteContent,
+			onRemoteNotes,
+			onRemoteExcalidraw,
+			onRemoteGroqApiKey,
+			onRemoteTimers,
+			migrateFromLocalStorage,
+		],
 	);
 
 	useEffect(() => {
+		if (setupRanRef.current) return;
+		setupRanRef.current = true;
+
 		if (!isFirebaseConfigured()) return;
 
 		const auth = getFirebaseAuth();
@@ -158,6 +229,15 @@ export const useFirestoreSync = ({
 				setUser(firebaseUser);
 				setSyncStatus("connecting");
 				await setupFirestore(firebaseUser.uid);
+			} else if (!hasAttemptedAnonymousRef.current) {
+				hasAttemptedAnonymousRef.current = true;
+				setSyncStatus("connecting");
+				try {
+					await loginAnonymously();
+				} catch (e) {
+					console.error("Anonymous sign-in failed:", e);
+					setSyncStatus("disconnected");
+				}
 			} else {
 				setUser(null);
 				teardownFirestore();
@@ -173,17 +253,9 @@ export const useFirestoreSync = ({
 	useEffect(() => {
 		if (!isConnected || !user || !isFirebaseConfigured()) return;
 
-		if (
-			content === lastSyncedContentRef.current &&
-			JSON.stringify(preferences ?? {}) === lastSyncedPrefsRef.current &&
-			JSON.stringify(notes ?? []) === lastSyncedNotesRef.current
-		)
-			return;
-
 		const db = getFirestoreDb();
-		const docId = `todo_${user.uid}`;
-		const docRef = doc(db, "todos", docId);
-		lastSyncedContentRef.current = content;
+		const docRef = doc(db, "todos", `todo_${user.uid}`);
+
 		setSyncStatus("syncing");
 
 		const data: Record<string, unknown> = {
@@ -191,15 +263,10 @@ export const useFirestoreSync = ({
 			updatedAt: serverTimestamp(),
 		};
 
-		if (preferences) {
-			data.preferences = preferences;
-			lastSyncedPrefsRef.current = JSON.stringify(preferences);
-		}
-
-		if (notes) {
-			data.notes = notes;
-			lastSyncedNotesRef.current = JSON.stringify(notes);
-		}
+		if (notes !== undefined) data.notes = notes;
+		if (excalidraw !== undefined) data.excalidraw = excalidraw;
+		if (groqApiKey !== undefined) data.groqApiKey = groqApiKey;
+		if (timers !== undefined) data.timers = timers;
 
 		setDoc(docRef, data, { merge: true })
 			.then(() => {
@@ -209,7 +276,7 @@ export const useFirestoreSync = ({
 				console.error("Firestore write error:", e);
 				setSyncStatus("error");
 			});
-	}, [content, preferences, notes, isConnected, user]);
+	}, [content, notes, excalidraw, groqApiKey, timers, isConnected, user]);
 
 	const connect = useCallback(async () => {
 		setSyncStatus("connecting");
@@ -226,6 +293,8 @@ export const useFirestoreSync = ({
 		teardownFirestore();
 		try {
 			await signOutUser();
+			hasAttemptedAnonymousRef.current = false;
+			await loginAnonymously();
 		} catch (e) {
 			console.error("Sign out error:", e);
 		}
@@ -235,7 +304,11 @@ export const useFirestoreSync = ({
 		isConnected,
 		syncStatus,
 		user: user
-			? { photoURL: user.photoURL, displayName: user.displayName }
+			? {
+					photoURL: user.photoURL,
+					displayName: user.displayName,
+					isAnonymous: user.isAnonymous,
+				}
 			: null,
 		connect,
 		disconnect,
