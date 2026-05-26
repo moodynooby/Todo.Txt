@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
+import { playBeep } from "@/lib/beep";
 import type { Task } from "@/types/todo";
-import { playBeep } from "@/utils/beep";
 import { getToday } from "@/utils/dateUtils";
 
 export const useDueNotifications = (tasks: Task[]) => {

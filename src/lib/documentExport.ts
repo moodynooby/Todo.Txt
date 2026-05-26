@@ -1,8 +1,8 @@
 import { saveAs } from "file-saver";
+import { stripHtml } from "@/utils/html";
 
 const stripHtmlTags = (html: string): string =>
-	html
-		.replace(/<[^>]*>/g, "")
+	stripHtml(html)
 		.replace(/\n{3,}/g, "\n\n")
 		.trim();
 

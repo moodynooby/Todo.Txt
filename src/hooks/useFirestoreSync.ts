@@ -7,6 +7,7 @@ import {
 	setDoc,
 } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ExcalidrawData } from "@/lib/excalidrawSync";
 import {
 	getFirebaseAuth,
 	getFirestoreDb,
@@ -16,7 +17,6 @@ import {
 	signOutUser,
 } from "@/lib/firebase";
 import type { Note } from "@/types/notes";
-import type { ExcalidrawData } from "@/utils/excalidrawStorageService";
 import type { TimerData } from "./useTimers";
 
 export type SyncStatus =
@@ -51,8 +51,6 @@ interface FirestoreSyncReturn {
 	disconnect: () => Promise<void>;
 }
 
-const MIGRATED_KEY = "migrated_v3";
-
 export const useFirestoreSync = ({
 	content,
 	onRemoteContent,
@@ -79,70 +77,6 @@ export const useFirestoreSync = ({
 		unsubFirestoreRef.current = null;
 		setIsConnected(false);
 		setSyncStatus("disconnected");
-	}, []);
-
-	const migrateFromLocalStorage = useCallback(async (uid: string) => {
-		if (localStorage.getItem(MIGRATED_KEY)) return;
-
-		const db = getFirestoreDb();
-		const docRef = doc(db, "todos", `todo_${uid}`);
-
-		const data: Record<string, unknown> = {};
-
-		const rawContent = localStorage.getItem("rteContent");
-		if (rawContent) {
-			try {
-				data.content = JSON.parse(rawContent);
-			} catch {
-				data.content = rawContent;
-			}
-		}
-
-		const rawNotes = localStorage.getItem("notes-data");
-		if (rawNotes) {
-			try {
-				data.notes = JSON.parse(rawNotes);
-			} catch {
-				/* skip */
-			}
-		}
-
-		const rawExcalidraw = localStorage.getItem("excalidraw-data");
-		if (rawExcalidraw) {
-			try {
-				data.excalidraw = JSON.parse(rawExcalidraw);
-			} catch {
-				/* skip */
-			}
-		}
-
-		const rawGroqKey = localStorage.getItem("groq_api_key");
-		if (rawGroqKey) {
-			try {
-				data.groqApiKey = JSON.parse(rawGroqKey);
-			} catch {
-				/* skip */
-			}
-		}
-
-		const rawTimers = localStorage.getItem("timers");
-		if (rawTimers) {
-			try {
-				data.timers = JSON.parse(rawTimers);
-			} catch {
-				/* skip */
-			}
-		}
-
-		if (Object.keys(data).length > 0) {
-			try {
-				await setDoc(docRef, data, { merge: true });
-			} catch (e) {
-				console.error("Migration error:", e);
-			}
-		}
-
-		localStorage.setItem(MIGRATED_KEY, "true");
 	}, []);
 
 	const setupFirestore = useCallback(
@@ -172,8 +106,6 @@ export const useFirestoreSync = ({
 					if (data.timers && onRemoteTimers)
 						onRemoteTimers(data.timers as TimerData[]);
 				}
-
-				await migrateFromLocalStorage(uid);
 
 				unsubFirestoreRef.current = onSnapshot(
 					docRef,
@@ -213,7 +145,6 @@ export const useFirestoreSync = ({
 			onRemoteExcalidraw,
 			onRemoteGroqApiKey,
 			onRemoteTimers,
-			migrateFromLocalStorage,
 		],
 	);
 

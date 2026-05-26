@@ -1,10 +1,6 @@
 import type { ParsedTodoContent, Task } from "@/types/todo";
 import { getToday, getTomorrow, getYesterday } from "./dateUtils";
-
-const stripHtml = (html: string, replacement = "\n"): string => {
-	if (!html) return "";
-	return html.replace(/<[^>]*>/g, replacement);
-};
+import { stripHtml } from "./html";
 
 const parseRelativeDate = (value: string): string | undefined => {
 	if (value === "today") {

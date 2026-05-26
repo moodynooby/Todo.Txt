@@ -11,8 +11,8 @@ import {
 	signOut,
 } from "firebase/auth";
 import {
-	type Firestore,
 	enableMultiTabIndexedDbPersistence,
+	type Firestore,
 	getFirestore,
 } from "firebase/firestore";
 

@@ -1,22 +1,11 @@
+import { extractLines, isEmptyHtml } from "@/utils/html";
+
 const SYNC_TAG = "__sync__";
 
 export interface ExcalidrawData {
 	elements: readonly unknown[];
 	appState: Record<string, unknown>;
 	scrollToContent?: boolean;
-}
-
-function extractLinesFromHtml(html: string): string[] {
-	const text = html.replace(/<[^>]*>/g, "\n");
-	return text
-		.split("\n")
-		.map((l) => l.trim())
-		.filter((l) => l.length > 0);
-}
-
-function isEmptyHtml(html: string): boolean {
-	const trimmed = html.trim();
-	return !trimmed || trimmed === "<p></p>" || trimmed === "<p><br></p>";
 }
 
 function escapeHtml(text: string): string {
@@ -79,7 +68,7 @@ export function syncTextToExcalidraw(
 ): { elements: readonly unknown[]; appState: Record<string, unknown> } {
 	if (!htmlContent || isEmptyHtml(htmlContent)) return { elements, appState };
 
-	const lines = extractLinesFromHtml(htmlContent);
+	const lines = extractLines(htmlContent);
 	if (lines.length === 0) return { elements, appState };
 
 	const existingElements = elements as Record<string, unknown>[];

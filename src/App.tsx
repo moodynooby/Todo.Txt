@@ -1,37 +1,20 @@
 import "@/styles/App.css";
 import { AppShell, Box } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
-import {
-	lazy,
-	Suspense,
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EditorContext } from "@/context/EditorContext";
+import { NotesContext } from "@/context/NotesContext";
 import { useViewMode } from "@/context/ViewModeContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
 import TextModeContent from "@/features/editor/TextModeContent";
 import NotesPage from "@/features/notes/NotesPage";
 import Timer from "@/features/timer/Timer";
+import { useDataManagement } from "@/hooks/useDataManagement";
 import { useDocumentSave } from "@/hooks/useDocumentSave";
 import { useDueNotifications } from "@/hooks/useDueNotifications";
 import { useFileHandler } from "@/hooks/useFileHandler";
-import { useFirestoreSync } from "@/hooks/useFirestoreSync";
-import { type TimerData, useTimers } from "@/hooks/useTimers";
-import { useTipTap } from "@/hooks/useTipTap";
-import type { Note } from "@/types/notes";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
-import type { ExcalidrawData } from "@/utils/excalidrawStorageService";
-import {
-	syncExcalidrawToText,
-	syncTextToExcalidraw,
-} from "@/utils/excalidrawStorageService";
-import { useNotes } from "@/utils/notesStorage";
 import { parseTodoContent } from "@/utils/todoParser";
 
 const ExcalidrawPage = lazy(
@@ -40,80 +23,18 @@ const ExcalidrawPage = lazy(
 
 const App = () => {
 	const { viewMode } = useViewMode();
+
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
-	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
-
-	const [rteContent, setRteContentState] = useState("");
-	const rteContentRef = useRef(rteContent);
-
-	useEffect(() => {
-		rteContentRef.current = rteContent;
-	}, [rteContent]);
-
-	const [debouncedRteContent] = useDebouncedValue(rteContent, 1000);
-
-	const prevViewMode = useRef(viewMode);
-
-	const handleContentChange = useCallback((content: string) => {
-		setRteContentState(content);
-	}, []);
-
-	const { editor, setExternalContent } = useTipTap({
-		initialContent: rteContent,
-		onContentChange: handleContentChange,
-	});
-
-	const excalidrawDataRef = useRef<ExcalidrawData | null>(null);
-
-	const [excalidrawData, setExcalidrawData] = useState<ExcalidrawData | null>(
-		null,
-	);
-
-	excalidrawDataRef.current = excalidrawData;
-
-	useEffect(() => {
-		const prev = prevViewMode.current;
-		prevViewMode.current = viewMode;
-		if (viewMode === prev) return;
-
-		if (viewMode === "excalidraw") {
-			const current = excalidrawDataRef.current;
-			const result = syncTextToExcalidraw(
-				rteContentRef.current,
-				current?.elements ?? [],
-				(current?.appState as Record<string, unknown>) ?? {},
-			);
-			setExcalidrawData({
-				elements: result.elements,
-				appState: result.appState as ExcalidrawData["appState"],
-			});
-		} else if (viewMode === "text" && prev === "excalidraw") {
-			const html = syncExcalidrawToText(
-				excalidrawDataRef.current?.elements ?? [],
-			);
-			if (html) {
-				setExternalContent(html);
-				setRteContentState(html);
-			}
-		}
-	}, [viewMode, setExternalContent]);
-
-	const handleRemoteExcalidraw = useCallback((data: ExcalidrawData | null) => {
-		setExcalidrawData(data);
-	}, []);
-
-	const [debouncedExcalidraw] = useDebouncedValue(excalidrawData, 3000);
-
-	const handleRemoteContent = useCallback(
-		(content: string) => {
-			setExternalContent(content);
-			setRteContentState(content);
-		},
-		[setExternalContent],
-	);
+	const [aiToolsOpen, setAiToolsOpen] = useState(false);
 
 	const {
+		editor,
+		setExternalContent,
+		rteContent,
+		setRteContentState,
+		excalidrawData,
+		setExcalidrawData,
 		notes,
 		setNotesFromRemote,
 		upsertNote,
@@ -121,73 +42,25 @@ const App = () => {
 		archiveNote,
 		togglePin,
 		setNoteColor,
-	} = useNotes();
-
-	const [debouncedNotes] = useDebouncedValue(notes, 2000);
-
-	const handleRemoteNotes = useCallback(
-		(remoteNotes: Note[]) => {
-			setNotesFromRemote(remoteNotes);
-		},
-		[setNotesFromRemote],
-	);
-
-	const [groqApiKey, setGroqApiKey] = useState("");
-
-	const handleRemoteGroqApiKey = useCallback((key: string) => {
-		setGroqApiKey(key);
-	}, []);
-
-	const handleGroqApiKeyChange = useCallback((key: string) => {
-		setGroqApiKey(key);
-	}, []);
-
-	const { timers, setTimersFromRemote, addTimer, removeTimer, updateTimer } =
-		useTimers();
-
-	const timerData = useMemo(
-		() =>
-			timers.map(({ id, elapsed, isActive, startTime }) => ({
-				id,
-				elapsed,
-				isActive,
-				startTime,
-			})),
-		[timers],
-	);
-
-	const handleRemoteTimers = useCallback(
-		(remote: TimerData[]) => {
-			setTimersFromRemote(remote);
-		},
-		[setTimersFromRemote],
-	);
-
-	const {
+		groqApiKey,
+		handleGroqApiKeyChange,
+		timers,
+		addTimer,
+		removeTimer,
+		updateTimer,
 		syncStatus,
 		isConnected: isSynced,
 		user,
-		connect: connectSync,
-		disconnect: disconnectSync,
-	} = useFirestoreSync({
-		content: debouncedRteContent,
-		onRemoteContent: handleRemoteContent,
-		notes: debouncedNotes,
-		onRemoteNotes: handleRemoteNotes,
-		excalidraw: debouncedExcalidraw,
-		onRemoteExcalidraw: handleRemoteExcalidraw,
-		groqApiKey,
-		onRemoteGroqApiKey: handleRemoteGroqApiKey,
-		timers: timerData,
-		onRemoteTimers: handleRemoteTimers,
-	});
+		connect,
+		disconnect,
+	} = useDataManagement(viewMode);
 
 	const handleFileLoaded = useCallback(
 		(html: string) => {
 			setExternalContent(html);
 			setRteContentState(html);
 		},
-		[setExternalContent],
+		[setExternalContent, setRteContentState],
 	);
 
 	const { fileInputRef, handleOpenRepo, handleFileChange } = useFileHandler({
@@ -204,7 +77,7 @@ const App = () => {
 	const handleSave = useDocumentSave(editor);
 
 	const handleAiTools = useCallback((): void => {
-		setIsAiDialogOpen(true);
+		setAiToolsOpen(true);
 	}, []);
 
 	const handleToggleSidebar = useCallback(() => {
@@ -221,8 +94,29 @@ const App = () => {
 		} else {
 			editor.chain().focus().setContent(text).run();
 		}
-		setIsAiDialogOpen(false);
+		setAiToolsOpen(false);
 	};
+
+	const notesContextValue = useMemo(
+		() => ({
+			notes,
+			setNotesFromRemote,
+			upsertNote,
+			deleteNote,
+			archiveNote,
+			togglePin,
+			setNoteColor,
+		}),
+		[
+			notes,
+			setNotesFromRemote,
+			upsertNote,
+			deleteNote,
+			archiveNote,
+			togglePin,
+			setNoteColor,
+		],
+	);
 
 	const editorContextValue = useMemo(
 		() => ({
@@ -236,10 +130,8 @@ const App = () => {
 			syncStatus,
 			isSynced,
 			user,
-			onConnect: connectSync,
-			onDisconnectSync: disconnectSync,
-			groqApiKey,
-			onGroqApiKeyChange: handleGroqApiKeyChange,
+			onConnect: connect,
+			onDisconnectSync: disconnect,
 		}),
 		[
 			editor,
@@ -252,10 +144,8 @@ const App = () => {
 			syncStatus,
 			isSynced,
 			user,
-			connectSync,
-			disconnectSync,
-			groqApiKey,
-			handleGroqApiKeyChange,
+			connect,
+			disconnect,
 		],
 	);
 
@@ -277,8 +167,8 @@ const App = () => {
 				>
 					<ErrorBoundary>
 						<AiToolsDialog
-							isOpen={isAiDialogOpen}
-							onClose={() => setIsAiDialogOpen(false)}
+							isOpen={aiToolsOpen}
+							onClose={() => setAiToolsOpen(false)}
 							initialContent={
 								editor?.state.selection.empty
 									? (editor?.getText() ?? "")
@@ -289,6 +179,8 @@ const App = () => {
 										) ?? "")
 							}
 							onInsert={handleAiInsert}
+							groqApiKey={groqApiKey}
+							onGroqApiKeyChange={handleGroqApiKeyChange}
 						/>
 						<input
 							type="file"
@@ -306,14 +198,9 @@ const App = () => {
 							</Suspense>
 						)}
 						{viewMode === "notes" && (
-							<NotesPage
-								notes={notes}
-								upsertNote={upsertNote}
-								deleteNote={deleteNote}
-								archiveNote={archiveNote}
-								togglePin={togglePin}
-								setNoteColor={setNoteColor}
-							/>
+							<NotesContext.Provider value={notesContextValue}>
+								<NotesPage />
+							</NotesContext.Provider>
 						)}
 						{viewMode === "text" && (
 							<TextModeContent
