@@ -1,6 +1,5 @@
 import "@/styles/App.css";
 import { AppShell, Box } from "@mantine/core";
-import { useLocalStorage } from "@mantine/hooks";
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -25,10 +24,7 @@ const ExcalidrawPage = lazy(
 const App = () => {
 	const { viewMode } = useViewMode();
 
-	const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage({
-		key: "sidebar-collapsed",
-		defaultValue: false,
-	});
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [aiToolsOpen, setAiToolsOpen] = useState(false);
 
@@ -86,7 +82,7 @@ const App = () => {
 
 	const handleToggleSidebar = useCallback(() => {
 		setSidebarCollapsed((prev) => !prev);
-	}, [setSidebarCollapsed]);
+	}, []);
 
 	const handleAiInsert = (text: string, mode: "replace" | "append") => {
 		if (!editor) return;
@@ -197,7 +193,7 @@ const App = () => {
 							<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
 								<ExcalidrawPage
 									initialData={excalidrawData}
-									onChange={setExcalidrawData}
+									onChange={(data) => setExcalidrawData(data)}
 								/>
 							</Suspense>
 						)}

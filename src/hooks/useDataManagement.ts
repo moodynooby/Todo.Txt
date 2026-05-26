@@ -12,11 +12,6 @@ import {
 } from "@/lib/excalidrawSync";
 import type { Note } from "@/types/notes";
 
-/** Quick JSON hash of an object — good enough for change detection. */
-function hash(v: unknown): string {
-	return JSON.stringify(v);
-}
-
 export function useDataManagement(viewMode?: string) {
 	const [rteContent, setRteContentState] = useState("");
 	const rteContentRef = useRef(rteContent);
@@ -42,31 +37,11 @@ export function useDataManagement(viewMode?: string) {
 	);
 	excalidrawDataRef.current = excalidrawData;
 
-	// Track data hashes to prevent redundant setExcalidrawData calls
-	const excalidrawHashRef = useRef<string>("");
-
-	// Wrap setExcalidrawData to skip redundant updates (breaks infinite loops).
-	const setExcalidrawDataSafe = useCallback(
-		(data: ExcalidrawData | null | ((prev: ExcalidrawData | null) => ExcalidrawData | null)) => {
-			const resolved =
-				typeof data === "function"
-					? data(excalidrawDataRef.current)
-					: data;
-
-			const h = hash(resolved);
-			if (h === excalidrawHashRef.current) return;
-			excalidrawHashRef.current = h;
-
-			setExcalidrawData(resolved);
-		},
-		[],
-	);
-
 	const [debouncedExcalidraw] = useDebouncedValue(excalidrawData, 3000);
 
 	const handleRemoteExcalidraw = useCallback((data: ExcalidrawData | null) => {
-		setExcalidrawDataSafe(data);
-	}, [setExcalidrawDataSafe]);
+		setExcalidrawData(data);
+	}, []);
 
 	const handleRemoteContent = useCallback(
 		(content: string) => {
@@ -136,16 +111,12 @@ export function useDataManagement(viewMode?: string) {
 
 		if (viewMode === "excalidraw") {
 			const current = excalidrawDataRef.current;
-			// When switching to excalidraw, sync text content into drawing
-			const hasText = rteContentRef.current?.trim();
-			if (!hasText) return;
-
 			const result = syncTextToExcalidraw(
 				rteContentRef.current,
 				current?.elements ?? [],
 				(current?.appState as Record<string, unknown>) ?? {},
 			);
-			setExcalidrawDataSafe({
+			setExcalidrawData({
 				elements: result.elements,
 				appState: result.appState as ExcalidrawData["appState"],
 			});
@@ -158,7 +129,7 @@ export function useDataManagement(viewMode?: string) {
 				setRteContentState(html);
 			}
 		}
-	}, [viewMode, setExternalContent, setExcalidrawDataSafe]);
+	}, [viewMode, setExternalContent, setRteContentState]);
 
 	const { syncStatus, isConnected, user, connect, disconnect } =
 		useFirestoreSync({
@@ -182,7 +153,7 @@ export function useDataManagement(viewMode?: string) {
 		rteContentRef,
 		handleContentChange,
 		excalidrawData,
-		setExcalidrawData: setExcalidrawDataSafe,
+		setExcalidrawData,
 		excalidrawDataRef,
 		notes,
 		setNotesFromRemote,
