@@ -1,4 +1,4 @@
-import type { Filter, FilterType, Task } from "../types/todo";
+import type { Filter, FilterType, Task } from "@/types/todo";
 import { getToday } from "./dateUtils";
 
 export const toggleFilter = (

@@ -3,12 +3,12 @@ import "@mantine/tiptap/styles.css";
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect } from "react";
 import ReactDOM from "react-dom/client";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { MantineProvider } from "@/context/MantineProvider";
+import { ViewModeContext } from "@/context/ViewModeContext";
+import Timer from "@/features/timer/Timer";
+import { useTimers } from "@/hooks/useTimers";
 import App from "./App";
-import { ErrorBoundary } from "./components/ErrorBoundary/ErrorBoundary";
-import Timer from "./components/Timer/Timer";
-import { useTimers } from "./hooks/useTimers";
-import { MantineProvider } from "./providers/MantineProvider";
-import { ViewModeContext } from "./providers/ViewModeContext";
 
 const root = ReactDOM.createRoot(
 	document.getElementById("root") as HTMLElement,

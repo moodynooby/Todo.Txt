@@ -27,10 +27,10 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Note, NoteColor } from "../../types/notes";
-import { NOTE_COLORS } from "../../types/notes";
-import { getEditorExtensions } from "../../utils/editorExtensions";
-import { createNote } from "../../utils/notesStorage";
+import type { Note, NoteColor } from "@/types/notes";
+import { NOTE_COLORS } from "@/types/notes";
+import { getEditorExtensions } from "@/utils/editorExtensions";
+import { createNote } from "@/utils/notesStorage";
 import "./NotesPage.css";
 
 function ColorDots({

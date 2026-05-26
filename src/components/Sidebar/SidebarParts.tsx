@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { ChevronRight, Search, X } from "lucide-react";
 import type { ReactNode } from "react";
-import type { Task } from "../../types/todo";
+import type { Task } from "@/types/todo";
 
 interface PriorityConfig {
 	label: string;

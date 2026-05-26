@@ -1,4 +1,4 @@
-import type { ParsedTodoContent, Task } from "../types/todo";
+import type { ParsedTodoContent, Task } from "@/types/todo";
 import { getToday, getTomorrow, getYesterday } from "./dateUtils";
 
 const stripHtml = (html: string, replacement = "\n"): string => {

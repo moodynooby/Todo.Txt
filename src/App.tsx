@@ -1,4 +1,4 @@
-import "./App.css";
+import "@/styles/App.css";
 import { AppShell, Box } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import {
@@ -10,32 +10,31 @@ import {
 	useRef,
 	useState,
 } from "react";
-import AiToolsDialog from "./components/AiTools/AiToolsDialog";
-import AppHeader from "./components/AppHeader/AppHeader";
-import { ErrorBoundary } from "./components/ErrorBoundary/ErrorBoundary";
-import NotesPage from "./components/NotesPage/NotesPage";
-
-import TextModeContent from "./components/TextModeContent/TextModeContent";
-import { useDocumentSave } from "./hooks/useDocumentSave";
-import { useDueNotifications } from "./hooks/useDueNotifications";
-import { useFileHandler } from "./hooks/useFileHandler";
-import { useFirestoreSync } from "./hooks/useFirestoreSync";
-import { useTipTap } from "./hooks/useTipTap";
-import { EditorContext } from "./providers/EditorContext";
-import { useViewMode } from "./providers/ViewModeContext";
-import type { Note } from "./types/notes";
-import type { Filter, ParsedTodoContent } from "./types/todo";
+import AppHeader from "@/components/AppHeader/AppHeader";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { EditorContext } from "@/context/EditorContext";
+import { useViewMode } from "@/context/ViewModeContext";
+import AiToolsDialog from "@/features/ai/AiToolsDialog";
+import TextModeContent from "@/features/editor/TextModeContent";
+import NotesPage from "@/features/notes/NotesPage";
+import { useDocumentSave } from "@/hooks/useDocumentSave";
+import { useDueNotifications } from "@/hooks/useDueNotifications";
+import { useFileHandler } from "@/hooks/useFileHandler";
+import { useFirestoreSync } from "@/hooks/useFirestoreSync";
+import { useTipTap } from "@/hooks/useTipTap";
+import type { Note } from "@/types/notes";
+import type { Filter, ParsedTodoContent } from "@/types/todo";
 import {
 	syncExcalidrawToText,
 	syncTextToExcalidraw,
-} from "./utils/excalidrawStorageService";
-import { useNotes } from "./utils/notesStorage";
-import { parseTodoContent } from "./utils/todoParser";
+} from "@/utils/excalidrawStorageService";
+import { useNotes } from "@/utils/notesStorage";
+import { parseTodoContent } from "@/utils/todoParser";
 
 const DEBOUNCE_DELAY = 1000;
 
 const ExcalidrawPage = lazy(
-	() => import("./components/ExcalidrawPage/ExcalidrawPage"),
+	() => import("@/features/excalidraw/ExcalidrawPage"),
 );
 
 interface AppProps {

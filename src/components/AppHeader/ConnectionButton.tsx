@@ -7,7 +7,7 @@ import {
 	Tooltip,
 } from "@mantine/core";
 import { LogOut, User } from "lucide-react";
-import { useEditor } from "../../providers/EditorContext";
+import { useEditor } from "@/context/EditorContext";
 
 const ConnectionButton = () => {
 	const { user, syncStatus, onConnect, onDisconnectSync } = useEditor();

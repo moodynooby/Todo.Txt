@@ -24,7 +24,7 @@ import {
 	WrapText,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useAiGroq } from "../../hooks/useAiGroq";
+import { useAiGroq } from "@/hooks/useAiGroq";
 
 interface AiToolsDialogProps {
 	isOpen: boolean;

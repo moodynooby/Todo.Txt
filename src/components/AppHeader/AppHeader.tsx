@@ -1,7 +1,7 @@
 import { ActionIcon, Group, Image, Paper, Title, Tooltip } from "@mantine/core";
 import { Plus, Timer as TimerIcon } from "lucide-react";
-import { useEditor } from "../../providers/EditorContext";
-import { useViewMode } from "../../providers/ViewModeContext";
+import { useEditor } from "@/context/EditorContext";
+import { useViewMode } from "@/context/ViewModeContext";
 import HeaderActions from "./HeaderActions";
 import ViewSwitcher from "./ViewSwitcher";
 

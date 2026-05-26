@@ -14,7 +14,8 @@ import {
 	Filter as FilterIcon,
 	X,
 } from "lucide-react";
-import type { Filter, ParsedTodoContent } from "../../types/todo";
+import { useSidebarState } from "@/hooks/useSidebarState";
+import type { Filter, ParsedTodoContent } from "@/types/todo";
 import {
 	CollapsedPriorityButton,
 	CompletionToggle,
@@ -24,7 +25,6 @@ import {
 	SearchInput,
 	SidebarSection,
 } from "./SidebarParts";
-import { useSidebarState } from "./useSidebarState";
 
 interface SidebarProps {
 	isCollapsed: boolean;

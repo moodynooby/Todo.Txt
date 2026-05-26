@@ -7,8 +7,8 @@ import {
 } from "@mantine/core";
 import { Download, Maximize, Minimize, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useInstallPrompt } from "../../hooks/useInstallPrompt";
-import { toggleFullscreen } from "../../utils/fullscreen";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { toggleFullscreen } from "@/utils/fullscreen";
 import ConnectionButton from "./ConnectionButton";
 
 const HeaderActions = () => {

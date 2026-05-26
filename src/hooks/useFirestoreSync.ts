@@ -14,8 +14,8 @@ import {
 	isFirebaseConfigured,
 	signInWithGoogle,
 	signOutUser,
-} from "../lib/firebase";
-import type { Note } from "../types/notes";
+} from "@/lib/firebase";
+import type { Note } from "@/types/notes";
 
 export type SyncStatus =
 	| "disconnected"

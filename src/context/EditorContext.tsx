@@ -1,6 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import { createContext, useContext } from "react";
-import type { SyncStatus } from "../hooks/useFirestoreSync";
+import type { SyncStatus } from "@/hooks/useFirestoreSync";
 
 export interface EditorContextValue {
 	editor: Editor | null;

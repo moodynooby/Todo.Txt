@@ -1,11 +1,11 @@
 import type { Editor } from "@tiptap/core";
 import { useCallback } from "react";
-import { playBeep } from "../utils/beep";
+import { playBeep } from "@/utils/beep";
 import {
 	saveAsHtml,
 	saveAsMarkdown,
 	saveAsText,
-} from "../utils/documentExportService";
+} from "@/utils/documentExportService";
 
 type SaveFormat = "markdown" | "text" | "html";
 

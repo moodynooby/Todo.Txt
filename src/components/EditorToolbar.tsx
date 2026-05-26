@@ -11,7 +11,7 @@ import {
 	Save,
 	Sparkles,
 } from "lucide-react";
-import { useEditor } from "../../providers/EditorContext";
+import { useEditor } from "@/context/EditorContext";
 export const EditorToolbar = () => {
 	const {
 		onSave,

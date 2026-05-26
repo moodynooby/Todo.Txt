@@ -1,5 +1,7 @@
 # Agent Guidelines for Todo.Txt
 Check Docs in /LLMS.TXT/
+WHEN MOVING FILES USE git mv
+CHECK DOCS ON STRUCUTRE IN @IdealStructure.md first before adding new files
 ## Commands
 
 | Action | Command |

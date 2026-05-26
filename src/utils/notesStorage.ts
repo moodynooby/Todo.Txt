@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Note, NoteColor } from "../types/notes";
+import type { Note, NoteColor } from "@/types/notes";
 import { safeGetItem, safeSetItem } from "./storage";
 
 const STORAGE_KEY = "notes-data";

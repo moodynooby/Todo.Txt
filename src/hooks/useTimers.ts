@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { computeElapsed } from "../utils/formatTime";
-import { safeGetItem, safeSetItem } from "../utils/storage";
+import { computeElapsed } from "@/utils/formatTime";
+import { safeGetItem, safeSetItem } from "@/utils/storage";
 
 const STORAGE_KEY = "timers";
 

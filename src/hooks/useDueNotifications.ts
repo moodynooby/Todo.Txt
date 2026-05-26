@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import type { Task } from "../types/todo";
-import { playBeep } from "../utils/beep";
-import { getToday } from "../utils/dateUtils";
-import { safeGetItem, safeSetItem } from "../utils/storage";
+import type { Task } from "@/types/todo";
+import { playBeep } from "@/utils/beep";
+import { getToday } from "@/utils/dateUtils";
+import { safeGetItem, safeSetItem } from "@/utils/storage";
 
 const STORAGE_KEY_PREFIX = "todo-notifications-";
 

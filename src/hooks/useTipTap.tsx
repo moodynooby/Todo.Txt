@@ -1,7 +1,7 @@
 import type { Editor } from "@tiptap/core";
 import { useEditor } from "@tiptap/react";
 import { useCallback } from "react";
-import { getEditorExtensions } from "../utils/editorExtensions";
+import { getEditorExtensions } from "@/utils/editorExtensions";
 
 interface UseTipTapProps {
 	initialContent: string;

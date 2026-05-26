@@ -1,7 +1,7 @@
 import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { useCallback, useState } from "react";
-import { safeGetItem, safeSetItem } from "../utils/storage";
+import { safeGetItem, safeSetItem } from "@/utils/storage";
 
 const STORAGE_KEY = "groq_api_key";
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";

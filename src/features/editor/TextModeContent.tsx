@@ -1,9 +1,9 @@
 import { Box } from "@mantine/core";
 import { RichTextEditor } from "@mantine/tiptap";
-import { useEditor } from "../../providers/EditorContext";
-import type { Filter, ParsedTodoContent } from "../../types/todo";
-import { EditorToolbar } from "../EditorToolbar/EditorToolbar";
-import Sidebar from "../Sidebar/Sidebar";
+import { EditorToolbar } from "@/components/EditorToolbar";
+import Sidebar from "@/components/Sidebar/Sidebar";
+import { useEditor } from "@/context/EditorContext";
+import type { Filter, ParsedTodoContent } from "@/types/todo";
 
 interface TextModeContentProps {
 	taskData: ParsedTodoContent;

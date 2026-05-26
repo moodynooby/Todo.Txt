@@ -6,8 +6,8 @@ import { Box, useComputedColorScheme } from "@mantine/core";
 import {
 	createExcalidrawSaver,
 	loadExcalidrawData,
-} from "../../utils/excalidrawStorageService";
-import { toggleFullscreen } from "../../utils/fullscreen";
+} from "@/utils/excalidrawStorageService";
+import { toggleFullscreen } from "@/utils/fullscreen";
 
 const EXCALIDRAW_UI_OPTIONS = {
 	canvasActions: {

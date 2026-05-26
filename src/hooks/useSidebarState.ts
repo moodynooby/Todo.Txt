@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import type { Filter, FilterType, Task } from "../../types/todo";
-import { applyFilter, toggleFilter } from "../../utils/filterUtils";
+import type { Filter, FilterType, Task } from "@/types/todo";
+import { applyFilter, toggleFilter } from "@/utils/filterUtils";
 
 interface UseSidebarStateParams {
 	tasks: Task[];
