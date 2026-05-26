@@ -9,7 +9,7 @@ import {
 import { Pause, Play, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TimerState } from "@/hooks/useTimers";
-import { playBeep } from "@/utils/beep";
+import { playBeep } from "@/lib/beep";
 import { computeElapsed, formatTime } from "@/utils/formatTime";
 
 interface TimerProps {

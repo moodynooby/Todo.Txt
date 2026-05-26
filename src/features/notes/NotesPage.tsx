@@ -27,10 +27,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Editor } from "@/components/Editor";
+import { useNotesContext } from "@/context/NotesContext";
+import { createNote } from "@/hooks/useNotes";
 import type { Note, NoteColor } from "@/types/notes";
 import { NOTE_COLORS } from "@/types/notes";
 import { getEditorExtensions } from "@/utils/editorExtensions";
-import { createNote } from "@/utils/notesStorage";
 import "./NotesPage.css";
 
 function ColorDots({
@@ -215,23 +216,16 @@ function NoteCard({
 	);
 }
 
-interface NotesPageProps {
-	notes: Note[];
-	upsertNote: (partial: Partial<Note> & { id: string }) => void;
-	deleteNote: (id: string) => void;
-	archiveNote: (id: string) => void;
-	togglePin: (id: string) => void;
-	setNoteColor: (id: string, color: NoteColor) => void;
-}
+const NotesPage = () => {
+	const {
+		notes,
+		upsertNote,
+		deleteNote,
+		archiveNote,
+		togglePin,
+		setNoteColor,
+	} = useNotesContext();
 
-const NotesPage = ({
-	notes,
-	upsertNote,
-	deleteNote,
-	archiveNote,
-	togglePin,
-	setNoteColor,
-}: NotesPageProps) => {
 	const [search, setSearch] = useState("");
 	const [showArchived, setShowArchived] = useState(false);
 	const [debouncedSearch] = useDebouncedValue(search, 200);

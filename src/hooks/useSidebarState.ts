@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useLocalStorage } from "@mantine/hooks";
+import { useMemo } from "react";
 import type { Filter, FilterType, Task } from "@/types/todo";
 import { applyFilter, toggleFilter } from "@/utils/filterUtils";
 
@@ -13,21 +14,34 @@ export const useSidebarState = ({
 	activeFilter,
 	onFilterChange,
 }: UseSidebarStateParams) => {
-	const [expandedSections, setExpandedSections] = useState<Set<string>>(
-		new Set(["priorities", "projects", "contexts", "dueDates"]),
+	const [expandedSectionsArray, setExpandedSectionsArray] = useLocalStorage<
+		string[]
+	>({
+		key: "sidebar-expanded-sections",
+		defaultValue: ["priorities", "projects", "contexts", "dueDates"],
+	});
+
+	const expandedSections = useMemo(
+		() => new Set(expandedSectionsArray),
+		[expandedSectionsArray],
 	);
-	const [searchQuery, setSearchQuery] = useState("");
-	const [showCompleted, setShowCompleted] = useState(false);
+
+	const [searchQuery, setSearchQuery] = useLocalStorage({
+		key: "sidebar-search",
+		defaultValue: "",
+	});
+
+	const [showCompleted, setShowCompleted] = useLocalStorage({
+		key: "sidebar-show-completed",
+		defaultValue: false,
+	});
 
 	const toggleSection = (section: string): void => {
-		setExpandedSections((prev) => {
-			const next = new Set(prev);
-			if (next.has(section)) {
-				next.delete(section);
-			} else {
-				next.add(section);
+		setExpandedSectionsArray((prev) => {
+			if (prev.includes(section)) {
+				return prev.filter((s) => s !== section);
 			}
-			return next;
+			return [...prev, section];
 		});
 	};
 

@@ -1,4 +1,5 @@
-import { Box } from "@mantine/core";
+import { ActionIcon, Box, Transition } from "@mantine/core";
+import { Filter as FilterIcon } from "lucide-react";
 import { Editor } from "@/components/Editor";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { useEditor } from "@/context/EditorContext";
@@ -27,18 +28,21 @@ const TextModeContent = ({
 				flex: 1,
 				minHeight: 0,
 				overflow: "hidden",
+				position: "relative",
 			}}
 		>
 			<Box
 				style={{
 					flexShrink: 0,
-					width: sidebarCollapsed
-						? "var(--sidebar-collapsed-width)"
-						: "var(--sidebar-width)",
+					width: sidebarCollapsed ? 0 : "var(--sidebar-width)",
+					opacity: sidebarCollapsed ? 0 : 1,
+					overflow: "hidden",
+					transition:
+						"width 250ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease",
 				}}
 			>
 				<Sidebar
-					isCollapsed={sidebarCollapsed}
+					isCollapsed={false}
 					onToggle={onToggleSidebar}
 					taskData={taskData}
 					activeFilter={activeFilter}
@@ -65,6 +69,34 @@ const TextModeContent = ({
 					}}
 				/>
 			</Box>
+			<Transition
+				mounted={sidebarCollapsed}
+				transition="slide-up"
+				duration={300}
+				timingFunction="cubic-bezier(0.4, 0, 0.2, 1)"
+			>
+				{(transitionStyles) => (
+					<ActionIcon
+						variant="filled"
+						size="xl"
+						radius="xl"
+						onClick={onToggleSidebar}
+						aria-label="Toggle Filters"
+						style={{
+							position: "fixed",
+							bottom: "20px",
+							right: "20px",
+							zIndex: 100,
+							boxShadow: "var(--mantine-shadow-md)",
+							transition: "transform 150ms ease, background-color 150ms ease",
+							...transitionStyles,
+						}}
+						className="fab-hover-effect"
+					>
+						<FilterIcon size={24} />
+					</ActionIcon>
+				)}
+			</Transition>
 		</Box>
 	);
 };

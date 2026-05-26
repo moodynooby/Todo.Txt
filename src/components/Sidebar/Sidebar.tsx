@@ -7,10 +7,11 @@ import {
 	ScrollArea,
 	Stack,
 	Text,
+	Tooltip,
 } from "@mantine/core";
 import {
-	ChevronLeft,
 	ChevronRight,
+	ChevronsLeft,
 	Filter as FilterIcon,
 	X,
 } from "lucide-react";
@@ -109,9 +110,20 @@ const Sidebar = ({
 						Filters
 					</Text>
 				</Group>
-				<ActionIcon variant="subtle" size="sm" onClick={onToggle}>
-					<ChevronLeft size={16} />
-				</ActionIcon>
+				<Tooltip
+					label="Collapse to floating button"
+					position="bottom"
+					withArrow
+				>
+					<ActionIcon
+						variant="subtle"
+						size="sm"
+						onClick={onToggle}
+						aria-label="Collapse to FAB"
+					>
+						<ChevronsLeft size={16} />
+					</ActionIcon>
+				</Tooltip>
 			</Group>
 			<Divider />
 

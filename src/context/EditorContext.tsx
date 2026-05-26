@@ -19,8 +19,6 @@ export interface EditorContextValue {
 	} | null;
 	onConnect: () => void;
 	onDisconnectSync: () => void;
-	groqApiKey: string;
-	onGroqApiKeyChange: (key: string) => void;
 }
 
 export const EditorContext = createContext<EditorContextValue | null>(null);

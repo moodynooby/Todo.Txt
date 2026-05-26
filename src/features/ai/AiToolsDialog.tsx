@@ -24,7 +24,6 @@ import {
 	WrapText,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useEditor } from "@/context/EditorContext";
 import { useAiGroq } from "@/hooks/useAiGroq";
 
 interface AiToolsDialogProps {
@@ -32,6 +31,8 @@ interface AiToolsDialogProps {
 	onClose: () => void;
 	initialContent: string;
 	onInsert: (text: string, mode: "replace" | "append") => void;
+	groqApiKey: string;
+	onGroqApiKeyChange: (key: string) => void;
 }
 
 interface AiTool {
@@ -91,8 +92,9 @@ const AiToolsDialog = ({
 	onClose,
 	initialContent,
 	onInsert,
+	groqApiKey,
+	onGroqApiKeyChange,
 }: AiToolsDialogProps) => {
-	const { groqApiKey, onGroqApiKeyChange } = useEditor();
 	const { generate, isLoading, error: apiError } = useAiGroq(groqApiKey);
 
 	const mountedRef = useRef(true);
