@@ -1,6 +1,5 @@
 import { Box } from "@mantine/core";
-import { RichTextEditor } from "@mantine/tiptap";
-import { EditorToolbar } from "@/components/EditorToolbar";
+import { Editor } from "@/components/Editor";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { useEditor } from "@/context/EditorContext";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
@@ -54,8 +53,9 @@ const TextModeContent = ({
 					minWidth: 0,
 				}}
 			>
-				<RichTextEditor
+				<Editor
 					editor={editor}
+					toolbarVariant="full"
 					className="tiptap-container"
 					style={{
 						flex: 1,
@@ -63,10 +63,7 @@ const TextModeContent = ({
 						flexDirection: "column",
 						minHeight: 0,
 					}}
-				>
-					<EditorToolbar />
-					<RichTextEditor.Content />
-				</RichTextEditor>
+				/>
 			</Box>
 		</Box>
 	);

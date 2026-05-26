@@ -12,7 +12,6 @@ import {
 	UnstyledButton,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
-import { RichTextEditor } from "@mantine/tiptap";
 import { useEditor } from "@tiptap/react";
 import {
 	Archive,
@@ -27,6 +26,7 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Editor } from "@/components/Editor";
 import type { Note, NoteColor } from "@/types/notes";
 import { NOTE_COLORS } from "@/types/notes";
 import { getEditorExtensions } from "@/utils/editorExtensions";
@@ -114,21 +114,12 @@ function NoteCardEditor({
 	}, [content, editor]);
 
 	return (
-		<RichTextEditor
+		<Editor
 			editor={editor}
+			toolbarVariant="minimal"
 			className="NotesPage-noteCard-editor"
 			style={{ "--note-text-color": "#000" } as React.CSSProperties}
-		>
-			<RichTextEditor.Toolbar>
-				<RichTextEditor.ControlsGroup>
-					<RichTextEditor.Bold />
-					<RichTextEditor.Italic />
-					<RichTextEditor.BulletList />
-					<RichTextEditor.OrderedList />
-				</RichTextEditor.ControlsGroup>
-			</RichTextEditor.Toolbar>
-			<RichTextEditor.Content />
-		</RichTextEditor>
+		/>
 	);
 }
 
