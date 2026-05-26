@@ -1,3 +1,12 @@
+export function escapeHtml(text: string): string {
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+}
+
 export function stripHtml(html: string, replacement = ""): string {
 	if (!html) return "";
 	return html.replace(/<[^>]*>/g, replacement);

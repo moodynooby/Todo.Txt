@@ -1,4 +1,4 @@
-import { extractLines, isEmptyHtml } from "@/utils/html";
+import { escapeHtml, extractLines, isEmptyHtml } from "@/utils/html";
 
 const SYNC_TAG = "__sync__";
 
@@ -6,14 +6,6 @@ export interface ExcalidrawData {
 	elements: readonly unknown[];
 	appState: Record<string, unknown>;
 	scrollToContent?: boolean;
-}
-
-function escapeHtml(text: string): string {
-	return text
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;");
 }
 
 function createSyncTextElement(
