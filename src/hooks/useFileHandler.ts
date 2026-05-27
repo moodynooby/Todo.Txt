@@ -1,8 +1,8 @@
-import { marked } from "marked";
 import { type RefObject, useRef } from "react";
+import { escapeHtml } from "@/utils/html";
 
 interface UseFileHandlerProps {
-	setRteContent: (content: string) => void;
+	onFileLoaded: (content: string) => void;
 }
 
 interface UseFileHandlerReturn {
@@ -12,7 +12,7 @@ interface UseFileHandlerReturn {
 }
 
 export const useFileHandler = ({
-	setRteContent,
+	onFileLoaded,
 }: UseFileHandlerProps): UseFileHandlerReturn => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,28 +28,14 @@ export const useFileHandler = ({
 			const result = e.target?.result;
 			if (typeof result !== "string") return;
 			if (file.name.endsWith(".md")) {
-				try {
-					const html = marked.parse(result, { async: false }) as string;
-					setRteContent(html);
-				} catch (e) {
-					console.warn(
-						"Failed to parse markdown, falling back to plain text:",
-						e,
-					);
-					setRteContent(
-						result
-							.split("\n")
-							.map((line) => `<p>${line}</p>`)
-							.join(""),
-					);
-				}
+				onFileLoaded(result);
 			} else if (file.name.endsWith(".html")) {
-				setRteContent(result);
+				onFileLoaded(result);
 			} else {
-				setRteContent(
+				onFileLoaded(
 					result
 						.split("\n")
-						.map((line) => `<p>${line}</p>`)
+						.map((line) => `<p>${escapeHtml(line)}</p>`)
 						.join(""),
 				);
 			}

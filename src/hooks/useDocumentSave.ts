@@ -1,27 +1,23 @@
 import type { Editor } from "@tiptap/core";
 import { useCallback } from "react";
-import { playBeep } from "../utils/beep";
-import {
-	saveAsHtml,
-	saveAsMarkdown,
-	saveAsText,
-} from "../utils/documentExportService";
+import { playBeep } from "@/lib/beep";
+import { saveAsHtml, saveAsMarkdown, saveAsText } from "@/lib/documentExport";
 
 type SaveFormat = "markdown" | "text" | "html";
 
-export const useDocumentSave = (editor: Editor | null, htmlContent: string) => {
+export const useDocumentSave = (editor: Editor | null) => {
 	return useCallback(
 		(format: SaveFormat) => {
-			if (format !== "html" && !editor) return;
+			if (!editor) return;
 			const saveActions: Record<SaveFormat, () => void> = {
-				markdown: () => saveAsMarkdown(editor ? editor.getHTML() : ""),
-				text: () => saveAsText(editor ? editor.getText() : ""),
-				html: () => saveAsHtml(htmlContent),
+				markdown: () => saveAsMarkdown(editor.getMarkdown()),
+				text: () => saveAsText(editor.getText()),
+				html: () => saveAsHtml(editor.getHTML()),
 			};
 
 			saveActions[format]();
 			playBeep(150, 660);
 		},
-		[editor, htmlContent],
+		[editor],
 	);
 };

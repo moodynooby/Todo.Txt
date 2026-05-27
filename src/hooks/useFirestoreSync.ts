@@ -7,14 +7,17 @@ import {
 	setDoc,
 } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ExcalidrawData } from "@/lib/excalidrawSync";
 import {
 	getFirebaseAuth,
 	getFirestoreDb,
-	handleRedirectResult,
 	isFirebaseConfigured,
+	loginAnonymously,
 	signInWithGoogle,
 	signOutUser,
-} from "../lib/firebase";
+} from "@/lib/firebase";
+import type { Note } from "@/types/notes";
+import type { TimerData } from "./useTimers";
 
 export type SyncStatus =
 	| "disconnected"
@@ -26,14 +29,24 @@ export type SyncStatus =
 interface FirestoreSyncOptions {
 	content: string;
 	onRemoteContent: (content: string) => void;
-	preferences?: Record<string, unknown>;
-	onRemotePreferences?: (prefs: Record<string, unknown>) => void;
+	notes?: Note[];
+	onRemoteNotes?: (notes: Note[]) => void;
+	excalidraw?: ExcalidrawData | null;
+	onRemoteExcalidraw?: (data: ExcalidrawData | null) => void;
+	groqApiKey?: string;
+	onRemoteGroqApiKey?: (key: string) => void;
+	timers?: TimerData[];
+	onRemoteTimers?: (timers: TimerData[]) => void;
 }
 
 interface FirestoreSyncReturn {
 	isConnected: boolean;
 	syncStatus: SyncStatus;
-	user: { photoURL: string | null; displayName: string | null } | null;
+	user: {
+		photoURL: string | null;
+		displayName: string | null;
+		isAnonymous: boolean;
+	} | null;
 	connect: () => Promise<void>;
 	disconnect: () => Promise<void>;
 }
@@ -41,8 +54,14 @@ interface FirestoreSyncReturn {
 export const useFirestoreSync = ({
 	content,
 	onRemoteContent,
-	preferences,
-	onRemotePreferences,
+	notes,
+	onRemoteNotes,
+	excalidraw,
+	onRemoteExcalidraw,
+	groqApiKey,
+	onRemoteGroqApiKey,
+	timers,
+	onRemoteTimers,
 }: FirestoreSyncOptions): FirestoreSyncReturn => {
 	const [user, setUser] = useState<User | null>(null);
 	const [isConnected, setIsConnected] = useState(false);
@@ -50,14 +69,8 @@ export const useFirestoreSync = ({
 
 	const unsubFirestoreRef = useRef<(() => void) | null>(null);
 	const unsubAuthRef = useRef<(() => void) | null>(null);
-	const isRemoteUpdateRef = useRef(false);
-	const lastSyncedContentRef = useRef("");
-	const lastSyncedPrefsRef = useRef("");
-	const contentRef = useRef(content);
-	const preferencesRef = useRef(preferences);
-
-	contentRef.current = content;
-	preferencesRef.current = preferences;
+	const hasAttemptedAnonymousRef = useRef(false);
+	const setupRanRef = useRef(false);
 
 	const teardownFirestore = useCallback(() => {
 		unsubFirestoreRef.current?.();
@@ -74,74 +87,43 @@ export const useFirestoreSync = ({
 			const docId = `todo_${uid}`;
 			const docRef = doc(db, "todos", docId);
 
-			await handleRedirectResult();
-
 			try {
 				const docSnap = await getDoc(docRef);
 				if (!docSnap.exists()) {
 					await setDoc(docRef, {
 						content: "",
-						preferences: {},
 						createdAt: serverTimestamp(),
 						updatedAt: serverTimestamp(),
 					});
 				} else {
-					const data = docSnap.data();
-					let hasRemoteUpdate = false;
-
-					if (data.content && data.content !== contentRef.current) {
-						isRemoteUpdateRef.current = true;
-						onRemoteContent(data.content);
-						lastSyncedContentRef.current = data.content;
-						hasRemoteUpdate = true;
-					}
-
-					if (data.preferences && onRemotePreferences) {
-						const prefsStr = JSON.stringify(data.preferences);
-						if (prefsStr !== lastSyncedPrefsRef.current) {
-							onRemotePreferences(data.preferences);
-							lastSyncedPrefsRef.current = prefsStr;
-						}
-					}
-
-					if (hasRemoteUpdate) {
-						setTimeout(() => {
-							isRemoteUpdateRef.current = false;
-						}, 200);
-					}
+					const data = docSnap.data() as Record<string, unknown>;
+					if (data.content) onRemoteContent(data.content as string);
+					if (data.notes && onRemoteNotes) onRemoteNotes(data.notes as Note[]);
+					if (data.excalidraw && onRemoteExcalidraw)
+						onRemoteExcalidraw(data.excalidraw as ExcalidrawData);
+					if (data.groqApiKey !== undefined && onRemoteGroqApiKey)
+						onRemoteGroqApiKey(data.groqApiKey as string);
+					if (data.timers && onRemoteTimers)
+						onRemoteTimers(data.timers as TimerData[]);
 				}
 
 				unsubFirestoreRef.current = onSnapshot(
 					docRef,
 					(snap) => {
 						if (!snap.exists()) return;
-						const data = snap.data();
-						let hasRemoteUpdate = false;
+						if (snap.metadata.hasPendingWrites) return;
 
-						if (
-							data.content &&
-							data.content !== lastSyncedContentRef.current &&
-							data.content !== contentRef.current
-						) {
-							isRemoteUpdateRef.current = true;
-							onRemoteContent(data.content);
-							lastSyncedContentRef.current = data.content;
-							hasRemoteUpdate = true;
-						}
-
-						if (data.preferences && onRemotePreferences) {
-							const prefsStr = JSON.stringify(data.preferences);
-							if (prefsStr !== lastSyncedPrefsRef.current) {
-								onRemotePreferences(data.preferences);
-								lastSyncedPrefsRef.current = prefsStr;
-							}
-						}
-
-						if (hasRemoteUpdate) {
-							setTimeout(() => {
-								isRemoteUpdateRef.current = false;
-							}, 200);
-						}
+						const data = snap.data() as Record<string, unknown>;
+						if (data.content !== undefined)
+							onRemoteContent(data.content as string);
+						if (data.notes !== undefined && onRemoteNotes)
+							onRemoteNotes(data.notes as Note[]);
+						if (data.excalidraw !== undefined && onRemoteExcalidraw)
+							onRemoteExcalidraw(data.excalidraw as ExcalidrawData);
+						if (data.groqApiKey !== undefined && onRemoteGroqApiKey)
+							onRemoteGroqApiKey(data.groqApiKey as string);
+						if (data.timers !== undefined && onRemoteTimers)
+							onRemoteTimers(data.timers as TimerData[]);
 						setSyncStatus("synced");
 					},
 					(err) => {
@@ -157,10 +139,19 @@ export const useFirestoreSync = ({
 				setSyncStatus("error");
 			}
 		},
-		[onRemoteContent, onRemotePreferences],
+		[
+			onRemoteContent,
+			onRemoteNotes,
+			onRemoteExcalidraw,
+			onRemoteGroqApiKey,
+			onRemoteTimers,
+		],
 	);
 
 	useEffect(() => {
+		if (setupRanRef.current) return;
+		setupRanRef.current = true;
+
 		if (!isFirebaseConfigured()) return;
 
 		const auth = getFirebaseAuth();
@@ -169,6 +160,15 @@ export const useFirestoreSync = ({
 				setUser(firebaseUser);
 				setSyncStatus("connecting");
 				await setupFirestore(firebaseUser.uid);
+			} else if (!hasAttemptedAnonymousRef.current) {
+				hasAttemptedAnonymousRef.current = true;
+				setSyncStatus("connecting");
+				try {
+					await loginAnonymously();
+				} catch (e) {
+					console.error("Anonymous sign-in failed:", e);
+					setSyncStatus("disconnected");
+				}
 			} else {
 				setUser(null);
 				teardownFirestore();
@@ -182,18 +182,11 @@ export const useFirestoreSync = ({
 	}, [setupFirestore, teardownFirestore]);
 
 	useEffect(() => {
-		if (
-			!isConnected ||
-			!user ||
-			isRemoteUpdateRef.current ||
-			!isFirebaseConfigured()
-		)
-			return;
+		if (!isConnected || !user || !isFirebaseConfigured()) return;
 
 		const db = getFirestoreDb();
-		const docId = `todo_${user.uid}`;
-		const docRef = doc(db, "todos", docId);
-		lastSyncedContentRef.current = content;
+		const docRef = doc(db, "todos", `todo_${user.uid}`);
+
 		setSyncStatus("syncing");
 
 		const data: Record<string, unknown> = {
@@ -201,10 +194,10 @@ export const useFirestoreSync = ({
 			updatedAt: serverTimestamp(),
 		};
 
-		if (preferences) {
-			data.preferences = preferences;
-			lastSyncedPrefsRef.current = JSON.stringify(preferences);
-		}
+		if (notes !== undefined) data.notes = notes;
+		if (excalidraw !== undefined) data.excalidraw = excalidraw;
+		if (groqApiKey !== undefined) data.groqApiKey = groqApiKey;
+		if (timers !== undefined) data.timers = timers;
 
 		setDoc(docRef, data, { merge: true })
 			.then(() => {
@@ -214,7 +207,7 @@ export const useFirestoreSync = ({
 				console.error("Firestore write error:", e);
 				setSyncStatus("error");
 			});
-	}, [content, preferences, isConnected, user]);
+	}, [content, notes, excalidraw, groqApiKey, timers, isConnected, user]);
 
 	const connect = useCallback(async () => {
 		setSyncStatus("connecting");
@@ -231,6 +224,8 @@ export const useFirestoreSync = ({
 		teardownFirestore();
 		try {
 			await signOutUser();
+			hasAttemptedAnonymousRef.current = false;
+			await loginAnonymously();
 		} catch (e) {
 			console.error("Sign out error:", e);
 		}
@@ -240,7 +235,11 @@ export const useFirestoreSync = ({
 		isConnected,
 		syncStatus,
 		user: user
-			? { photoURL: user.photoURL, displayName: user.displayName }
+			? {
+					photoURL: user.photoURL,
+					displayName: user.displayName,
+					isAnonymous: user.isAnonymous,
+				}
 			: null,
 		connect,
 		disconnect,

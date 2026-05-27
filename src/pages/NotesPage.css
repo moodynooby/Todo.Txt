@@ -1,0 +1,71 @@
+.NotesPage-masonry {
+	columns: 280px;
+	column-gap: 16px;
+}
+
+.NotesPage-noteCard {
+	break-inside: avoid;
+	margin-bottom: 16px;
+	overflow: hidden;
+	transition: box-shadow 0.15s ease;
+}
+
+.NotesPage-noteCard:hover {
+	box-shadow:
+		0 3px 8px rgba(0, 0, 0, 0.15),
+		0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.NotesPage-noteCard-editor {
+	border: none !important;
+	background: transparent !important;
+}
+
+.NotesPage-noteCard-editor .mantine-RichTextEditor-toolbar {
+	background: transparent;
+	border: none;
+	padding: 2px 4px;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.NotesPage-noteCard:hover
+	.NotesPage-noteCard-editor
+	.mantine-RichTextEditor-toolbar {
+	opacity: 1;
+}
+
+.NotesPage-noteCard-editor
+	.mantine-RichTextEditor-toolbar
+	.mantine-ActionIcon-root {
+	width: 26px;
+	height: 26px;
+	color: var(--note-text-color, inherit);
+}
+
+.NotesPage-noteCard-editor .mantine-RichTextEditor-content {
+	background: transparent;
+}
+
+.NotesPage-noteCard-editor .ProseMirror {
+	padding: 4px 12px 8px;
+	min-height: 20px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--note-text-color, inherit);
+}
+
+.NotesPage-noteCard-editor .ProseMirror p {
+	margin: 0;
+}
+
+.NotesPage-noteCard-editor .ProseMirror p.is-editor-empty:first-child::before {
+	color: var(--note-text-color, inherit);
+	opacity: 0.5;
+}
+
+.NotesPage-noteCard-title {
+	font-weight: 600;
+	font-size: 14px;
+	color: var(--note-textarea-color);
+}

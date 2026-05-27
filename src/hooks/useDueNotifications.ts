@@ -1,19 +1,20 @@
 import { useEffect, useRef } from "react";
-import type { Task } from "../types/todo";
-import { playBeep } from "../utils/beep";
-import { getToday } from "../utils/dateUtils";
-
-const STORAGE_KEY_PREFIX = "todo-notifications-";
+import { playBeep } from "@/lib/beep";
+import type { Task } from "@/types/todo";
+import { getToday } from "@/utils/dateUtils";
 
 export const useDueNotifications = (tasks: Task[]) => {
 	const lastCheckedDateRef = useRef<string>("");
+	const notifiedIdsRef = useRef(new Set<number>());
 
 	useEffect(() => {
 		if (!("Notification" in window)) return;
 
 		const today = getToday();
-		if (lastCheckedDateRef.current === today) return;
-		lastCheckedDateRef.current = today;
+		if (lastCheckedDateRef.current !== today) {
+			lastCheckedDateRef.current = today;
+			notifiedIdsRef.current.clear();
+		}
 
 		let cancelled = false;
 
@@ -26,23 +27,9 @@ export const useDueNotifications = (tasks: Task[]) => {
 
 			if (Notification.permission !== "granted") return;
 
-			const storageKey = `${STORAGE_KEY_PREFIX}${today}`;
-
-			let notifiedTaskIds: number[] = [];
-			try {
-				const stored = localStorage.getItem(storageKey);
-				if (stored) {
-					notifiedTaskIds = JSON.parse(stored);
-				}
-			} catch (e) {
-				console.error("Failed to parse notified tasks", e);
-			}
-
-			if (cancelled) return;
-
-			const dueTasks = tasks.filter((task) => {
-				return task.due === today && !notifiedTaskIds.includes(task.id);
-			});
+			const dueTasks = tasks.filter(
+				(task) => task.due === today && !notifiedIdsRef.current.has(task.id),
+			);
 
 			if (dueTasks.length === 0) return;
 
@@ -55,16 +42,10 @@ export const useDueNotifications = (tasks: Task[]) => {
 				} catch (e) {
 					console.warn("Failed to show notification:", e);
 				}
-				notifiedTaskIds.push(task.id);
+				notifiedIdsRef.current.add(task.id);
 			});
 
 			playBeep();
-
-			try {
-				localStorage.setItem(storageKey, JSON.stringify(notifiedTaskIds));
-			} catch (e) {
-				console.error("Failed to save notified task IDs:", e);
-			}
 		};
 
 		checkDueTasks().catch((e) =>

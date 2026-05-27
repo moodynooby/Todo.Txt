@@ -7,14 +7,16 @@ import {
 	ScrollArea,
 	Stack,
 	Text,
+	Tooltip,
 } from "@mantine/core";
 import {
-	ChevronLeft,
 	ChevronRight,
+	ChevronsLeft,
 	Filter as FilterIcon,
 	X,
 } from "lucide-react";
-import type { Filter, ParsedTodoContent } from "../../types/todo";
+import { useSidebarState } from "@/hooks/useSidebarState";
+import type { Filter, ParsedTodoContent } from "@/types/todo";
 import {
 	CollapsedPriorityButton,
 	CompletionToggle,
@@ -24,7 +26,6 @@ import {
 	SearchInput,
 	SidebarSection,
 } from "./SidebarParts";
-import { useSidebarState } from "./useSidebarState";
 
 interface SidebarProps {
 	isCollapsed: boolean;
@@ -67,14 +68,7 @@ const Sidebar = ({
 
 	if (isCollapsed) {
 		return (
-			<Paper
-				component="aside"
-				shadow="sm"
-				radius={0}
-				style={{
-					height: "100%",
-				}}
-			>
+			<Paper component="aside" shadow="sm" radius={0} h="100%">
 				<Group justify="center" py="sm">
 					<ActionIcon variant="subtle" size="sm" onClick={onToggle}>
 						<ChevronRight size={16} />
@@ -101,11 +95,8 @@ const Sidebar = ({
 			component="aside"
 			shadow="sm"
 			radius={0}
-			style={{
-				height: "100%",
-				display: "flex",
-				flexDirection: "column",
-			}}
+			h="100%"
+			style={{ display: "flex", flexDirection: "column" }}
 		>
 			<Group justify="space-between" px="md" py="sm">
 				<Group gap="xs">
@@ -119,9 +110,20 @@ const Sidebar = ({
 						Filters
 					</Text>
 				</Group>
-				<ActionIcon variant="subtle" size="sm" onClick={onToggle}>
-					<ChevronLeft size={16} />
-				</ActionIcon>
+				<Tooltip
+					label="Collapse to floating button"
+					position="bottom"
+					withArrow
+				>
+					<ActionIcon
+						variant="subtle"
+						size="sm"
+						onClick={onToggle}
+						aria-label="Collapse to FAB"
+					>
+						<ChevronsLeft size={16} />
+					</ActionIcon>
+				</Tooltip>
 			</Group>
 			<Divider />
 

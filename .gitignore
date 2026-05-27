@@ -13,3 +13,4 @@ tsconfig.tsbuildinfo
 !.vscode/extensions.json
 .idea
 /.opencode
+.antigravitycli

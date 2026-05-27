@@ -1,5 +1,0 @@
-export const LAYOUT = {
-	HEADER_HEIGHT: 48,
-	SIDEBAR_WIDTH: 280,
-	SIDEBAR_COLLAPSED_WIDTH: 60,
-} as const;

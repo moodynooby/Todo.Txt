@@ -1,68 +1,47 @@
 import type { Editor } from "@tiptap/core";
-import Placeholder from "@tiptap/extension-placeholder";
-import { Markdown } from "@tiptap/markdown";
 import { useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { useEffect } from "react";
-import type { Filter } from "../types/todo";
+import { useCallback } from "react";
+import { getEditorExtensions } from "@/utils/editorExtensions";
 
 interface UseTipTapProps {
-	viewMode: string;
-	activeFilter: Filter | null;
 	initialContent: string;
 	onContentChange: (content: string) => void;
 }
 
 interface UseTipTapReturn {
 	editor: Editor | null;
+	setExternalContent: (html: string) => void;
 }
 
 export const useTipTap = ({
-	viewMode,
-	activeFilter,
 	initialContent,
 	onContentChange,
 }: UseTipTapProps): UseTipTapReturn => {
-	const shouldShowEditor = viewMode === "text" && !activeFilter;
-
 	const editor = useEditor({
-		extensions: [
-			StarterKit.configure({
-				heading: {
-					levels: [1, 2, 3, 4, 5, 6],
-				},
-			}),
-			Placeholder.configure({
-				placeholder: "Start writing your todos...",
-			}),
-			Markdown.configure({
-				markedOptions: {
-					gfm: true,
-					breaks: true,
-				},
-			}),
-		],
-		content: initialContent ? { type: "doc", content: [] } : "",
+		extensions: getEditorExtensions({
+			placeholder: "Start writing your todos...",
+		}),
+		content: initialContent,
+		contentType: "markdown",
+		shouldRerenderOnTransaction: true,
 		editorProps: {
 			attributes: {
 				class: "tiptap-editor-content",
 			},
 		},
 		onUpdate: ({ editor: currentEditor }) => {
-			onContentChange(currentEditor.getHTML());
+			onContentChange(currentEditor.getMarkdown());
 		},
 		immediatelyRender: false,
 	});
 
-	useEffect(() => {
-		if (!editor) return;
+	const setExternalContent = useCallback(
+		(html: string) => {
+			if (!editor) return;
+			editor.commands.setContent(html);
+		},
+		[editor],
+	);
 
-		if (shouldShowEditor && !initialContent) {
-			editor.commands.clearContent();
-		} else if (shouldShowEditor && initialContent && editor.isEmpty) {
-			editor.commands.setContent(initialContent);
-		}
-	}, [editor, shouldShowEditor, initialContent]);
-
-	return { editor };
+	return { editor, setExternalContent };
 };

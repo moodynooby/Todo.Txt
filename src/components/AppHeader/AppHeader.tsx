@@ -1,22 +1,21 @@
 import { ActionIcon, Group, Image, Paper, Title, Tooltip } from "@mantine/core";
 import { Plus, Timer as TimerIcon } from "lucide-react";
-import { useViewMode } from "../../providers/ViewModeContext";
-import HeaderActions from "../Header/HeaderActions";
-import ViewSwitcher from "../Header/ViewSwitcher";
+import { useEditor } from "@/context/EditorContext";
+import { useViewMode } from "@/context/ViewModeContext";
+import HeaderActions from "./HeaderActions";
+import ViewSwitcher from "./ViewSwitcher";
 
 const AppHeader = () => {
-	const { viewMode, addTimer } = useViewMode();
+	const { viewMode } = useViewMode();
+	const { addTimer } = useEditor();
 
 	return (
 		<Paper
 			component="header"
 			shadow="sm"
 			radius={0}
-			style={{
-				height: "100%",
-				overflowX: "auto",
-				WebkitOverflowScrolling: "touch",
-			}}
+			h="100%"
+			style={{ overflowX: "auto" }}
 		>
 			<Group h="100%" justify="space-between" px="md" wrap="nowrap">
 				<Group gap="sm">
@@ -28,7 +27,7 @@ const AppHeader = () => {
 				</Group>
 
 				<Group gap="sm">
-					{viewMode === "text" && (
+					{viewMode === "todo" && (
 						<Tooltip label="Add timer">
 							<ActionIcon variant="subtle" size="lg" onClick={addTimer}>
 								<Group gap={2}>

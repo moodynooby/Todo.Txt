@@ -1,0 +1,352 @@
+import {
+	Badge,
+	Button,
+	Divider,
+	Grid,
+	Group,
+	Loader,
+	Modal,
+	Paper,
+	PasswordInput,
+	Stack,
+	Text,
+	TextInput,
+	ThemeIcon,
+	Title,
+} from "@mantine/core";
+import {
+	Check,
+	Eraser,
+	LayoutList,
+	ListChecks,
+	Sparkles,
+	TextCursorInput,
+	WrapText,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useAiGroq } from "@/hooks/useAiGroq";
+
+interface AiToolsDialogProps {
+	isOpen: boolean;
+	onClose: () => void;
+	initialContent: string;
+	onInsert: (text: string, mode: "replace" | "append") => void;
+	groqApiKey: string;
+	onGroqApiKeyChange: (key: string) => void;
+}
+
+interface AiTool {
+	id: string;
+	label: string;
+	icon: React.ElementType;
+	prompt: string;
+}
+
+const AI_TOOLS: AiTool[] = [
+	{
+		id: "shorten",
+		label: "Shorten",
+		icon: TextCursorInput,
+		prompt:
+			"Make the following text more concise while preserving its core meaning.",
+	},
+	{
+		id: "reduce",
+		label: "Reduce",
+		icon: WrapText,
+		prompt:
+			"Reduce the content length significantly without losing the essential points.",
+	},
+	{
+		id: "reformat",
+		label: "Reformat",
+		icon: ListChecks,
+		prompt:
+			"Reformat the following todo list into a cleaner, more readable structure. Follow todo.txt conventions.",
+	},
+	{
+		id: "reorganize",
+		label: "Reorganize",
+		icon: LayoutList,
+		prompt:
+			"Group related tasks together and reorganize the following list logically.",
+	},
+	{
+		id: "cleanup",
+		label: "Cleanup Done",
+		icon: Eraser,
+		prompt:
+			"Identify and remove all completed tasks (those starting with 'x '). Return the remaining list.",
+	},
+	{
+		id: "grammar",
+		label: "Fix Grammar",
+		icon: Check,
+		prompt:
+			"Correct grammatical errors and improve the clarity of the following text.",
+	},
+];
+
+const AiToolsDialog = ({
+	isOpen,
+	onClose,
+	initialContent,
+	onInsert,
+	groqApiKey,
+	onGroqApiKeyChange,
+}: AiToolsDialogProps) => {
+	const { generate, isLoading, error: apiError } = useAiGroq(groqApiKey);
+
+	const mountedRef = useRef(true);
+	const [showKeyInput, setShowKeyInput] = useState(false);
+	const [keyInput, setKeyInput] = useState(groqApiKey);
+	const [customPrompt, setCustomPrompt] = useState("");
+	const [result, setResult] = useState("");
+	const [activeTool, setActiveTool] = useState<string | null>(null);
+
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		if (isOpen) {
+			setKeyInput(groqApiKey);
+			setShowKeyInput(!groqApiKey);
+		}
+	}, [isOpen, groqApiKey]);
+
+	const handleSaveKey = () => {
+		onGroqApiKeyChange(keyInput);
+		setShowKeyInput(false);
+	};
+
+	const handleToolClick = async (promptTemplate: string, toolId: string) => {
+		setActiveTool(toolId);
+		const fullPrompt = `${promptTemplate}\n\nCONTENT:\n${initialContent}`;
+		const output = await generate(fullPrompt);
+		if (output && mountedRef.current) setResult(output);
+	};
+
+	const handleCustomPrompt = async () => {
+		if (!customPrompt.trim()) return;
+		const fullPrompt = `${customPrompt}\n\nCONTENT:\n${initialContent}`;
+		const output = await generate(fullPrompt);
+		if (output && mountedRef.current) setResult(output);
+	};
+
+	const handleClose = () => {
+		setResult("");
+		setActiveTool(null);
+		onClose();
+	};
+
+	return (
+		<Modal
+			opened={isOpen}
+			onClose={handleClose}
+			title={
+				<Group gap="xs">
+					<Sparkles size={20} />
+					<Title order={4}>AI Tools (Groq)</Title>
+				</Group>
+			}
+			size="lg"
+		>
+			<Stack gap="md">
+				{showKeyInput ? (
+					<Stack gap="sm">
+						<PasswordInput
+							label="Groq API Key"
+							placeholder="gsk_..."
+							value={keyInput}
+							onChange={(e) => setKeyInput(e.currentTarget.value)}
+							description={
+								<Text
+									component="a"
+									href="https://console.groq.com/keys"
+									target="_blank"
+									rel="noopener noreferrer"
+									size="xs"
+								>
+									Get a key at console.groq.com
+								</Text>
+							}
+						/>
+						<Group justify="flex-end">
+							{groqApiKey && (
+								<Button
+									variant="subtle"
+									size="sm"
+									onClick={() => setShowKeyInput(false)}
+								>
+									Cancel
+								</Button>
+							)}
+							<Button size="sm" onClick={handleSaveKey}>
+								{groqApiKey ? "Update" : "Save"}
+							</Button>
+						</Group>
+					</Stack>
+				) : (
+					<Group justify="space-between">
+						<Group gap="xs">
+							<ThemeIcon variant="light" color="green" size="sm">
+								<Check size={14} />
+							</ThemeIcon>
+							<Text size="sm" c="green">
+								API key configured
+							</Text>
+						</Group>
+						<Button
+							variant="subtle"
+							size="compact-sm"
+							onClick={() => setShowKeyInput(true)}
+						>
+							Change key
+						</Button>
+					</Group>
+				)}
+
+				<Grid>
+					{AI_TOOLS.map((tool) => {
+						const Icon = tool.icon;
+						const isActive = activeTool === tool.id;
+						return (
+							<Grid.Col key={tool.id} span={{ base: 6, sm: 4 }}>
+								<Paper
+									p="md"
+									withBorder
+									style={{
+										cursor: groqApiKey ? "pointer" : "not-allowed",
+										opacity: groqApiKey ? 1 : 0.6,
+									}}
+									onClick={() =>
+										groqApiKey &&
+										!isLoading &&
+										handleToolClick(tool.prompt, tool.id)
+									}
+								>
+									<Stack align="center" gap="xs">
+										<ThemeIcon
+											variant={isActive ? "filled" : "light"}
+											size="lg"
+											color={isActive ? "blue" : "gray"}
+										>
+											<Icon size={20} />
+										</ThemeIcon>
+										<Text size="xs" fw={500}>
+											{tool.label}
+										</Text>
+									</Stack>
+								</Paper>
+							</Grid.Col>
+						);
+					})}
+				</Grid>
+
+				<Paper p="md" withBorder>
+					<Stack gap="sm">
+						<Text size="sm" fw={600}>
+							Custom Prompt
+						</Text>
+						<Group gap="sm">
+							<TextInput
+								flex={1}
+								placeholder="e.g., Translate to Spanish, extract dates..."
+								value={customPrompt}
+								onChange={(e) => setCustomPrompt(e.currentTarget.value)}
+								onKeyDown={(e) => e.key === "Enter" && handleCustomPrompt()}
+								disabled={!groqApiKey || isLoading}
+							/>
+							<Button
+								variant="filled"
+								size="sm"
+								onClick={handleCustomPrompt}
+								disabled={!groqApiKey || !customPrompt.trim()}
+								loading={isLoading}
+							>
+								<Sparkles size={16} />
+							</Button>
+						</Group>
+					</Stack>
+				</Paper>
+
+				{(result || isLoading || apiError) && (
+					<Stack gap="sm">
+						<Group justify="space-between">
+							<Text size="sm" fw={600} tt="uppercase" c="dimmed">
+								Result Preview
+							</Text>
+							{isLoading && (
+								<Badge color="violet" leftSection={<Loader size={10} />}>
+									Processing
+								</Badge>
+							)}
+						</Group>
+
+						{apiError && (
+							<Text size="sm" c="red">
+								{apiError}
+							</Text>
+						)}
+
+						{result && (
+							<Paper
+								p="md"
+								withBorder
+								style={{
+									position: "relative",
+									maxHeight: 240,
+									overflow: "auto",
+								}}
+							>
+								<Text
+									component="pre"
+									size="sm"
+									style={{
+										fontFamily: "monospace",
+										whiteSpace: "pre-wrap",
+										margin: 0,
+									}}
+								>
+									{result}
+								</Text>
+								<Group gap="xs" mt="sm">
+									<Button size="xs" onClick={() => onInsert(result, "replace")}>
+										Replace
+									</Button>
+									<Button
+										size="xs"
+										variant="light"
+										onClick={() => onInsert(result, "append")}
+									>
+										Append
+									</Button>
+								</Group>
+							</Paper>
+						)}
+					</Stack>
+				)}
+
+				<Divider />
+
+				<Group justify="flex-end">
+					<Button variant="subtle" onClick={handleClose}>
+						Cancel
+					</Button>
+					<Button
+						disabled={!result}
+						onClick={() => onInsert(result, "replace")}
+					>
+						Apply Changes
+					</Button>
+				</Group>
+			</Stack>
+		</Modal>
+	);
+};
+
+export default AiToolsDialog;

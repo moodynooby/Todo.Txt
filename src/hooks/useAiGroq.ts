@@ -2,29 +2,11 @@ import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { useCallback, useState } from "react";
 
-const STORAGE_KEY = "groq_api_key";
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 
-export const useAiGroq = () => {
-	const [apiKey, setApiKeyState] = useState<string>(() => {
-		try {
-			return localStorage.getItem(STORAGE_KEY) || "";
-		} catch (e) {
-			console.warn("Failed to read API key from localStorage:", e);
-			return "";
-		}
-	});
+export const useAiGroq = (apiKey: string) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-
-	const saveApiKey = (key: string) => {
-		try {
-			localStorage.setItem(STORAGE_KEY, key);
-		} catch (e) {
-			console.error("Failed to save API key to localStorage:", e);
-		}
-		setApiKeyState(key);
-	};
 
 	const generate = useCallback(
 		async (prompt: string, systemPrompt?: string) => {
@@ -63,8 +45,6 @@ export const useAiGroq = () => {
 	);
 
 	return {
-		apiKey,
-		saveApiKey,
 		generate,
 		isLoading,
 		error,

@@ -1,4 +1,5 @@
 import {
+	ActionIcon,
 	Badge,
 	Button,
 	Collapse,
@@ -12,7 +13,7 @@ import {
 } from "@mantine/core";
 import { ChevronRight, Search, X } from "lucide-react";
 import type { ReactNode } from "react";
-import type { Task } from "../../types/todo";
+import type { Task } from "@/types/todo";
 
 interface PriorityConfig {
 	label: string;
@@ -92,14 +93,10 @@ export const SidebarSection = ({
 			justify="space-between"
 			rightSection={<ChevronRight size={14} />}
 			onClick={() => onToggle(id)}
-			styles={{
-				root: {
-					textTransform: "uppercase",
-					fontSize: "var(--mantine-font-size-xs)",
-					fontWeight: 700,
-					letterSpacing: "0.05em",
-				},
-			}}
+			tt="uppercase"
+			size="xs"
+			fw={700}
+			style={{ letterSpacing: "0.05em" }}
 		>
 			{title}
 		</Button>
@@ -139,7 +136,6 @@ export const CollapsedPriorityButton = ({
 			size="lg"
 			radius="md"
 			onClick={onClick}
-			style={{ cursor: "pointer" }}
 		>
 			<Text fw={700} size="sm">
 				{priority}
@@ -185,14 +181,9 @@ export const SearchInput = ({ value, onChange }: SearchInputProps) => (
 		leftSection={<Search size={14} />}
 		rightSection={
 			value ? (
-				<Button
-					variant="subtle"
-					size="compact-xs"
-					onClick={() => onChange("")}
-					px={4}
-				>
+				<ActionIcon variant="subtle" size="xs" onClick={() => onChange("")}>
 					<X size={14} />
-				</Button>
+				</ActionIcon>
 			) : null
 		}
 		value={value}

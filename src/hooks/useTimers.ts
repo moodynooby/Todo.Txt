@@ -1,12 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-import { computeElapsed } from "../utils/formatTime";
-
-const STORAGE_KEY = "timers";
-
-const BASE_TOP = 100;
-const BASE_LEFT = 20;
-const TOP_OFFSET = 30;
-const LEFT_OFFSET = 20;
+import { useCallback, useState } from "react";
 
 export interface TimerState {
 	id: number;
@@ -16,59 +8,48 @@ export interface TimerState {
 	position: { top: number; left: number };
 }
 
-function loadTimers(): TimerState[] {
-	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
-		if (stored) {
-			const timers: TimerState[] = JSON.parse(stored);
-			const now = Date.now();
-			return timers.map((t) => {
-				if (t.isActive && t.startTime !== null) {
-					return {
-						...t,
-						elapsed: computeElapsed(t.elapsed, t.startTime),
-						startTime: now,
-					};
-				}
-				return t;
-			});
-		}
-	} catch (e) {
-		console.error("Failed to load timers from localStorage:", e);
-	}
-	return [];
+export interface TimerData {
+	id: number;
+	elapsed: number;
+	isActive: boolean;
+	startTime: number | null;
 }
 
-function saveTimers(timers: TimerState[]) {
-	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
-	} catch (e) {
-		console.error("Failed to save timers to localStorage:", e);
-	}
-}
+const BASE_TOP = 100;
+const BASE_LEFT = 20;
+const TOP_OFFSET = 30;
+const LEFT_OFFSET = 20;
 
-let nextId = Date.now();
+const MAX_TIMERS = 5;
+let nextId = 0;
+
+function generatePosition(id: number): { top: number; left: number } {
+	return {
+		top: BASE_TOP + (id % 10) * TOP_OFFSET,
+		left: BASE_LEFT + (id % 5) * LEFT_OFFSET,
+	};
+}
 
 export const useTimers = () => {
-	const [timers, setTimers] = useState<TimerState[]>(loadTimers);
+	const [timers, setTimers] = useState<TimerState[]>([]);
 
-	useEffect(() => {
-		saveTimers(timers);
-	}, [timers]);
+	const setTimersFromRemote = useCallback((data: TimerData[]) => {
+		setTimers(data.map((t) => ({ ...t, position: generatePosition(t.id) })));
+	}, []);
 
 	const addTimer = useCallback(() => {
-		const id = nextId++;
-		const newTimer: TimerState = {
-			id,
-			elapsed: 0,
-			isActive: false,
-			startTime: null,
-			position: {
-				top: BASE_TOP + (id % 10) * TOP_OFFSET,
-				left: BASE_LEFT + (id % 5) * LEFT_OFFSET,
-			},
-		};
-		setTimers((prev) => [...prev, newTimer]);
+		setTimers((prev) => {
+			if (prev.length >= MAX_TIMERS) return prev;
+			const id = Date.now() + nextId++;
+			const newTimer: TimerState = {
+				id,
+				elapsed: 0,
+				isActive: false,
+				startTime: null,
+				position: generatePosition(id),
+			};
+			return [...prev, newTimer];
+		});
 	}, []);
 
 	const removeTimer = useCallback((id: number) => {
@@ -84,5 +65,11 @@ export const useTimers = () => {
 		[],
 	);
 
-	return { timers, addTimer, removeTimer, updateTimer };
+	return {
+		timers,
+		setTimersFromRemote,
+		addTimer,
+		removeTimer,
+		updateTimer,
+	};
 };

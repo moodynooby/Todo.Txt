@@ -1,165 +1,81 @@
-import "./App.css";
+import "@/styles/App.css";
 import { AppShell, Box } from "@mantine/core";
-import { useLocalStorage } from "@mantine/hooks";
-import {
-	lazy,
-	Suspense,
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
-import AiToolsDialog from "./components/AiTools/AiToolsDialog";
-import AppHeader from "./components/AppHeader/AppHeader";
-import { ErrorBoundary } from "./components/ErrorBoundary/ErrorBoundary";
-import Sidebar from "./components/Sidebar/Sidebar";
-import TextModeContent from "./components/TextModeContent/TextModeContent";
-import { useDocumentSave } from "./hooks/useDocumentSave";
-import { useDueNotifications } from "./hooks/useDueNotifications";
-import { useFileHandler } from "./hooks/useFileHandler";
-import { useFirestoreSync } from "./hooks/useFirestoreSync";
-import { useTipTap } from "./hooks/useTipTap";
-import { EditorContext } from "./providers/EditorContext";
-import { LAYOUT } from "./providers/layout";
-import { useViewMode } from "./providers/ViewModeContext";
-import type { Filter, ParsedTodoContent } from "./types/todo";
-import {
-	syncExcalidrawToText,
-	syncTextToExcalidraw,
-} from "./utils/excalidrawSync";
-import { parseTodoContent } from "./utils/todoParser";
+import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import AppHeader from "@/components/AppHeader/AppHeader";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { EditorContext } from "@/context/EditorContext";
+import { NotesContext } from "@/context/NotesContext";
+import { useViewMode } from "@/context/ViewModeContext";
+import AiToolsDialog from "@/features/ai/AiToolsDialog";
+import Timer from "@/features/timer/Timer";
+import { useDataManagement } from "@/hooks/useDataManagement";
+import { useDocumentSave } from "@/hooks/useDocumentSave";
+import { useDueNotifications } from "@/hooks/useDueNotifications";
+import { useFileHandler } from "@/hooks/useFileHandler";
+import NotesPage from "@/pages/NotesPage";
+import TodoPage from "@/pages/TodoPage";
+import type { Filter, ParsedTodoContent } from "@/types/todo";
+import { parseTodoContent } from "@/utils/todoParser";
 
-const DEBOUNCE_DELAY = 1000;
-
-const ExcalidrawPage = lazy(
-	() => import("./components/ExcalidrawPage/ExcalidrawPage.tsx"),
-);
+const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
 
 const App = () => {
-	const { viewMode, setViewMode } = useViewMode();
+	const { viewMode } = useViewMode();
+
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
-	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
-
-	const [rteContent, setRteContentState] = useLocalStorage({
-		key: "rteContent",
-		defaultValue: "",
-	});
-	const [debouncedRteContent, setDebouncedRteContent] = useState(rteContent);
-	const [groqApiKey, setGroqApiKey] = useState(() => {
-		try {
-			return localStorage.getItem("groq_api_key") || "";
-		} catch (e) {
-			console.warn("Failed to read API key from localStorage:", e);
-			return "";
-		}
-	});
-
-	const isRemoteUpdate = useRef(false);
-	const isFirstMount = useRef(true);
-
-	const handleRemoteContent = useCallback(
-		(content: string) => {
-			isRemoteUpdate.current = true;
-			setRteContentState(content);
-			setTimeout(() => {
-				isRemoteUpdate.current = false;
-			}, 200);
-		},
-		[setRteContentState],
-	);
-
-	const handleRemotePreferences = useCallback(
-		(prefs: Record<string, unknown>) => {
-			if (
-				typeof prefs.groqApiKey === "string" &&
-				prefs.groqApiKey !== groqApiKey
-			) {
-				try {
-					localStorage.setItem("groq_api_key", prefs.groqApiKey);
-				} catch (e) {
-					console.error("Failed to save remote API key:", e);
-				}
-				setGroqApiKey(prefs.groqApiKey);
-			}
-			if (typeof prefs.viewMode === "string" && prefs.viewMode !== viewMode) {
-				setViewMode(prefs.viewMode);
-			}
-		},
-		[groqApiKey, viewMode, setViewMode],
-	);
-
-	const preferences = useMemo(
-		() => ({ groqApiKey, viewMode }),
-		[groqApiKey, viewMode],
-	);
+	const [aiToolsOpen, setAiToolsOpen] = useState(false);
 
 	const {
+		editor,
+		setExternalContent,
+		rteContent,
+		setRteContentState,
+		excalidrawData,
+		setExcalidrawData,
+		notes,
+		setNotesFromRemote,
+		upsertNote,
+		deleteNote,
+		archiveNote,
+		togglePin,
+		setNoteColor,
+		groqApiKey,
+		handleGroqApiKeyChange,
+		timers,
+		addTimer,
+		removeTimer,
+		updateTimer,
 		syncStatus,
 		isConnected: isSynced,
 		user,
-		connect: connectSync,
-		disconnect: disconnectSync,
-	} = useFirestoreSync({
-		content: debouncedRteContent,
-		onRemoteContent: handleRemoteContent,
-		preferences,
-		onRemotePreferences: handleRemotePreferences,
-	});
+		connect,
+		disconnect,
+	} = useDataManagement(viewMode);
 
-	const handleContentChange = useCallback(
-		(content: string) => {
-			setRteContentState(content);
+	const handleFileLoaded = useCallback(
+		(html: string) => {
+			setExternalContent(html);
+			setRteContentState(html);
 		},
-		[setRteContentState],
+		[setExternalContent, setRteContentState],
 	);
 
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedRteContent(rteContent);
-		}, DEBOUNCE_DELAY);
-		return () => clearTimeout(timer);
-	}, [rteContent]);
-
-	useEffect(() => {
-		if (isFirstMount.current) {
-			isFirstMount.current = false;
-			return;
-		}
-
-		if (viewMode === "excalidraw") {
-			syncTextToExcalidraw(rteContent);
-		} else if (viewMode === "text") {
-			const excalidrawHtml = syncExcalidrawToText();
-			if (excalidrawHtml) {
-				setRteContentState((prev: string) => prev + excalidrawHtml);
-			}
-		}
-	}, [viewMode, rteContent, setRteContentState]);
-
-	const { editor } = useTipTap({
-		viewMode,
-		activeFilter,
-		initialContent: rteContent,
-		onContentChange: handleContentChange,
-	});
-
 	const { fileInputRef, handleOpenRepo, handleFileChange } = useFileHandler({
-		setRteContent: setRteContentState,
+		onFileLoaded: handleFileLoaded,
 	});
 
 	const taskData: ParsedTodoContent = useMemo(
-		() => parseTodoContent(debouncedRteContent),
-		[debouncedRteContent],
+		() => parseTodoContent(rteContent),
+		[rteContent],
 	);
 
 	useDueNotifications(taskData.tasks);
 
-	const handleSave = useDocumentSave(editor, rteContent);
+	const handleSave = useDocumentSave(editor);
 
 	const handleAiTools = useCallback((): void => {
-		setIsAiDialogOpen(true);
+		setAiToolsOpen(true);
 	}, []);
 
 	const handleToggleSidebar = useCallback(() => {
@@ -176,12 +92,34 @@ const App = () => {
 		} else {
 			editor.chain().focus().setContent(text).run();
 		}
-		setIsAiDialogOpen(false);
+		setAiToolsOpen(false);
 	};
+
+	const notesContextValue = useMemo(
+		() => ({
+			notes,
+			setNotesFromRemote,
+			upsertNote,
+			deleteNote,
+			archiveNote,
+			togglePin,
+			setNoteColor,
+		}),
+		[
+			notes,
+			setNotesFromRemote,
+			upsertNote,
+			deleteNote,
+			archiveNote,
+			togglePin,
+			setNoteColor,
+		],
+	);
 
 	const editorContextValue = useMemo(
 		() => ({
 			editor,
+			addTimer,
 			onSave: handleSave,
 			onOpen: handleOpenRepo,
 			onAiTools: handleAiTools,
@@ -190,11 +128,12 @@ const App = () => {
 			syncStatus,
 			isSynced,
 			user,
-			onConnect: connectSync,
-			onDisconnectSync: disconnectSync,
+			onConnect: connect,
+			onDisconnectSync: disconnect,
 		}),
 		[
 			editor,
+			addTimer,
 			handleSave,
 			handleOpenRepo,
 			handleAiTools,
@@ -203,46 +142,31 @@ const App = () => {
 			syncStatus,
 			isSynced,
 			user,
-			connectSync,
-			disconnectSync,
+			connect,
+			disconnect,
 		],
 	);
 
 	return (
 		<EditorContext.Provider value={editorContextValue}>
-			<AppShell
-				header={{ height: LAYOUT.HEADER_HEIGHT }}
-				aside={{
-					width: LAYOUT.SIDEBAR_WIDTH,
-					collapsed: {
-						mobile: true,
-						desktop: sidebarCollapsed || viewMode === "excalidraw",
-					},
-					breakpoint: "sm",
-				}}
-				padding="md"
-			>
+			<AppShell header={{ height: 38 }} padding={0}>
 				<AppShell.Header>
 					<AppHeader />
 				</AppShell.Header>
 
-				{viewMode === "text" && (
-					<AppShell.Aside>
-						<Sidebar
-							isCollapsed={sidebarCollapsed}
-							onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-							taskData={taskData}
-							activeFilter={activeFilter}
-							onFilterChange={setActiveFilter}
-						/>
-					</AppShell.Aside>
-				)}
-
-				<AppShell.Main>
+				<AppShell.Main
+					pos="relative"
+					style={{
+						overflow: "hidden",
+						...(viewMode === "todo"
+							? { display: "flex", flexDirection: "column" }
+							: {}),
+					}}
+				>
 					<ErrorBoundary>
 						<AiToolsDialog
-							isOpen={isAiDialogOpen}
-							onClose={() => setIsAiDialogOpen(false)}
+							isOpen={aiToolsOpen}
+							onClose={() => setAiToolsOpen(false)}
 							initialContent={
 								editor?.state.selection.empty
 									? (editor?.getText() ?? "")
@@ -253,6 +177,8 @@ const App = () => {
 										) ?? "")
 							}
 							onInsert={handleAiInsert}
+							groqApiKey={groqApiKey}
+							onGroqApiKeyChange={handleGroqApiKeyChange}
 						/>
 						<input
 							type="file"
@@ -263,13 +189,36 @@ const App = () => {
 						/>
 						{viewMode === "excalidraw" && (
 							<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
-								<ExcalidrawPage />
+								<ExcalidrawPage
+									initialData={excalidrawData}
+									onChange={(data) => setExcalidrawData(data)}
+								/>
 							</Suspense>
 						)}
-						{viewMode === "text" && <TextModeContent />}
+						{viewMode === "notes" && (
+							<NotesContext.Provider value={notesContextValue}>
+								<NotesPage />
+							</NotesContext.Provider>
+						)}
+						{viewMode === "todo" && (
+							<TodoPage
+								taskData={taskData}
+								activeFilter={activeFilter}
+								onFilterChange={setActiveFilter}
+							/>
+						)}
 					</ErrorBoundary>
 				</AppShell.Main>
 			</AppShell>
+
+			{timers.map((timer) => (
+				<Timer
+					key={timer.id}
+					timer={timer}
+					onRemove={removeTimer}
+					onUpdate={updateTimer}
+				/>
+			))}
 		</EditorContext.Provider>
 	);
 };
