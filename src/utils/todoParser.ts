@@ -2,15 +2,18 @@ import type { ParsedTodoContent, Task } from "@/types/todo";
 import { getToday, getTomorrow, getYesterday } from "./dateUtils";
 import { stripHtml } from "./html";
 
-const parseRelativeDate = (value: string): string | undefined => {
+const parseRelativeDate = (
+	value: string,
+	dates: { today: string; tomorrow: string; yesterday: string },
+): string | undefined => {
 	if (value === "today") {
-		return getToday();
+		return dates.today;
 	}
 	if (value === "tomorrow") {
-		return getTomorrow();
+		return dates.tomorrow;
 	}
 	if (value === "yesterday") {
-		return getYesterday();
+		return dates.yesterday;
 	}
 	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
 		return value;
@@ -37,11 +40,16 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 	const contexts: Record<string, Task[]> = {};
 	const dueDates: Record<string, Task[]> = {};
 
+	const today = getToday();
+	const tomorrow = getTomorrow();
+	const yesterday = getYesterday();
+	const dateContext = { today, tomorrow, yesterday };
+
 	const categorizeDueDate = (due: string): string => {
 		if (/^\d{4}-\d{2}-\d{2}$/.test(due)) {
-			if (due < getToday()) return "overdue";
-			if (due === getToday()) return "today";
-			if (due === getTomorrow()) return "tomorrow";
+			if (due < today) return "overdue";
+			if (due === today) return "today";
+			if (due === tomorrow) return "tomorrow";
 		}
 		return due;
 	};
@@ -78,7 +86,10 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		if (projectMatches) {
 			task.projects = projectMatches.map((p: string) => p.slice(1));
 			task.projects.forEach((p: string) => {
-				projects[p] = (projects[p] || []).concat(task);
+				if (!projects[p]) {
+					projects[p] = [];
+				}
+				projects[p].push(task);
 			});
 		}
 
@@ -86,17 +97,23 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		if (contextMatches) {
 			task.contexts = contextMatches.map((c: string) => c.slice(1));
 			task.contexts.forEach((c: string) => {
-				contexts[c] = (contexts[c] || []).concat(task);
+				if (!contexts[c]) {
+					contexts[c] = [];
+				}
+				contexts[c].push(task);
 			});
 		}
 
 		const dueMatch = cleanText.match(/due:([\w-]+)/);
 		if (dueMatch) {
 			const value = dueMatch[1].toLowerCase();
-			task.due = parseRelativeDate(value);
+			task.due = parseRelativeDate(value, dateContext);
 			if (task.due) {
 				const category = categorizeDueDate(task.due);
-				dueDates[category] = (dueDates[category] || []).concat(task);
+				if (!dueDates[category]) {
+					dueDates[category] = [];
+				}
+				dueDates[category].push(task);
 			}
 		}
 
