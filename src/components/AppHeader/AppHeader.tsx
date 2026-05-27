@@ -27,7 +27,7 @@ const AppHeader = () => {
 				</Group>
 
 				<Group gap="sm">
-					{viewMode === "text" && (
+					{viewMode === "todo" && (
 						<Tooltip label="Add timer">
 							<ActionIcon variant="subtle" size="lg" onClick={addTimer}>
 								<Group gap={2}>

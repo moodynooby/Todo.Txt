@@ -13,10 +13,10 @@ const ViewSwitcher = () => {
 			onChange={setViewMode}
 			data={[
 				{
-					value: "text",
+					value: "todo",
 					label: (
-						<Tooltip label="Text Editor" position="bottom">
-							<Image src={TicIcon} w={24} h={24} alt="Text editor" />
+						<Tooltip label="Todo List" position="bottom">
+							<Image src={TicIcon} w={24} h={24} alt="Todo list" />
 						</Tooltip>
 					),
 				},

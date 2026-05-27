@@ -7,7 +7,6 @@ import {
 	Code,
 	File as FileIcon,
 	FileText,
-	Filter,
 	FolderOpen,
 	Save,
 	Sparkles,
@@ -75,23 +74,6 @@ export function Editor({
 								>
 									<Tooltip label="Toggle task list" position="top">
 										<CheckSquare size={16} />
-									</Tooltip>
-								</RichTextEditor.Control>
-
-								<RichTextEditor.Control
-									onClick={context.onToggleSidebar}
-									active={false}
-									aria-label={
-										context.sidebarCollapsed ? "Show filters" : "Hide filters"
-									}
-								>
-									<Tooltip
-										label={
-											context.sidebarCollapsed ? "Show filters" : "Hide filters"
-										}
-										position="top"
-									>
-										<Filter size={16} />
 									</Tooltip>
 								</RichTextEditor.Control>
 

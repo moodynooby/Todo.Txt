@@ -1,37 +1,37 @@
-import { ActionIcon, Box, Transition } from "@mantine/core";
+import { ActionIcon, Flex, Transition } from "@mantine/core";
 import { Filter as FilterIcon } from "lucide-react";
 import { Editor } from "@/components/Editor";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { useEditor } from "@/context/EditorContext";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 
-interface TextModeContentProps {
+interface TodoPageProps {
 	taskData: ParsedTodoContent;
 	activeFilter: Filter | null;
 	onFilterChange: (filter: Filter | null) => void;
 }
 
-const TextModeContent = ({
+const TodoPage = ({
 	taskData,
 	activeFilter,
 	onFilterChange,
-}: TextModeContentProps) => {
+}: TodoPageProps) => {
 	const { editor, sidebarCollapsed, onToggleSidebar } = useEditor();
 
 	if (!editor) return null;
 
 	return (
-		<Box
+		<Flex
+			direction="row"
 			style={{
-				display: "flex",
-				flexDirection: "row",
 				flex: 1,
 				minHeight: 0,
 				overflow: "hidden",
 				position: "relative",
 			}}
 		>
-			<Box
+			<Flex
+				direction="column"
 				style={{
 					flexShrink: 0,
 					width: sidebarCollapsed ? 0 : "var(--sidebar-width)",
@@ -48,15 +48,8 @@ const TextModeContent = ({
 					activeFilter={activeFilter}
 					onFilterChange={onFilterChange}
 				/>
-			</Box>
-			<Box
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					flex: 1,
-					minWidth: 0,
-				}}
-			>
+			</Flex>
+			<Flex direction="column" style={{ flex: 1, minWidth: 0 }}>
 				<Editor
 					editor={editor}
 					toolbarVariant="full"
@@ -68,7 +61,7 @@ const TextModeContent = ({
 						minHeight: 0,
 					}}
 				/>
-			</Box>
+			</Flex>
 			<Transition
 				mounted={sidebarCollapsed}
 				transition="slide-up"
@@ -97,8 +90,8 @@ const TextModeContent = ({
 					</ActionIcon>
 				)}
 			</Transition>
-		</Box>
+		</Flex>
 	);
 };
 
-export default TextModeContent;
+export default TodoPage;

@@ -120,7 +120,7 @@ export function useDataManagement(viewMode?: string) {
 				elements: result.elements,
 				appState: result.appState as ExcalidrawData["appState"],
 			});
-		} else if (viewMode === "text" && prev === "excalidraw") {
+		} else if (viewMode === "todo" && prev === "excalidraw") {
 			const html = syncExcalidrawToText(
 				excalidrawDataRef.current?.elements ?? [],
 			);
@@ -129,7 +129,7 @@ export function useDataManagement(viewMode?: string) {
 				setRteContentState(html);
 			}
 		}
-	}, [viewMode, setExternalContent, setRteContentState]);
+	}, [viewMode, setExternalContent]);
 
 	const { syncStatus, isConnected, user, connect, disconnect } =
 		useFirestoreSync({

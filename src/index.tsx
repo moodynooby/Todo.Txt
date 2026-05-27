@@ -15,7 +15,7 @@ root.render(<RootComponent />);
 function RootComponent() {
 	const [viewMode, setViewMode] = useLocalStorage({
 		key: "viewMode",
-		defaultValue: "text",
+		defaultValue: "todo",
 	});
 
 	return (

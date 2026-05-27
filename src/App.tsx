@@ -7,19 +7,17 @@ import { EditorContext } from "@/context/EditorContext";
 import { NotesContext } from "@/context/NotesContext";
 import { useViewMode } from "@/context/ViewModeContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
-import TextModeContent from "@/features/editor/TextModeContent";
-import NotesPage from "@/features/notes/NotesPage";
 import Timer from "@/features/timer/Timer";
 import { useDataManagement } from "@/hooks/useDataManagement";
 import { useDocumentSave } from "@/hooks/useDocumentSave";
 import { useDueNotifications } from "@/hooks/useDueNotifications";
 import { useFileHandler } from "@/hooks/useFileHandler";
+import NotesPage from "@/pages/NotesPage";
+import TodoPage from "@/pages/TodoPage";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 import { parseTodoContent } from "@/utils/todoParser";
 
-const ExcalidrawPage = lazy(
-	() => import("@/features/excalidraw/ExcalidrawPage"),
-);
+const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
 
 const App = () => {
 	const { viewMode } = useViewMode();
@@ -160,7 +158,7 @@ const App = () => {
 					pos="relative"
 					style={{
 						overflow: "hidden",
-						...(viewMode === "text"
+						...(viewMode === "todo"
 							? { display: "flex", flexDirection: "column" }
 							: {}),
 					}}
@@ -202,8 +200,8 @@ const App = () => {
 								<NotesPage />
 							</NotesContext.Provider>
 						)}
-						{viewMode === "text" && (
-							<TextModeContent
+						{viewMode === "todo" && (
+							<TodoPage
 								taskData={taskData}
 								activeFilter={activeFilter}
 								onFilterChange={setActiveFilter}
