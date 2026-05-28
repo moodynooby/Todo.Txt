@@ -11,6 +11,7 @@ import {
 	Save,
 	Sparkles,
 } from "lucide-react";
+import { memo } from "react";
 import { useEditor } from "@/context/EditorContext";
 
 interface EditorProps {
@@ -20,7 +21,7 @@ interface EditorProps {
 	style?: React.CSSProperties;
 }
 
-export function Editor({
+export const Editor = memo(function Editor({
 	editor,
 	toolbarVariant = "full",
 	className,
@@ -136,4 +137,4 @@ export function Editor({
 			<RichTextEditor.Content />
 		</RichTextEditor>
 	);
-}
+});

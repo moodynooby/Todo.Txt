@@ -1,6 +1,13 @@
 import "@/styles/App.css";
 import { AppShell, Box } from "@mantine/core";
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useDeferredValue,
+	useMemo,
+	useState,
+} from "react";
 import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EditorContext } from "@/context/EditorContext";
@@ -65,9 +72,11 @@ const App = () => {
 		onFileLoaded: handleFileLoaded,
 	});
 
+	const deferredRteContent = useDeferredValue(rteContent);
+
 	const taskData: ParsedTodoContent = useMemo(
-		() => parseTodoContent(rteContent),
-		[rteContent],
+		() => parseTodoContent(deferredRteContent),
+		[deferredRteContent],
 	);
 
 	useDueNotifications(taskData.tasks);
