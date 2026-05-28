@@ -5,12 +5,14 @@ import { applyFilter, toggleFilter } from "@/utils/filterUtils";
 
 interface UseSidebarStateParams {
 	tasks: Task[];
+	completedCount: number;
 	activeFilter: Filter | null;
 	onFilterChange: (filter: Filter | null) => void;
 }
 
 export const useSidebarState = ({
 	tasks,
+	completedCount,
 	activeFilter,
 	onFilterChange,
 }: UseSidebarStateParams) => {
@@ -66,11 +68,6 @@ export const useSidebarState = ({
 					)
 				: visibleTasks,
 		[visibleTasks, searchQuery],
-	);
-
-	const completedCount = useMemo(
-		() => tasks.filter((task) => task.completed).length,
-		[tasks],
 	);
 
 	const filteredTasks = useMemo(
