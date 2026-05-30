@@ -29,16 +29,18 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 			projects: {},
 			contexts: {},
 			dueDates: {},
+			completedCount: 0,
 		};
 
 	const text = stripHtml(content, "\n");
-	const lines = text.split("\n").filter((line) => line.trim());
+	const lines = text.split("\n");
 
 	const tasks: Task[] = [];
 	const priorities: Record<string, Task[]> = {};
 	const projects: Record<string, Task[]> = {};
 	const contexts: Record<string, Task[]> = {};
 	const dueDates: Record<string, Task[]> = {};
+	let completedCount = 0;
 
 	const today = getToday();
 	const tomorrow = getTomorrow();
@@ -54,32 +56,55 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		return due;
 	};
 
-	lines.forEach((line, index) => {
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
 		const trimmed = line.trim();
-		if (!trimmed) return;
+		if (!trimmed) continue;
 
-		const hasCheckboxMarker = /^-?\[.?\]\s/.test(trimmed);
-		const isChecked = /^-?\[x\]\s/i.test(trimmed);
-		const hasXPrefix = /^x\s/i.test(trimmed);
+		// PERFORMANCE (Bolt): Fast path for completion check using startsWith instead of regex.
+		// This significantly reduces overhead for large documents.
+		const isChecked =
+			trimmed.startsWith("[x] ") ||
+			trimmed.startsWith("[X] ") ||
+			trimmed.startsWith("x ") ||
+			trimmed.startsWith("X ") ||
+			trimmed.startsWith("-[x] ") ||
+			trimmed.startsWith("-[X] ");
 
-		const cleanText = hasCheckboxMarker
-			? trimmed.replace(/^-?\[.?\]\s/, "")
-			: trimmed;
+		const hasCheckboxMarker =
+			!isChecked &&
+			(trimmed.startsWith("[] ") ||
+				trimmed.startsWith("[ ] ") ||
+				trimmed.startsWith("-[] ") ||
+				trimmed.startsWith("-[ ] "));
+
+		const cleanText =
+			isChecked || hasCheckboxMarker
+				? trimmed.replace(/^-?\[.?\]\s|^(x|X)\s/, "")
+				: trimmed;
 
 		const task: Task = {
-			id: index,
+			id: i,
 			text: cleanText,
 			raw: trimmed,
-			completed: isChecked || hasXPrefix,
+			completed: isChecked,
 		};
 
-		const priorityMatch = cleanText.match(/^\(([A-Z])\)\s/);
-		if (priorityMatch) {
-			task.priority = priorityMatch[1];
-			if (!priorities[task.priority]) {
-				priorities[task.priority] = [];
+		if (isChecked) completedCount++;
+
+		// PERFORMANCE (Bolt): Fast path for priority (A) check to avoid regex execution.
+		if (
+			cleanText.length >= 4 &&
+			cleanText[0] === "(" &&
+			cleanText[2] === ")" &&
+			cleanText[3] === " "
+		) {
+			const priority = cleanText[1];
+			task.priority = priority;
+			if (!priorities[priority]) {
+				priorities[priority] = [];
 			}
-			priorities[task.priority].push(task);
+			priorities[priority].push(task);
 		}
 
 		const projectMatches = cleanText.match(/\+[\w-]+/g);
@@ -118,7 +143,14 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		}
 
 		tasks.push(task);
-	});
+	}
 
-	return { tasks, priorities, projects, contexts, dueDates };
+	return {
+		tasks,
+		priorities,
+		projects,
+		contexts,
+		dueDates,
+		completedCount,
+	};
 };

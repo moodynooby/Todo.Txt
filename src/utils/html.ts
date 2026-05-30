@@ -9,6 +9,8 @@ export function escapeHtml(text: string): string {
 
 export function stripHtml(html: string, replacement = ""): string {
 	if (!html) return "";
+	// PERFORMANCE (Bolt): Fast path to avoid regex execution if no HTML tags are present.
+	if (!html.includes("<")) return html;
 	return html.replace(/<[^>]*>/g, replacement);
 }
 

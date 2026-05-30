@@ -27,4 +27,5 @@ export interface ParsedTodoContent {
 	projects: Record<string, Task[]>;
 	contexts: Record<string, Task[]>;
 	dueDates: Record<string, Task[]>;
+	completedCount: number;
 }

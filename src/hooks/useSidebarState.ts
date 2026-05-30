@@ -13,7 +13,8 @@ export const useSidebarState = ({
 	tasks,
 	activeFilter,
 	onFilterChange,
-}: UseSidebarStateParams) => {
+	completedCount = 0,
+}: UseSidebarStateParams & { completedCount?: number }) => {
 	const [expandedSectionsArray, setExpandedSectionsArray] = useLocalStorage<
 		string[]
 	>({
@@ -66,11 +67,6 @@ export const useSidebarState = ({
 					)
 				: visibleTasks,
 		[visibleTasks, searchQuery],
-	);
-
-	const completedCount = useMemo(
-		() => tasks.filter((task) => task.completed).length,
-		[tasks],
 	);
 
 	const filteredTasks = useMemo(
