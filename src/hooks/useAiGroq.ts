@@ -35,7 +35,11 @@ export const useAiGroq = (apiKey: string) => {
 			} catch (err) {
 				console.error("Groq API Error:", err);
 				const errorMessage = err instanceof Error ? err.message : String(err);
-				setError(errorMessage);
+				setError(
+					import.meta.env.DEV
+						? errorMessage
+						: "An error occurred while communicating with the AI service.",
+				);
 				return null;
 			} finally {
 				setIsLoading(false);
