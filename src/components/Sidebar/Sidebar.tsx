@@ -61,7 +61,7 @@ const Sidebar = ({
 		showCompleted,
 		toggleShowCompleted,
 	} = useSidebarState({
-		tasks,
+		taskData,
 		activeFilter,
 		onFilterChange,
 	});
