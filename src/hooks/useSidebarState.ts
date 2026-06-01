@@ -4,16 +4,20 @@ import type { Filter, FilterType, Task } from "@/types/todo";
 import { applyFilter, toggleFilter } from "@/utils/filterUtils";
 
 interface UseSidebarStateParams {
-	tasks: Task[];
+	taskData: {
+		tasks: Task[];
+		completedCount: number;
+	};
 	activeFilter: Filter | null;
 	onFilterChange: (filter: Filter | null) => void;
 }
 
 export const useSidebarState = ({
-	tasks,
+	taskData,
 	activeFilter,
 	onFilterChange,
 }: UseSidebarStateParams) => {
+	const { tasks, completedCount } = taskData;
 	const [expandedSectionsArray, setExpandedSectionsArray] = useLocalStorage<
 		string[]
 	>({
@@ -66,11 +70,6 @@ export const useSidebarState = ({
 					)
 				: visibleTasks,
 		[visibleTasks, searchQuery],
-	);
-
-	const completedCount = useMemo(
-		() => tasks.filter((task) => task.completed).length,
-		[tasks],
 	);
 
 	const filteredTasks = useMemo(

@@ -2,22 +2,24 @@ import type { ParsedTodoContent, Task } from "@/types/todo";
 import { getToday, getTomorrow, getYesterday } from "./dateUtils";
 import { stripHtml } from "./html";
 
+// Pre-compiled regexes for better performance
+const RE_IS_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const RE_CHECKBOX_MARKER = /^-?\[.?\]\s/;
+const RE_CHECKED_MARKER = /^-?\[x\]\s/i;
+const RE_X_PREFIX = /^x\s/i;
+const RE_PRIORITY = /^\(([A-Z])\)\s/;
+const RE_PROJECTS = /\+[\w-]+/g;
+const RE_CONTEXTS = /@[\w-]+/g;
+const RE_DUE = /due:([\w-]+)/;
+
 const parseRelativeDate = (
 	value: string,
 	dates: { today: string; tomorrow: string; yesterday: string },
 ): string | undefined => {
-	if (value === "today") {
-		return dates.today;
-	}
-	if (value === "tomorrow") {
-		return dates.tomorrow;
-	}
-	if (value === "yesterday") {
-		return dates.yesterday;
-	}
-	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-		return value;
-	}
+	if (value === "today") return dates.today;
+	if (value === "tomorrow") return dates.tomorrow;
+	if (value === "yesterday") return dates.yesterday;
+	if (RE_IS_DATE.test(value)) return value;
 	return undefined;
 };
 
@@ -29,16 +31,18 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 			projects: {},
 			contexts: {},
 			dueDates: {},
+			completedCount: 0,
 		};
 
 	const text = stripHtml(content, "\n");
-	const lines = text.split("\n").filter((line) => line.trim());
+	const rawLines = text.split("\n");
 
 	const tasks: Task[] = [];
 	const priorities: Record<string, Task[]> = {};
 	const projects: Record<string, Task[]> = {};
 	const contexts: Record<string, Task[]> = {};
 	const dueDates: Record<string, Task[]> = {};
+	let completedCount = 0;
 
 	const today = getToday();
 	const tomorrow = getTomorrow();
@@ -46,7 +50,7 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 	const dateContext = { today, tomorrow, yesterday };
 
 	const categorizeDueDate = (due: string): string => {
-		if (/^\d{4}-\d{2}-\d{2}$/.test(due)) {
+		if (RE_IS_DATE.test(due)) {
 			if (due < today) return "overdue";
 			if (due === today) return "today";
 			if (due === tomorrow) return "tomorrow";
@@ -54,71 +58,96 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		return due;
 	};
 
-	lines.forEach((line, index) => {
-		const trimmed = line.trim();
-		if (!trimmed) return;
+	for (let i = 0; i < rawLines.length; i++) {
+		const trimmed = rawLines[i].trim();
+		if (!trimmed) continue;
 
-		const hasCheckboxMarker = /^-?\[.?\]\s/.test(trimmed);
-		const isChecked = /^-?\[x\]\s/i.test(trimmed);
-		const hasXPrefix = /^x\s/i.test(trimmed);
+		// Fast-path check for markers
+		const hasCheckboxMarker = RE_CHECKBOX_MARKER.test(trimmed);
+		const isChecked = hasCheckboxMarker && RE_CHECKED_MARKER.test(trimmed);
+		const hasXPrefix = !hasCheckboxMarker && RE_X_PREFIX.test(trimmed);
 
 		const cleanText = hasCheckboxMarker
-			? trimmed.replace(/^-?\[.?\]\s/, "")
+			? trimmed.replace(RE_CHECKBOX_MARKER, "")
 			: trimmed;
 
+		const completed = isChecked || hasXPrefix;
+		if (completed) {
+			completedCount++;
+		}
+
 		const task: Task = {
-			id: index,
+			id: i,
 			text: cleanText,
 			raw: trimmed,
-			completed: isChecked || hasXPrefix,
+			completed,
 		};
 
-		const priorityMatch = cleanText.match(/^\(([A-Z])\)\s/);
-		if (priorityMatch) {
-			task.priority = priorityMatch[1];
-			if (!priorities[task.priority]) {
-				priorities[task.priority] = [];
+		// Only check for priority if the line starts with '('
+		if (cleanText.startsWith("(")) {
+			const priorityMatch = cleanText.match(RE_PRIORITY);
+			if (priorityMatch) {
+				task.priority = priorityMatch[1];
+				if (!priorities[task.priority]) {
+					priorities[task.priority] = [];
+				}
+				priorities[task.priority].push(task);
 			}
-			priorities[task.priority].push(task);
 		}
 
-		const projectMatches = cleanText.match(/\+[\w-]+/g);
-		if (projectMatches) {
-			task.projects = projectMatches.map((p: string) => p.slice(1));
-			task.projects.forEach((p: string) => {
-				if (!projects[p]) {
-					projects[p] = [];
+		// Only check for projects if '+' is present
+		if (cleanText.includes("+")) {
+			const projectMatches = cleanText.match(RE_PROJECTS);
+			if (projectMatches) {
+				task.projects = projectMatches.map((p: string) => p.slice(1));
+				for (const p of task.projects) {
+					if (!projects[p]) {
+						projects[p] = [];
+					}
+					projects[p].push(task);
 				}
-				projects[p].push(task);
-			});
+			}
 		}
 
-		const contextMatches = cleanText.match(/@[\w-]+/g);
-		if (contextMatches) {
-			task.contexts = contextMatches.map((c: string) => c.slice(1));
-			task.contexts.forEach((c: string) => {
-				if (!contexts[c]) {
-					contexts[c] = [];
+		// Only check for contexts if '@' is present
+		if (cleanText.includes("@")) {
+			const contextMatches = cleanText.match(RE_CONTEXTS);
+			if (contextMatches) {
+				task.contexts = contextMatches.map((c: string) => c.slice(1));
+				for (const c of task.contexts) {
+					if (!contexts[c]) {
+						contexts[c] = [];
+					}
+					contexts[c].push(task);
 				}
-				contexts[c].push(task);
-			});
+			}
 		}
 
-		const dueMatch = cleanText.match(/due:([\w-]+)/);
-		if (dueMatch) {
-			const value = dueMatch[1].toLowerCase();
-			task.due = parseRelativeDate(value, dateContext);
-			if (task.due) {
-				const category = categorizeDueDate(task.due);
-				if (!dueDates[category]) {
-					dueDates[category] = [];
+		// Only check for due date if 'due:' is present
+		if (cleanText.includes("due:")) {
+			const dueMatch = cleanText.match(RE_DUE);
+			if (dueMatch) {
+				const value = dueMatch[1].toLowerCase();
+				task.due = parseRelativeDate(value, dateContext);
+				if (task.due) {
+					const category = categorizeDueDate(task.due);
+					if (!dueDates[category]) {
+						dueDates[category] = [];
+					}
+					dueDates[category].push(task);
 				}
-				dueDates[category].push(task);
 			}
 		}
 
 		tasks.push(task);
-	});
+	}
 
-	return { tasks, priorities, projects, contexts, dueDates };
+	return {
+		tasks,
+		priorities,
+		projects,
+		contexts,
+		dueDates,
+		completedCount,
+	};
 };
