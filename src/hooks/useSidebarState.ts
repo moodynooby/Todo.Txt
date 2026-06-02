@@ -1,7 +1,8 @@
 import { useLocalStorage } from "@mantine/hooks";
 import { useMemo } from "react";
 import type { Filter, FilterType, Task } from "@/types/todo";
-import { applyFilter, toggleFilter } from "@/utils/filterUtils";
+import { getToday } from "@/utils/dateUtils";
+import { getFilterPredicate, toggleFilter } from "@/utils/filterUtils";
 
 interface UseSidebarStateParams {
 	taskData: {
@@ -57,25 +58,32 @@ export const useSidebarState = ({
 		onFilterChange(null);
 	};
 
-	const visibleTasks = useMemo(
-		() => (showCompleted ? tasks : tasks.filter((t) => !t.completed)),
-		[tasks, showCompleted],
-	);
+	const filteredTasks = useMemo(() => {
+		// Parity: The UI only shows the filtered task list when a filter is active.
+		if (!activeFilter) return [];
 
-	const searchedTasks = useMemo(
-		() =>
-			searchQuery
-				? visibleTasks.filter((t) =>
-						t.text.toLowerCase().includes(searchQuery.toLowerCase()),
-					)
-				: visibleTasks,
-		[visibleTasks, searchQuery],
-	);
+		const today = getToday();
+		const filterPredicate = getFilterPredicate(activeFilter, today);
+		const normalizedSearch = searchQuery.toLowerCase();
 
-	const filteredTasks = useMemo(
-		() => applyFilter(searchedTasks, activeFilter),
-		[searchedTasks, activeFilter],
-	);
+		// Performance: Single pass over the tasks array instead of three.
+		// Combines visibility (completed status), search, and active filter logic.
+		return tasks.filter((task) => {
+			// 1. Completion filter
+			if (!showCompleted && task.completed) return false;
+
+			// 2. Search filter
+			if (
+				normalizedSearch &&
+				!task.text.toLowerCase().includes(normalizedSearch)
+			) {
+				return false;
+			}
+
+			// 3. Active UI filter (Priority, Project, Context, etc.)
+			return filterPredicate(task);
+		});
+	}, [tasks, activeFilter, searchQuery, showCompleted]);
 
 	const toggleShowCompleted = (): void => {
 		setShowCompleted((prev) => !prev);
