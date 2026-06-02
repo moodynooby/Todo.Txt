@@ -11,7 +11,6 @@ import type { ExcalidrawData } from "@/lib/excalidrawSync";
 import {
 	getFirebaseAuth,
 	getFirestoreDb,
-	handleRedirectResult,
 	isFirebaseConfigured,
 	loginAnonymously,
 	signInWithGoogle,
@@ -176,11 +175,6 @@ export const useFirestoreSync = ({
 			}
 		});
 
-		handleRedirectResult().catch((e) => {
-			console.error("Redirect sign-in error:", e);
-			setSyncStatus("error");
-		});
-
 		return () => {
 			unsubAuthRef.current?.();
 			unsubFirestoreRef.current?.();
@@ -220,7 +214,8 @@ export const useFirestoreSync = ({
 		try {
 			await signInWithGoogle();
 		} catch (err: unknown) {
-			console.error("Login error:", err);
+			const message = err instanceof Error ? err.message : "Failed to sign in";
+			console.error("Login error:", message);
 			setSyncStatus("error");
 		}
 	}, []);

@@ -4,11 +4,10 @@ import {
 	browserLocalPersistence,
 	GoogleAuthProvider,
 	getAuth,
-	getRedirectResult,
-	linkWithRedirect,
+	linkWithPopup,
 	setPersistence,
 	signInAnonymously,
-	signInWithRedirect,
+	signInWithPopup,
 	signOut,
 } from "firebase/auth";
 import {
@@ -77,17 +76,31 @@ export const signInWithGoogle = async (): Promise<void> => {
 	const a = getFirebaseAuth();
 	const provider = new GoogleAuthProvider();
 
-	if (a.currentUser?.isAnonymous) {
-		await linkWithRedirect(a.currentUser, provider);
-	} else {
-		await signInWithRedirect(a, provider);
+	try {
+		if (a.currentUser?.isAnonymous) {
+			await linkWithPopup(a.currentUser, provider);
+		} else {
+			await signInWithPopup(a, provider);
+		}
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			const code = (error as { code?: string }).code;
+			if (code === "auth/popup-blocked") {
+				throw new Error(
+					"Popup was blocked. Please allow popups for this site in your browser settings and try again.",
+				);
+			}
+			if (code === "auth/popup-closed-by-user") {
+				throw new Error(
+					"Sign-in popup was closed before completing. Please try again.",
+				);
+			}
+			if (code === "auth/cancelled-popup-request") {
+				return;
+			}
+		}
+		throw error;
 	}
-};
-
-export const handleRedirectResult = async (): Promise<void> => {
-	const a = getFirebaseAuth();
-	const result = await getRedirectResult(a);
-	return result ? undefined : undefined;
 };
 
 export const signOutUser = async (): Promise<void> => {
