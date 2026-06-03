@@ -12,7 +12,6 @@ import {
 	getFirebaseAuth,
 	getFirestoreDb,
 	isFirebaseConfigured,
-	loginAnonymously,
 	signOutUser,
 } from "@/lib/firebase";
 import { readBackup, updateBackup } from "@/lib/persistedState";
@@ -53,7 +52,6 @@ interface FirestoreSyncReturn {
 const WRITE_DEBOUNCE_MS = 1000;
 const RETRY_BASE_MS = 500;
 const RETRY_MAX_MS = 30000;
-const DISCONNECT_GRACE_MS = 8000;
 
 const mapUser = (u: User) => ({
 	photoURL: u.photoURL,
@@ -279,33 +277,17 @@ export const useFirestoreSync = ({
 
 		const auth = getFirebaseAuth();
 
-		unsubAuthRef.current = onAuthStateChanged(auth, async (firebaseUser) => {
-			if (firebaseUser) {
+		unsubAuthRef.current = onAuthStateChanged(auth, (firebaseUser) => {
+			if (firebaseUser && !firebaseUser.isAnonymous) {
 				setUser(firebaseUser);
 				setAuthError(null);
 				setSyncStatus("connecting");
-				await setupFirestore(firebaseUser.uid);
+				setupFirestore(firebaseUser.uid);
 			} else {
 				cancelDisconnectGrace();
-
-				const oldUser = userRef.current;
-				pendingMigrationRef.current =
-					oldUser?.isAnonymous && oldUser.uid ? oldUser.uid : null;
-
+				teardownFirestore();
 				setUser(null);
-				setSyncStatus("connecting");
-
-				disconnectGraceRef.current = setTimeout(() => {
-					if (syncStatusRef.current === "connecting") {
-						setSyncStatus("disconnected");
-					}
-				}, DISCONNECT_GRACE_MS);
-
-				try {
-					await loginAnonymously();
-				} catch (e) {
-					console.error("Anonymous sign-in failed:", e);
-				}
+				setSyncStatus("disconnected");
 			}
 		});
 
@@ -339,23 +321,11 @@ export const useFirestoreSync = ({
 
 	const connect = useCallback(async () => {
 		cancelDisconnectGrace();
-		teardownFirestore();
-		setSyncStatus("connecting");
-
 		const currentUser = userRef.current;
-		if (currentUser) {
+		if (currentUser && !currentUser.isAnonymous) {
+			teardownFirestore();
+			setSyncStatus("connecting");
 			await setupFirestore(currentUser.uid);
-		} else {
-			try {
-				await loginAnonymously();
-			} catch (e) {
-				console.error("Anonymous sign-in failed:", e);
-				disconnectGraceRef.current = setTimeout(() => {
-					if (syncStatusRef.current === "connecting") {
-						setSyncStatus("disconnected");
-					}
-				}, DISCONNECT_GRACE_MS);
-			}
 		}
 	}, [teardownFirestore, setupFirestore, cancelDisconnectGrace]);
 

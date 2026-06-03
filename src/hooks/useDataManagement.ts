@@ -8,10 +8,12 @@ import {
 	syncExcalidrawToText,
 	syncTextToExcalidraw,
 } from "@/lib/excalidrawSync";
+import { readBackup } from "@/lib/persistedState";
 import type { Note } from "@/types/notes";
 
 export function useDataManagement(viewMode?: string) {
-	const [rteContent, setRteContentState] = useState("");
+	const initialContent = readBackup()?.data?.content ?? "";
+	const [rteContent, setRteContentState] = useState(initialContent);
 	const rteContentRef = useRef(rteContent);
 
 	useEffect(() => {

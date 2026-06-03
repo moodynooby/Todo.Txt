@@ -1,10 +1,10 @@
 import {
 	ActionIcon,
 	Avatar,
+	Button,
 	Indicator,
 	Menu,
 	Text,
-	Tooltip,
 } from "@mantine/core";
 import { LogOut, User } from "lucide-react";
 import { useState } from "react";
@@ -31,16 +31,14 @@ const ConnectionButton = () => {
 	if (!user) {
 		return (
 			<>
-				<Tooltip label="Sign in" position="bottom">
-					<ActionIcon
-						variant="subtle"
-						size="lg"
-						onClick={() => setSignInModalOpen(true)}
-						aria-label="Sign in"
-					>
-						<User size={20} />
-					</ActionIcon>
-				</Tooltip>
+				<Button
+					variant="subtle"
+					size="compact-sm"
+					leftSection={<User size={16} />}
+					onClick={() => setSignInModalOpen(true)}
+				>
+					Sign in
+				</Button>
 				<SignInModal
 					opened={signInModalOpen}
 					onClose={() => setSignInModalOpen(false)}

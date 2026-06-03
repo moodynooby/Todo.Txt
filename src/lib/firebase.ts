@@ -14,11 +14,7 @@ import {
 	signOut,
 	updateProfile,
 } from "firebase/auth";
-import {
-	enableMultiTabIndexedDbPersistence,
-	type Firestore,
-	getFirestore,
-} from "firebase/firestore";
+import { type Firestore, getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -39,9 +35,6 @@ try {
 	app = initializeApp(firebaseConfig);
 	auth = getAuth(app);
 	db = getFirestore(app);
-	enableMultiTabIndexedDbPersistence(db).catch((err) => {
-		console.error("Failed to enable Firestore persistence:", err);
-	});
 	setPersistence(auth, browserLocalPersistence).catch((err) => {
 		console.error("Failed to set auth persistence:", err);
 	});

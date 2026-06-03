@@ -12,11 +12,12 @@ import {
 	TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { Globe, Mail, TriangleAlert } from "lucide-react";
+import { Ghost, Globe, Mail, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import {
 	createAccount,
 	getFirebaseAuth,
+	loginAnonymously,
 	sendPasswordReset,
 	signInWithEmail,
 	signInWithGoogle,
@@ -152,6 +153,19 @@ const SignInModal = ({ opened, onClose }: SignInModalProps) => {
 		}
 	})();
 
+	const handleAnonymousSignIn = async () => {
+		setError(null);
+		setLoading(true);
+		try {
+			await loginAnonymously();
+			onClose();
+		} catch (e) {
+			setError(getFirebaseErrorMessage(e));
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const handleClose = () => {
 		setError(null);
 		setLoading(false);
@@ -280,6 +294,17 @@ const SignInModal = ({ opened, onClose }: SignInModalProps) => {
 								loading={loading}
 							>
 								Sign in with Google
+							</Button>
+
+							<Button
+								variant="subtle"
+								fullWidth
+								mt="xs"
+								leftSection={<Ghost size={18} />}
+								onClick={handleAnonymousSignIn}
+								loading={loading}
+							>
+								Continue anonymously
 							</Button>
 						</Tabs.Panel>
 
