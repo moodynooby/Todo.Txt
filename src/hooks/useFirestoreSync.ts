@@ -107,40 +107,43 @@ export const useFirestoreSync = ({
 		}
 	}, []);
 
-	const readFieldsFromDoc = useCallback((data: Record<string, unknown>, isRemote = false) => {
-		if (isRemote && writeSeqRef.current > lastSyncSeqRef.current) {
-			return;
-		}
-		const remoteSeq = (data._seq as number) ?? 0;
-		if (isRemote && remoteSeq <= remoteSeqRef.current) {
-			return;
-		}
-		remoteSeqRef.current = remoteSeq;
-		const state: Partial<FirestoreSyncState> = {};
-		if (data.content !== undefined) {
-			state.content = data.content as string;
-		}
-		if (data.notes !== undefined) {
-			state.notes = data.notes as Note[];
-		}
-		if (data.excalidraw !== undefined) {
-			state.excalidraw = data.excalidraw as ExcalidrawData;
-		}
-		if (data.groqApiKey !== undefined) {
-			state.groqApiKey = data.groqApiKey as string;
-		}
-		onRemoteStateRef.current({
-			content: state.content ?? "",
-			...(state.notes !== undefined && { notes: state.notes }),
-			...(state.excalidraw !== undefined && {
-				excalidraw: state.excalidraw,
-			}),
-			...(state.groqApiKey !== undefined && {
-				groqApiKey: state.groqApiKey,
-			}),
-		});
-		backupReadyRef.current = true;
-	}, []);
+	const readFieldsFromDoc = useCallback(
+		(data: Record<string, unknown>, isRemote = false) => {
+			if (isRemote && writeSeqRef.current > lastSyncSeqRef.current) {
+				return;
+			}
+			const remoteSeq = (data._seq as number) ?? 0;
+			if (isRemote && remoteSeq <= remoteSeqRef.current) {
+				return;
+			}
+			remoteSeqRef.current = remoteSeq;
+			const state: Partial<FirestoreSyncState> = {};
+			if (data.content !== undefined) {
+				state.content = data.content as string;
+			}
+			if (data.notes !== undefined) {
+				state.notes = data.notes as Note[];
+			}
+			if (data.excalidraw !== undefined) {
+				state.excalidraw = data.excalidraw as ExcalidrawData;
+			}
+			if (data.groqApiKey !== undefined) {
+				state.groqApiKey = data.groqApiKey as string;
+			}
+			onRemoteStateRef.current({
+				content: state.content ?? "",
+				...(state.notes !== undefined && { notes: state.notes }),
+				...(state.excalidraw !== undefined && {
+					excalidraw: state.excalidraw,
+				}),
+				...(state.groqApiKey !== undefined && {
+					groqApiKey: state.groqApiKey,
+				}),
+			});
+			backupReadyRef.current = true;
+		},
+		[],
+	);
 
 	const writeDoc = useCallback(
 		async (uid: string) => {
