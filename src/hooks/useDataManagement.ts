@@ -1,8 +1,6 @@
-import { useDebouncedValue } from "@mantine/hooks";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFirestoreSync } from "@/hooks/useFirestoreSync";
 import { useNotes } from "@/hooks/useNotes";
-import type { TimerData } from "@/hooks/useTimers";
 import { useTimers } from "@/hooks/useTimers";
 import { useTipTap } from "@/hooks/useTipTap";
 import type { ExcalidrawData } from "@/lib/excalidrawSync";
@@ -20,8 +18,6 @@ export function useDataManagement(viewMode?: string) {
 		rteContentRef.current = rteContent;
 	}, [rteContent]);
 
-	const [debouncedRteContent] = useDebouncedValue(rteContent, 1000);
-
 	const handleContentChange = useCallback((content: string) => {
 		setRteContentState(content);
 	}, []);
@@ -36,8 +32,6 @@ export function useDataManagement(viewMode?: string) {
 		null,
 	);
 	excalidrawDataRef.current = excalidrawData;
-
-	const [debouncedExcalidraw] = useDebouncedValue(excalidrawData, 3000);
 
 	const handleRemoteExcalidraw = useCallback((data: ExcalidrawData | null) => {
 		setExcalidrawData(data);
@@ -61,8 +55,6 @@ export function useDataManagement(viewMode?: string) {
 		setNoteColor,
 	} = useNotes();
 
-	const [debouncedNotes] = useDebouncedValue(notes, 2000);
-
 	const handleRemoteNotes = useCallback(
 		(remoteNotes: Note[]) => {
 			setNotesFromRemote(remoteNotes);
@@ -80,26 +72,7 @@ export function useDataManagement(viewMode?: string) {
 		setGroqApiKey(key);
 	}, []);
 
-	const { timers, setTimersFromRemote, addTimer, removeTimer, updateTimer } =
-		useTimers();
-
-	const timerData = useMemo(
-		() =>
-			timers.map(({ id, elapsed, isActive, startTime }) => ({
-				id,
-				elapsed,
-				isActive,
-				startTime,
-			})),
-		[timers],
-	);
-
-	const handleRemoteTimers = useCallback(
-		(remote: TimerData[]) => {
-			setTimersFromRemote(remote);
-		},
-		[setTimersFromRemote],
-	);
+	const { timers, addTimer, removeTimer, updateTimer } = useTimers();
 
 	const prevViewMode = useRef(viewMode);
 
@@ -131,18 +104,37 @@ export function useDataManagement(viewMode?: string) {
 		}
 	}, [viewMode, setExternalContent]);
 
+	const handleRemoteState = useCallback(
+		(state: {
+			content: string;
+			notes?: Note[];
+			excalidraw?: ExcalidrawData | null;
+			groqApiKey?: string;
+		}) => {
+			if (state.content !== undefined) handleRemoteContent(state.content);
+			if (state.notes !== undefined) handleRemoteNotes(state.notes);
+			if (state.excalidraw !== undefined)
+				handleRemoteExcalidraw(state.excalidraw);
+			if (state.groqApiKey !== undefined)
+				handleRemoteGroqApiKey(state.groqApiKey);
+		},
+		[
+			handleRemoteContent,
+			handleRemoteNotes,
+			handleRemoteExcalidraw,
+			handleRemoteGroqApiKey,
+		],
+	);
+
 	const { syncStatus, isConnected, user, authError, connect, disconnect } =
 		useFirestoreSync({
-			content: debouncedRteContent,
-			onRemoteContent: handleRemoteContent,
-			notes: debouncedNotes,
-			onRemoteNotes: handleRemoteNotes,
-			excalidraw: debouncedExcalidraw,
-			onRemoteExcalidraw: handleRemoteExcalidraw,
-			groqApiKey,
-			onRemoteGroqApiKey: handleRemoteGroqApiKey,
-			timers: timerData,
-			onRemoteTimers: handleRemoteTimers,
+			localState: {
+				content: rteContent,
+				notes,
+				excalidraw: excalidrawData,
+				groqApiKey,
+			},
+			onRemoteState: handleRemoteState,
 		});
 
 	return {

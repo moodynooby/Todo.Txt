@@ -1,5 +1,10 @@
 import { useLocalStorage } from "@mantine/hooks";
 import { useMemo } from "react";
+import {
+	defaults,
+	type PersistedState,
+	STORAGE_KEY,
+} from "@/lib/persistedState";
 import type { Filter, FilterType, Task } from "@/types/todo";
 import { applyFilter, toggleFilter } from "@/utils/filterUtils";
 
@@ -18,34 +23,36 @@ export const useSidebarState = ({
 	onFilterChange,
 }: UseSidebarStateParams) => {
 	const { tasks, completedCount } = taskData;
-	const [expandedSectionsArray, setExpandedSectionsArray] = useLocalStorage<
-		string[]
-	>({
-		key: "sidebar-expanded-sections",
-		defaultValue: ["priorities", "projects", "contexts", "dueDates"],
+	const [persisted, setPersisted] = useLocalStorage<PersistedState>({
+		key: STORAGE_KEY,
+		defaultValue: defaults,
 	});
 
+	const expandedSectionsArray = persisted.sidebar.expandedSections;
 	const expandedSections = useMemo(
 		() => new Set(expandedSectionsArray),
 		[expandedSectionsArray],
 	);
 
-	const [searchQuery, setSearchQuery] = useLocalStorage({
-		key: "sidebar-search",
-		defaultValue: "",
-	});
+	const searchQuery = persisted.sidebar.search;
+	const showCompleted = persisted.sidebar.showCompleted;
 
-	const [showCompleted, setShowCompleted] = useLocalStorage({
-		key: "sidebar-show-completed",
-		defaultValue: false,
-	});
+	const setSearchQuery = (val: string) =>
+		setPersisted((p) => ({
+			...p,
+			sidebar: { ...p.sidebar, search: val },
+		}));
 
 	const toggleSection = (section: string): void => {
-		setExpandedSectionsArray((prev) => {
-			if (prev.includes(section)) {
-				return prev.filter((s) => s !== section);
-			}
-			return [...prev, section];
+		setPersisted((prev) => {
+			const current = prev.sidebar.expandedSections;
+			const next = current.includes(section)
+				? current.filter((s) => s !== section)
+				: [...current, section];
+			return {
+				...prev,
+				sidebar: { ...prev.sidebar, expandedSections: next },
+			};
 		});
 	};
 
@@ -78,7 +85,10 @@ export const useSidebarState = ({
 	);
 
 	const toggleShowCompleted = (): void => {
-		setShowCompleted((prev) => !prev);
+		setPersisted((prev) => ({
+			...prev,
+			sidebar: { ...prev.sidebar, showCompleted: !prev.sidebar.showCompleted },
+		}));
 	};
 
 	return {

@@ -5,6 +5,11 @@ import ReactDOM from "react-dom/client";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MantineProvider } from "@/context/MantineProvider";
 import { ViewModeContext } from "@/context/ViewModeContext";
+import {
+	defaults,
+	type PersistedState,
+	STORAGE_KEY,
+} from "@/lib/persistedState";
 import App from "./App";
 
 const root = ReactDOM.createRoot(
@@ -13,10 +18,14 @@ const root = ReactDOM.createRoot(
 root.render(<RootComponent />);
 
 function RootComponent() {
-	const [viewMode, setViewMode] = useLocalStorage({
-		key: "viewMode",
-		defaultValue: "todo",
+	const [persisted, setPersisted] = useLocalStorage<PersistedState>({
+		key: STORAGE_KEY,
+		defaultValue: defaults,
 	});
+
+	const viewMode = persisted.viewMode;
+	const setViewMode = (mode: string) =>
+		setPersisted((p) => ({ ...p, viewMode: mode }));
 
 	return (
 		<MantineProvider>
