@@ -1,4 +1,5 @@
 import { type RefObject, useRef } from "react";
+import { escapeHtml } from "@/utils/html";
 
 interface UseFileHandlerProps {
 	onFileLoaded: (content: string) => void;
@@ -26,10 +27,16 @@ export const useFileHandler = ({
 		reader.onload = (e) => {
 			const result = e.target?.result;
 			if (typeof result !== "string") return;
-			if (file.name.endsWith(".html")) {
+
+			if (file.name.endsWith(".html") || file.name.endsWith(".md")) {
 				onFileLoaded(result);
 			} else {
-				onFileLoaded(result);
+				// Escape plain text and wrap in paragraphs to prevent XSS
+				const lines = result.split("\n");
+				const escapedHtml = lines
+					.map((line) => `<p>${escapeHtml(line)}</p>`)
+					.join("");
+				onFileLoaded(escapedHtml);
 			}
 		};
 		reader.readAsText(file);
