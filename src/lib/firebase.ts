@@ -2,13 +2,17 @@ import { type FirebaseApp, initializeApp } from "firebase/app";
 import {
 	type Auth,
 	browserLocalPersistence,
+	createUserWithEmailAndPassword,
 	GoogleAuthProvider,
 	getAuth,
 	linkWithPopup,
+	sendPasswordResetEmail,
 	setPersistence,
 	signInAnonymously,
+	signInWithEmailAndPassword,
 	signInWithPopup,
 	signOut,
+	updateProfile,
 } from "firebase/auth";
 import {
 	enableMultiTabIndexedDbPersistence,
@@ -101,6 +105,29 @@ export const signInWithGoogle = async (): Promise<void> => {
 		}
 		throw error;
 	}
+};
+
+export const signInWithEmail = async (
+	email: string,
+	password: string,
+): Promise<void> => {
+	const a = getFirebaseAuth();
+	await signInWithEmailAndPassword(a, email, password);
+};
+
+export const createAccount = async (
+	email: string,
+	password: string,
+	displayName: string,
+): Promise<void> => {
+	const a = getFirebaseAuth();
+	const result = await createUserWithEmailAndPassword(a, email, password);
+	await updateProfile(result.user, { displayName });
+};
+
+export const sendPasswordReset = async (email: string): Promise<void> => {
+	const a = getFirebaseAuth();
+	await sendPasswordResetEmail(a, email);
 };
 
 export const signOutUser = async (): Promise<void> => {

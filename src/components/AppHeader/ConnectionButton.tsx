@@ -7,10 +7,13 @@ import {
 	Tooltip,
 } from "@mantine/core";
 import { LogOut, User } from "lucide-react";
+import { useState } from "react";
 import { useEditor } from "@/context/EditorContext";
+import SignInModal from "@/features/auth/SignInModal";
 
 const ConnectionButton = () => {
-	const { user, syncStatus, onConnect, onDisconnectSync } = useEditor();
+	const { user, syncStatus, onDisconnectSync } = useEditor();
+	const [signInModalOpen, setSignInModalOpen] = useState(false);
 
 	const dotColor = () => {
 		switch (syncStatus) {
@@ -27,16 +30,22 @@ const ConnectionButton = () => {
 
 	if (!user) {
 		return (
-			<Tooltip label="Sign in" position="bottom">
-				<ActionIcon
-					variant="subtle"
-					size="lg"
-					onClick={onConnect}
-					aria-label="Sign in"
-				>
-					<User size={20} />
-				</ActionIcon>
-			</Tooltip>
+			<>
+				<Tooltip label="Sign in" position="bottom">
+					<ActionIcon
+						variant="subtle"
+						size="lg"
+						onClick={() => setSignInModalOpen(true)}
+						aria-label="Sign in"
+					>
+						<User size={20} />
+					</ActionIcon>
+				</Tooltip>
+				<SignInModal
+					opened={signInModalOpen}
+					onClose={() => setSignInModalOpen(false)}
+				/>
+			</>
 		);
 	}
 

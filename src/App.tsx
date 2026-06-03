@@ -56,6 +56,7 @@ const App = () => {
 		syncStatus,
 		isConnected: isSynced,
 		user,
+		authError,
 		connect,
 		disconnect,
 	} = useDataManagement(viewMode);
@@ -137,6 +138,7 @@ const App = () => {
 			syncStatus,
 			isSynced,
 			user,
+			authError,
 			onConnect: connect,
 			onDisconnectSync: disconnect,
 		}),
@@ -151,6 +153,7 @@ const App = () => {
 			syncStatus,
 			isSynced,
 			user,
+			authError,
 			connect,
 			disconnect,
 		],

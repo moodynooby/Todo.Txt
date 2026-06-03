@@ -17,6 +17,7 @@ export interface EditorContextValue {
 		displayName: string | null;
 		isAnonymous: boolean;
 	} | null;
+	authError: string | null;
 	onConnect: () => void;
 	onDisconnectSync: () => void;
 }

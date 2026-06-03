@@ -131,7 +131,7 @@ export function useDataManagement(viewMode?: string) {
 		}
 	}, [viewMode, setExternalContent]);
 
-	const { syncStatus, isConnected, user, connect, disconnect } =
+	const { syncStatus, isConnected, user, authError, connect, disconnect } =
 		useFirestoreSync({
 			content: debouncedRteContent,
 			onRemoteContent: handleRemoteContent,
@@ -171,6 +171,7 @@ export function useDataManagement(viewMode?: string) {
 		syncStatus,
 		isConnected,
 		user,
+		authError,
 		connect,
 		disconnect,
 	};

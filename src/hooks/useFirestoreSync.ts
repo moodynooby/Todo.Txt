@@ -13,7 +13,6 @@ import {
 	getFirestoreDb,
 	isFirebaseConfigured,
 	loginAnonymously,
-	signInWithGoogle,
 	signOutUser,
 } from "@/lib/firebase";
 import type { Note } from "@/types/notes";
@@ -47,8 +46,44 @@ interface FirestoreSyncReturn {
 		displayName: string | null;
 		isAnonymous: boolean;
 	} | null;
+	authError: string | null;
 	connect: () => Promise<void>;
 	disconnect: () => Promise<void>;
+}
+
+const mapUser = (u: User) => ({
+	photoURL: u.photoURL,
+	displayName: u.displayName,
+	isAnonymous: u.isAnonymous,
+});
+
+function readFieldsFromDoc(
+	data: Record<string, unknown>,
+	callbacks: Pick<
+		FirestoreSyncOptions,
+		| "onRemoteContent"
+		| "onRemoteNotes"
+		| "onRemoteExcalidraw"
+		| "onRemoteGroqApiKey"
+		| "onRemoteTimers"
+	>,
+) {
+	const {
+		onRemoteContent,
+		onRemoteNotes,
+		onRemoteExcalidraw,
+		onRemoteGroqApiKey,
+		onRemoteTimers,
+	} = callbacks;
+	if (data.content !== undefined) onRemoteContent(data.content as string);
+	if (data.notes !== undefined && onRemoteNotes)
+		onRemoteNotes(data.notes as Note[]);
+	if (data.excalidraw !== undefined && onRemoteExcalidraw)
+		onRemoteExcalidraw(data.excalidraw as ExcalidrawData);
+	if (data.groqApiKey !== undefined && onRemoteGroqApiKey)
+		onRemoteGroqApiKey(data.groqApiKey as string);
+	if (data.timers !== undefined && onRemoteTimers)
+		onRemoteTimers(data.timers as TimerData[]);
 }
 
 export const useFirestoreSync = ({
@@ -66,11 +101,28 @@ export const useFirestoreSync = ({
 	const [user, setUser] = useState<User | null>(null);
 	const [isConnected, setIsConnected] = useState(false);
 	const [syncStatus, setSyncStatus] = useState<SyncStatus>("disconnected");
+	const [authError, setAuthError] = useState<string | null>(null);
 
 	const unsubFirestoreRef = useRef<(() => void) | null>(null);
 	const unsubAuthRef = useRef<(() => void) | null>(null);
 	const hasAttemptedAnonymousRef = useRef(false);
 	const setupRanRef = useRef(false);
+	const writeFailedRef = useRef(false);
+
+	const callbacksRef = useRef({
+		onRemoteContent,
+		onRemoteNotes,
+		onRemoteExcalidraw,
+		onRemoteGroqApiKey,
+		onRemoteTimers,
+	});
+	callbacksRef.current = {
+		onRemoteContent,
+		onRemoteNotes,
+		onRemoteExcalidraw,
+		onRemoteGroqApiKey,
+		onRemoteTimers,
+	};
 
 	const teardownFirestore = useCallback(() => {
 		unsubFirestoreRef.current?.();
@@ -79,74 +131,52 @@ export const useFirestoreSync = ({
 		setSyncStatus("disconnected");
 	}, []);
 
-	const setupFirestore = useCallback(
-		async (uid: string) => {
-			if (!isFirebaseConfigured()) return;
+	const setupFirestore = useCallback(async (uid: string) => {
+		const db = getFirestoreDb();
+		const docId = `todo_${uid}`;
+		const docRef = doc(db, "todos", docId);
 
-			const db = getFirestoreDb();
-			const docId = `todo_${uid}`;
-			const docRef = doc(db, "todos", docId);
-
-			try {
-				const docSnap = await getDoc(docRef);
-				if (!docSnap.exists()) {
-					await setDoc(docRef, {
-						content: "",
-						createdAt: serverTimestamp(),
-						updatedAt: serverTimestamp(),
-					});
-				} else {
-					const data = docSnap.data() as Record<string, unknown>;
-					if (data.content) onRemoteContent(data.content as string);
-					if (data.notes && onRemoteNotes) onRemoteNotes(data.notes as Note[]);
-					if (data.excalidraw && onRemoteExcalidraw)
-						onRemoteExcalidraw(data.excalidraw as ExcalidrawData);
-					if (data.groqApiKey !== undefined && onRemoteGroqApiKey)
-						onRemoteGroqApiKey(data.groqApiKey as string);
-					if (data.timers && onRemoteTimers)
-						onRemoteTimers(data.timers as TimerData[]);
-				}
-
-				unsubFirestoreRef.current = onSnapshot(
-					docRef,
-					(snap) => {
-						if (!snap.exists()) return;
-						if (snap.metadata.hasPendingWrites) return;
-
-						const data = snap.data() as Record<string, unknown>;
-						if (data.content !== undefined)
-							onRemoteContent(data.content as string);
-						if (data.notes !== undefined && onRemoteNotes)
-							onRemoteNotes(data.notes as Note[]);
-						if (data.excalidraw !== undefined && onRemoteExcalidraw)
-							onRemoteExcalidraw(data.excalidraw as ExcalidrawData);
-						if (data.groqApiKey !== undefined && onRemoteGroqApiKey)
-							onRemoteGroqApiKey(data.groqApiKey as string);
-						if (data.timers !== undefined && onRemoteTimers)
-							onRemoteTimers(data.timers as TimerData[]);
-						setSyncStatus("synced");
-					},
-					(err) => {
-						console.error("Firestore snapshot error:", err);
-						setSyncStatus("error");
-					},
+		try {
+			const docSnap = await getDoc(docRef);
+			if (!docSnap.exists()) {
+				await setDoc(docRef, {
+					content: "",
+					createdAt: serverTimestamp(),
+					updatedAt: serverTimestamp(),
+				});
+			} else {
+				readFieldsFromDoc(
+					docSnap.data() as Record<string, unknown>,
+					callbacksRef.current,
 				);
-
-				setIsConnected(true);
-				setSyncStatus("synced");
-			} catch (e) {
-				console.error("Firestore setup error:", e);
-				setSyncStatus("error");
 			}
-		},
-		[
-			onRemoteContent,
-			onRemoteNotes,
-			onRemoteExcalidraw,
-			onRemoteGroqApiKey,
-			onRemoteTimers,
-		],
-	);
+
+			unsubFirestoreRef.current = onSnapshot(
+				docRef,
+				(snap) => {
+					if (!snap.exists()) return;
+					if (snap.metadata.hasPendingWrites) return;
+					if (writeFailedRef.current) return;
+
+					readFieldsFromDoc(
+						snap.data() as Record<string, unknown>,
+						callbacksRef.current,
+					);
+					setSyncStatus("synced");
+				},
+				(err) => {
+					console.error("Firestore snapshot error:", err);
+					setSyncStatus("error");
+				},
+			);
+
+			setIsConnected(true);
+			setSyncStatus("synced");
+		} catch (e) {
+			console.error("Firestore setup error:", e);
+			setSyncStatus("error");
+		}
+	}, []);
 
 	useEffect(() => {
 		if (setupRanRef.current) return;
@@ -158,13 +188,14 @@ export const useFirestoreSync = ({
 		unsubAuthRef.current = onAuthStateChanged(auth, async (firebaseUser) => {
 			if (firebaseUser) {
 				setUser(firebaseUser);
+				setAuthError(null);
 				setSyncStatus("connecting");
 				await setupFirestore(firebaseUser.uid);
 			} else if (!hasAttemptedAnonymousRef.current) {
-				hasAttemptedAnonymousRef.current = true;
 				setSyncStatus("connecting");
 				try {
 					await loginAnonymously();
+					hasAttemptedAnonymousRef.current = true;
 				} catch (e) {
 					console.error("Anonymous sign-in failed:", e);
 					setSyncStatus("disconnected");
@@ -178,6 +209,7 @@ export const useFirestoreSync = ({
 		return () => {
 			unsubAuthRef.current?.();
 			unsubFirestoreRef.current?.();
+			setupRanRef.current = false;
 		};
 	}, [setupFirestore, teardownFirestore]);
 
@@ -188,6 +220,7 @@ export const useFirestoreSync = ({
 		const docRef = doc(db, "todos", `todo_${user.uid}`);
 
 		setSyncStatus("syncing");
+		writeFailedRef.current = false;
 
 		const data: Record<string, unknown> = {
 			content,
@@ -201,46 +234,39 @@ export const useFirestoreSync = ({
 
 		setDoc(docRef, data, { merge: true })
 			.then(() => {
-				setSyncStatus("synced");
+				if (!writeFailedRef.current) {
+					setSyncStatus("synced");
+				}
 			})
 			.catch((e) => {
+				writeFailedRef.current = true;
 				console.error("Firestore write error:", e);
 				setSyncStatus("error");
 			});
 	}, [content, notes, excalidraw, groqApiKey, timers, isConnected, user]);
 
-	const connect = useCallback(async () => {
+	const connect = async () => {
 		setSyncStatus("connecting");
-		try {
-			await signInWithGoogle();
-		} catch (err: unknown) {
-			const message = err instanceof Error ? err.message : "Failed to sign in";
-			console.error("Login error:", message);
-			setSyncStatus("error");
-		}
-	}, []);
+	};
 
-	const disconnect = useCallback(async () => {
+	const disconnect = async () => {
 		teardownFirestore();
-		try {
-			await signOutUser();
-			hasAttemptedAnonymousRef.current = false;
-			await loginAnonymously();
-		} catch (e) {
-			console.error("Sign out error:", e);
+		if (user && !user.isAnonymous) {
+			try {
+				await signOutUser();
+				hasAttemptedAnonymousRef.current = false;
+				await loginAnonymously();
+			} catch (e) {
+				console.error("Sign out error:", e);
+			}
 		}
-	}, [teardownFirestore]);
+	};
 
 	return {
 		isConnected,
 		syncStatus,
-		user: user
-			? {
-					photoURL: user.photoURL,
-					displayName: user.displayName,
-					isAnonymous: user.isAnonymous,
-				}
-			: null,
+		user: user ? mapUser(user) : null,
+		authError,
 		connect,
 		disconnect,
 	};
