@@ -3,7 +3,6 @@ import {
 	Badge,
 	Button,
 	Collapse,
-	Group,
 	NavLink,
 	Stack,
 	Switch,
@@ -13,7 +12,6 @@ import {
 } from "@mantine/core";
 import { ChevronRight, Search, X } from "lucide-react";
 import type { ReactNode } from "react";
-import type { Task } from "@/types/todo";
 
 interface PriorityConfig {
 	label: string;
@@ -29,7 +27,7 @@ export const PRIORITY_CONFIG: Record<string, PriorityConfig> = {
 interface FilterButtonProps {
 	type: string;
 	value: string;
-	label: string;
+	label?: string;
 	count: number;
 	isActive: boolean;
 	onClick: () => void;
@@ -48,10 +46,11 @@ export const FilterButton = ({
 	const priorityColor =
 		type === "priority" ? PRIORITY_CONFIG[value]?.color : null;
 	const variant = isActive ? "light" : "subtle";
+	const displayLabel = label ?? value;
 
 	return (
 		<NavLink
-			label={label}
+			label={displayLabel}
 			description={prefix ? `${prefix}${value}` : undefined}
 			rightSection={
 				<Badge size="sm" variant="light">
@@ -72,8 +71,8 @@ interface SidebarSectionProps {
 	expandedSections: Set<string>;
 	onToggle: (id: string) => void;
 	children: ReactNode;
-	isEmpty: boolean;
-	emptyMessage: string;
+	isEmpty?: boolean;
+	emptyMessage?: string;
 }
 
 export const SidebarSection = ({
@@ -84,35 +83,43 @@ export const SidebarSection = ({
 	children,
 	isEmpty,
 	emptyMessage,
-}: SidebarSectionProps) => (
-	<Stack gap="xs">
-		<Button
-			variant="subtle"
-			color="gray"
-			fullWidth
-			justify="space-between"
-			rightSection={<ChevronRight size={14} />}
-			onClick={() => onToggle(id)}
-			tt="uppercase"
-			size="xs"
-			fw={700}
-			style={{ letterSpacing: "0.05em" }}
-		>
-			{title}
-		</Button>
-		<Collapse expanded={expandedSections.has(id)}>
-			<Stack gap={4}>
-				{isEmpty ? (
-					<Text size="xs" c="dimmed" fs="italic" px="sm" py="xs">
-						{emptyMessage}
-					</Text>
-				) : (
-					children
-				)}
-			</Stack>
-		</Collapse>
-	</Stack>
-);
+}: SidebarSectionProps) => {
+	const isExpanded = expandedSections.has(id);
+	return (
+		<Stack gap="xs">
+			<Button
+				variant="subtle"
+				color="gray"
+				fullWidth
+				justify="space-between"
+				rightSection={
+					<ChevronRight
+						size={14}
+						style={{ transform: isExpanded ? "rotate(90deg)" : "none" }}
+					/>
+				}
+				onClick={() => onToggle(id)}
+				tt="uppercase"
+				size="xs"
+				fw={700}
+				style={{ letterSpacing: "0.05em" }}
+			>
+				{title}
+			</Button>
+			<Collapse expanded={isExpanded}>
+				<Stack gap={4}>
+					{isEmpty ? (
+						<Text size="xs" c="dimmed" fs="italic" px="sm" py="xs">
+							{emptyMessage}
+						</Text>
+					) : (
+						children
+					)}
+				</Stack>
+			</Collapse>
+		</Stack>
+	);
+};
 
 interface CollapsedPriorityButtonProps {
 	priority: string;
@@ -143,32 +150,6 @@ export const CollapsedPriorityButton = ({
 		</ThemeIcon>
 	);
 };
-
-interface FilteredTasksProps {
-	filteredTasks: Task[];
-	onClearFilter: () => void;
-}
-
-export const FilteredTasks = ({
-	filteredTasks,
-	onClearFilter,
-}: FilteredTasksProps) => (
-	<Stack gap="xs" p="md">
-		<Group justify="space-between">
-			<Text size="sm" fw={600}>
-				{filteredTasks.length} matching tasks
-			</Text>
-			<Button variant="subtle" size="xs" onClick={onClearFilter}>
-				Clear Filter
-			</Button>
-		</Group>
-		{filteredTasks.map((task) => (
-			<Text key={task.id} size="xs" ff="monospace" px="xs">
-				{task.raw}
-			</Text>
-		))}
-	</Stack>
-);
 
 interface SearchInputProps {
 	value: string;

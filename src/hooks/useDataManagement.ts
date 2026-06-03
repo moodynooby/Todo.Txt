@@ -11,7 +11,10 @@ import {
 import { readBackup } from "@/lib/persistedState";
 import type { Note } from "@/types/notes";
 
-export function useDataManagement(viewMode?: string) {
+export function useDataManagement(
+	viewMode?: string,
+	onFilterClick?: (type: string, value: string) => void,
+) {
 	const initialContent = readBackup()?.data?.content ?? "";
 	const [rteContent, setRteContentState] = useState(initialContent);
 	const rteContentRef = useRef(rteContent);
@@ -27,6 +30,7 @@ export function useDataManagement(viewMode?: string) {
 	const { editor, setExternalContent } = useTipTap({
 		initialContent: rteContent,
 		onContentChange: handleContentChange,
+		onFilterClick,
 	});
 
 	const excalidrawDataRef = useRef<ExcalidrawData | null>(null);

@@ -6,6 +6,7 @@ import { getEditorExtensions } from "@/utils/editorExtensions";
 interface UseTipTapProps {
 	initialContent: string;
 	onContentChange: (content: string) => void;
+	onFilterClick?: (type: string, value: string) => void;
 }
 
 interface UseTipTapReturn {
@@ -16,10 +17,12 @@ interface UseTipTapReturn {
 export const useTipTap = ({
 	initialContent,
 	onContentChange,
+	onFilterClick,
 }: UseTipTapProps): UseTipTapReturn => {
 	const editor = useEditor({
 		extensions: getEditorExtensions({
 			placeholder: "Start writing your todos...",
+			onFilterClick,
 		}),
 		content: initialContent,
 		contentType: "markdown",

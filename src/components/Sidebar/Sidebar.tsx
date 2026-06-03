@@ -15,13 +15,12 @@ import {
 	Filter as FilterIcon,
 	X,
 } from "lucide-react";
-import { useSidebarState } from "@/hooks/useSidebarState";
+import type { useSidebarState } from "@/hooks/useSidebarState";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 import {
 	CollapsedPriorityButton,
 	CompletionToggle,
 	FilterButton,
-	FilteredTasks,
 	PRIORITY_CONFIG,
 	SearchInput,
 	SidebarSection,
@@ -33,7 +32,7 @@ interface SidebarProps {
 	onToggle: () => void;
 	taskData: ParsedTodoContent;
 	activeFilter: Filter | null;
-	onFilterChange: (filter: Filter | null) => void;
+	sidebarState: ReturnType<typeof useSidebarState>;
 }
 
 const isFilterActive = (
@@ -47,25 +46,20 @@ const Sidebar = ({
 	onToggle,
 	taskData,
 	activeFilter,
-	onFilterChange,
+	sidebarState,
 }: SidebarProps) => {
-	const { tasks, priorities, projects, contexts, dueDates } = taskData;
+	const { priorities, projects, contexts, dueDates } = taskData;
 	const {
 		expandedSections,
 		toggleSection,
 		handleFilterClick,
 		clearFilter,
 		completedCount,
-		filteredTasks,
 		searchQuery,
 		setSearchQuery,
 		showCompleted,
 		toggleShowCompleted,
-	} = useSidebarState({
-		taskData,
-		activeFilter,
-		onFilterChange,
-	});
+	} = sidebarState;
 
 	if (isCollapsed) {
 		return (
@@ -76,9 +70,9 @@ const Sidebar = ({
 					</ActionIcon>
 				</Group>
 				<Stack align="center" gap="xs" p="xs">
-					{Object.keys(priorities)
-						.filter((p) => priorities[p]?.length)
-						.map((p) => (
+					{Object.entries(priorities)
+						.filter(([, items]) => items?.length)
+						.map(([p]) => (
 							<CollapsedPriorityButton
 								key={p}
 								priority={p}
@@ -149,7 +143,7 @@ const Sidebar = ({
 
 			<Group justify="space-between" px="md" py="xs">
 				<Text size="xs" c="dimmed">
-					{tasks.length} tasks
+					{sidebarState.filteredTasks.length} tasks
 				</Text>
 				<Text size="xs" c="dimmed">
 					{completedCount} done
@@ -167,118 +161,101 @@ const Sidebar = ({
 			<Divider />
 
 			<ScrollArea style={{ flex: 1 }} p="sm">
-				{activeFilter ? (
-					<FilteredTasks
-						filteredTasks={filteredTasks}
-						onClearFilter={clearFilter}
-					/>
-				) : (
-					<>
-						<SidebarSection
-							title="Priorities"
-							id="priorities"
-							expandedSections={expandedSections}
-							onToggle={toggleSection}
-							isEmpty={Object.values(priorities).every((arr) => !arr?.length)}
-							emptyMessage="No prioritized tasks"
-						>
-							{Object.entries(priorities).map(([priority, items]) => {
-								if (!items?.length) return null;
-								return (
-									<FilterButton
-										key={priority}
-										type="priority"
-										value={priority}
-										label={PRIORITY_CONFIG[priority]?.label || priority}
-										count={items.length}
-										isActive={isFilterActive(
-											activeFilter,
-											"priority",
-											priority,
-										)}
-										onClick={() => handleFilterClick("priority", priority)}
-									/>
-								);
-							})}
-						</SidebarSection>
+				<SidebarSection
+					title="Priorities"
+					id="priorities"
+					expandedSections={expandedSections}
+					onToggle={toggleSection}
+					isEmpty={Object.values(priorities).every((arr) => !arr?.length)}
+					emptyMessage="No prioritized tasks"
+				>
+					{Object.entries(priorities).map(([priority, items]) => {
+						if (!items?.length) return null;
+						return (
+							<FilterButton
+								key={priority}
+								type="priority"
+								value={priority}
+								label={PRIORITY_CONFIG[priority]?.label || priority}
+								count={items.length}
+								isActive={isFilterActive(activeFilter, "priority", priority)}
+								onClick={() => handleFilterClick("priority", priority)}
+							/>
+						);
+					})}
+				</SidebarSection>
 
-						<SidebarSection
-							title="Projects"
-							id="projects"
-							expandedSections={expandedSections}
-							onToggle={toggleSection}
-							isEmpty={Object.keys(projects).length === 0}
-							emptyMessage="No projects found"
-						>
-							{Object.entries(projects).map(([project, items]) => (
-								<FilterButton
-									key={project}
-									type="project"
-									value={project}
-									label={project}
-									count={items.length}
-									isActive={isFilterActive(activeFilter, "project", project)}
-									onClick={() => handleFilterClick("project", project)}
-									prefix="+"
-								/>
-							))}
-						</SidebarSection>
+				<SidebarSection
+					title="Projects"
+					id="projects"
+					expandedSections={expandedSections}
+					onToggle={toggleSection}
+					isEmpty={Object.keys(projects).length === 0}
+					emptyMessage="No projects found"
+				>
+					{Object.entries(projects).map(([project, items]) => (
+						<FilterButton
+							key={project}
+							type="project"
+							value={project}
+							count={items.length}
+							isActive={isFilterActive(activeFilter, "project", project)}
+							onClick={() => handleFilterClick("project", project)}
+							prefix="+"
+						/>
+					))}
+				</SidebarSection>
 
-						<SidebarSection
-							title="Contexts"
-							id="contexts"
-							expandedSections={expandedSections}
-							onToggle={toggleSection}
-							isEmpty={Object.keys(contexts).length === 0}
-							emptyMessage="No contexts found"
-						>
-							{Object.entries(contexts).map(([context, items]) => (
-								<FilterButton
-									key={context}
-									type="context"
-									value={context}
-									count={items.length}
-									isActive={isFilterActive(activeFilter, "context", context)}
-									onClick={() => handleFilterClick("context", context)}
-									prefix="@"
-									label={context}
-								/>
-							))}
-						</SidebarSection>
+				<SidebarSection
+					title="Contexts"
+					id="contexts"
+					expandedSections={expandedSections}
+					onToggle={toggleSection}
+					isEmpty={Object.keys(contexts).length === 0}
+					emptyMessage="No contexts found"
+				>
+					{Object.entries(contexts).map(([context, items]) => (
+						<FilterButton
+							key={context}
+							type="context"
+							value={context}
+							count={items.length}
+							isActive={isFilterActive(activeFilter, "context", context)}
+							onClick={() => handleFilterClick("context", context)}
+							prefix="@"
+						/>
+					))}
+				</SidebarSection>
 
-						<SidebarSection
-							title="Due Dates"
-							id="dueDates"
-							expandedSections={expandedSections}
-							onToggle={toggleSection}
-							isEmpty={Object.keys(dueDates).length === 0}
-							emptyMessage="No due dates found"
-						>
-							{Object.entries(dueDates).map(([due, items]) => (
-								<FilterButton
-									key={due}
-									type="due"
-									value={due}
-									label={due}
-									count={items.length}
-									isActive={isFilterActive(activeFilter, "due", due)}
-									onClick={() => handleFilterClick("due", due)}
-								/>
-							))}
-						</SidebarSection>
+				<SidebarSection
+					title="Due Dates"
+					id="dueDates"
+					expandedSections={expandedSections}
+					onToggle={toggleSection}
+					isEmpty={Object.keys(dueDates).length === 0}
+					emptyMessage="No due dates found"
+				>
+					{Object.entries(dueDates).map(([due, items]) => (
+						<FilterButton
+							key={due}
+							type="due"
+							value={due}
+							label={due}
+							count={items.length}
+							isActive={isFilterActive(activeFilter, "due", due)}
+							onClick={() => handleFilterClick("due", due)}
+						/>
+					))}
+				</SidebarSection>
 
-						<SidebarSection
-							title="Tips"
-							id="tips"
-							expandedSections={expandedSections}
-							onToggle={toggleSection}
-							isEmpty={false}
-							emptyMessage=""
-						>
-							<TipsPanel />
-						</SidebarSection>
-					</>
-				)}
+				<SidebarSection
+					title="Tips"
+					id="tips"
+					expandedSections={expandedSections}
+					onToggle={toggleSection}
+				>
+					<TipsPanel />
+				</SidebarSection>
 			</ScrollArea>
 		</Paper>
 	);

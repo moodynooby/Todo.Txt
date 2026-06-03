@@ -1,5 +1,3 @@
-import { escapeHtml, extractLines, isEmptyHtml } from "@/utils/html";
-
 const SYNC_TAG = "__sync__";
 
 export interface ExcalidrawData {
@@ -54,13 +52,16 @@ function createSyncTextElement(
 }
 
 export function syncTextToExcalidraw(
-	htmlContent: string,
+	textContent: string,
 	elements: readonly unknown[],
 	appState: Record<string, unknown>,
 ): { elements: readonly unknown[]; appState: Record<string, unknown> } {
-	if (!htmlContent || isEmptyHtml(htmlContent)) return { elements, appState };
+	if (!textContent?.trim()) return { elements, appState };
 
-	const lines = extractLines(htmlContent);
+	const lines = textContent
+		.split("\n")
+		.map((l) => l.trim())
+		.filter((l) => l.length > 0);
 	if (lines.length === 0) return { elements, appState };
 
 	const existingElements = elements as Record<string, unknown>[];
@@ -105,8 +106,5 @@ export function syncExcalidrawToText(
 
 	if (userTextElements.length === 0) return null;
 
-	const text = userTextElements
-		.map((el) => escapeHtml(el.text as string))
-		.join("</p><p>");
-	return `<p>${text}</p>`;
+	return userTextElements.map((el) => el.text as string).join("\n");
 }

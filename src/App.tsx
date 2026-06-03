@@ -33,6 +33,15 @@ const App = () => {
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [aiToolsOpen, setAiToolsOpen] = useState(false);
 
+	const handleTagFilterClick = useCallback((type: string, value: string) => {
+		setActiveFilter((prev) => {
+			if (prev?.type === type && prev?.value === value) {
+				return null;
+			}
+			return { type: type as Filter["type"], value };
+		});
+	}, []);
+
 	const {
 		editor,
 		setExternalContent,
@@ -59,7 +68,7 @@ const App = () => {
 		authError,
 		connect,
 		disconnect,
-	} = useDataManagement(viewMode);
+	} = useDataManagement(viewMode, handleTagFilterClick);
 
 	const handleFileLoaded = useCallback(
 		(html: string) => {

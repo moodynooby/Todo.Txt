@@ -1,6 +1,5 @@
 import type { ParsedTodoContent, Task } from "@/types/todo";
 import { getToday, getTomorrow, getYesterday } from "./dateUtils";
-import { stripHtml } from "./html";
 
 // Pre-compiled regexes for better performance
 const RE_IS_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -23,6 +22,65 @@ const parseRelativeDate = (
 	return undefined;
 };
 
+export const parseTodoLine = (trimmed: string, id = 0): Task => {
+	// Fast-path check for markers
+	const hasCheckboxMarker = RE_CHECKBOX_MARKER.test(trimmed);
+	const isChecked = hasCheckboxMarker && RE_CHECKED_MARKER.test(trimmed);
+	const hasXPrefix = !hasCheckboxMarker && RE_X_PREFIX.test(trimmed);
+
+	const cleanText = hasCheckboxMarker
+		? trimmed.replace(RE_CHECKBOX_MARKER, "")
+		: trimmed;
+
+	const completed = isChecked || hasXPrefix;
+
+	const task: Task = {
+		id,
+		text: cleanText,
+		raw: trimmed,
+		completed,
+	};
+
+	// Only check for priority if the line starts with '('
+	if (cleanText.startsWith("(")) {
+		const priorityMatch = cleanText.match(RE_PRIORITY);
+		if (priorityMatch) {
+			task.priority = priorityMatch[1];
+		}
+	}
+
+	// Only check for projects if '+' is present
+	if (cleanText.includes("+")) {
+		const projectMatches = cleanText.match(RE_PROJECTS);
+		if (projectMatches) {
+			task.projects = projectMatches.map((p: string) => p.slice(1));
+		}
+	}
+
+	// Only check for contexts if '@' is present
+	if (cleanText.includes("@")) {
+		const contextMatches = cleanText.match(RE_CONTEXTS);
+		if (contextMatches) {
+			task.contexts = contextMatches.map((c: string) => c.slice(1));
+		}
+	}
+
+	// Only check for due date if 'due:' is present
+	if (cleanText.includes("due:")) {
+		const dueMatch = cleanText.match(RE_DUE);
+		if (dueMatch) {
+			const value = dueMatch[1].toLowerCase();
+			const today = getToday();
+			const tomorrow = getTomorrow();
+			const yesterday = getYesterday();
+			const dateContext = { today, tomorrow, yesterday };
+			task.due = parseRelativeDate(value, dateContext);
+		}
+	}
+
+	return task;
+};
+
 export const parseTodoContent = (content: string): ParsedTodoContent => {
 	if (!content)
 		return {
@@ -34,7 +92,7 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 			completedCount: 0,
 		};
 
-	const text = stripHtml(content, "\n");
+	const text = content;
 	const rawLines = text.split("\n");
 
 	const tasks: Task[] = [];
@@ -46,8 +104,6 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 
 	const today = getToday();
 	const tomorrow = getTomorrow();
-	const yesterday = getYesterday();
-	const dateContext = { today, tomorrow, yesterday };
 
 	const categorizeDueDate = (due: string): string => {
 		if (RE_IS_DATE.test(due)) {
@@ -62,81 +118,43 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		const trimmed = rawLines[i].trim();
 		if (!trimmed) continue;
 
-		// Fast-path check for markers
-		const hasCheckboxMarker = RE_CHECKBOX_MARKER.test(trimmed);
-		const isChecked = hasCheckboxMarker && RE_CHECKED_MARKER.test(trimmed);
-		const hasXPrefix = !hasCheckboxMarker && RE_X_PREFIX.test(trimmed);
+		const task = parseTodoLine(trimmed, i);
 
-		const cleanText = hasCheckboxMarker
-			? trimmed.replace(RE_CHECKBOX_MARKER, "")
-			: trimmed;
-
-		const completed = isChecked || hasXPrefix;
-		if (completed) {
+		if (task.completed) {
 			completedCount++;
 		}
 
-		const task: Task = {
-			id: i,
-			text: cleanText,
-			raw: trimmed,
-			completed,
-		};
+		if (task.priority) {
+			if (!priorities[task.priority]) {
+				priorities[task.priority] = [];
+			}
+			priorities[task.priority].push(task);
+		}
 
-		// Only check for priority if the line starts with '('
-		if (cleanText.startsWith("(")) {
-			const priorityMatch = cleanText.match(RE_PRIORITY);
-			if (priorityMatch) {
-				task.priority = priorityMatch[1];
-				if (!priorities[task.priority]) {
-					priorities[task.priority] = [];
+		if (task.projects) {
+			for (const p of task.projects) {
+				if (!projects[p]) {
+					projects[p] = [];
 				}
-				priorities[task.priority].push(task);
+				projects[p].push(task);
 			}
 		}
 
-		// Only check for projects if '+' is present
-		if (cleanText.includes("+")) {
-			const projectMatches = cleanText.match(RE_PROJECTS);
-			if (projectMatches) {
-				task.projects = projectMatches.map((p: string) => p.slice(1));
-				for (const p of task.projects) {
-					if (!projects[p]) {
-						projects[p] = [];
-					}
-					projects[p].push(task);
+		if (task.contexts) {
+			for (const c of task.contexts) {
+				if (!contexts[c]) {
+					contexts[c] = [];
 				}
+				contexts[c].push(task);
 			}
 		}
 
-		// Only check for contexts if '@' is present
-		if (cleanText.includes("@")) {
-			const contextMatches = cleanText.match(RE_CONTEXTS);
-			if (contextMatches) {
-				task.contexts = contextMatches.map((c: string) => c.slice(1));
-				for (const c of task.contexts) {
-					if (!contexts[c]) {
-						contexts[c] = [];
-					}
-					contexts[c].push(task);
-				}
+		if (task.due) {
+			const category = categorizeDueDate(task.due);
+			if (!dueDates[category]) {
+				dueDates[category] = [];
 			}
-		}
-
-		// Only check for due date if 'due:' is present
-		if (cleanText.includes("due:")) {
-			const dueMatch = cleanText.match(RE_DUE);
-			if (dueMatch) {
-				const value = dueMatch[1].toLowerCase();
-				task.due = parseRelativeDate(value, dateContext);
-				if (task.due) {
-					const category = categorizeDueDate(task.due);
-					if (!dueDates[category]) {
-						dueDates[category] = [];
-					}
-					dueDates[category].push(task);
-				}
-			}
+			dueDates[category].push(task);
 		}
 
 		tasks.push(task);

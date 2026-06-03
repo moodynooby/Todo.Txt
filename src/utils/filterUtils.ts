@@ -14,7 +14,7 @@ export const applyFilter = (
 	tasks: Task[],
 	activeFilter: Filter | null,
 ): Task[] => {
-	if (!activeFilter) return [];
+	if (!activeFilter) return tasks;
 	const filters: Record<FilterType, (t: Task) => boolean> = {
 		priority: (t) => t.priority === activeFilter.value,
 		project: (t) => t.projects?.includes(activeFilter.value) ?? false,

@@ -48,3 +48,75 @@
 	text-decoration: line-through;
 	color: var(--mantine-color-dimmed);
 }
+
+/* Custom interactive tags & filtering */
+.filter-hidden {
+	display: none !important;
+}
+
+.tag-interactive {
+	cursor: pointer;
+	border-radius: 4px;
+	padding: 1px 6px;
+	font-weight: 600;
+	font-size: 0.9em;
+	transition:
+		transform 0.1s ease,
+		filter 0.15s ease,
+		background-color 0.15s ease;
+	display: inline-block;
+	margin: 0 2px;
+	user-select: none;
+}
+
+.tag-interactive:hover {
+	transform: scale(1.05);
+	filter: brightness(0.95);
+}
+
+.tag-priority {
+	border: 1px solid transparent;
+}
+
+.tag-priority-A {
+	background-color: var(--mantine-color-red-light);
+	color: var(--mantine-color-red-filled);
+	border-color: var(--mantine-color-red-light-border);
+}
+
+.tag-priority-B {
+	background-color: var(--mantine-color-yellow-light);
+	color: var(--mantine-color-yellow-filled);
+	border-color: var(--mantine-color-yellow-light-border);
+}
+
+.tag-priority-C {
+	background-color: var(--mantine-color-blue-light);
+	color: var(--mantine-color-blue-filled);
+	border-color: var(--mantine-color-blue-light-border);
+}
+
+.tag-project {
+	background-color: var(--mantine-color-violet-light);
+	color: var(--mantine-color-violet-filled);
+	border: 1px solid var(--mantine-color-violet-light-border);
+}
+
+.tag-context {
+	background-color: var(--mantine-color-teal-light);
+	color: var(--mantine-color-teal-filled);
+	border: 1px solid var(--mantine-color-teal-light-border);
+}
+
+.tag-due {
+	background-color: var(--mantine-color-gray-light);
+	color: var(--mantine-color-gray-filled);
+	border: 1px solid var(--mantine-color-gray-light-border);
+}
+
+.tag-due-overdue {
+	background-color: var(--mantine-color-orange-light);
+	color: var(--mantine-color-orange-filled);
+	border-color: var(--mantine-color-orange-filled);
+	font-weight: 700;
+}

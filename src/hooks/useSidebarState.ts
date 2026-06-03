@@ -22,7 +22,7 @@ export const useSidebarState = ({
 	activeFilter,
 	onFilterChange,
 }: UseSidebarStateParams) => {
-	const { tasks, completedCount } = taskData;
+	const { tasks } = taskData;
 	const [persisted, setPersisted] = useLocalStorage<PersistedState>({
 		key: STORAGE_KEY,
 		defaultValue: defaults,
@@ -82,6 +82,11 @@ export const useSidebarState = ({
 	const filteredTasks = useMemo(
 		() => applyFilter(searchedTasks, activeFilter),
 		[searchedTasks, activeFilter],
+	);
+
+	const completedCount = useMemo(
+		() => filteredTasks.filter((t) => t.completed).length,
+		[filteredTasks],
 	);
 
 	const toggleShowCompleted = (): void => {

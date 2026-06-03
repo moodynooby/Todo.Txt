@@ -29,9 +29,6 @@ importers:
       '@tiptap/core':
         specifier: ^3.24.0
         version: 3.24.0(@tiptap/pm@3.24.0)
-      '@tiptap/extension-link':
-        specifier: ^3.24.0
-        version: 3.24.0(@tiptap/core@3.24.0(@tiptap/pm@3.24.0))(@tiptap/pm@3.24.0)
       '@tiptap/extension-placeholder':
         specifier: ^3.24.0
         version: 3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.24.0(@tiptap/pm@3.24.0))(@tiptap/pm@3.24.0))
@@ -41,12 +38,12 @@ importers:
       '@tiptap/extension-task-list':
         specifier: ^3.24.0
         version: 3.24.0(@tiptap/extension-list@3.24.0(@tiptap/core@3.24.0(@tiptap/pm@3.24.0))(@tiptap/pm@3.24.0))
-      '@tiptap/extension-underline':
-        specifier: ^3.24.0
-        version: 3.24.0(@tiptap/core@3.24.0(@tiptap/pm@3.24.0))
       '@tiptap/markdown':
         specifier: ^3.24.0
         version: 3.24.0(@tiptap/core@3.24.0(@tiptap/pm@3.24.0))(@tiptap/pm@3.24.0)
+      '@tiptap/pm':
+        specifier: ^3.24.0
+        version: 3.24.0
       '@tiptap/react':
         specifier: ^3.24.0
         version: 3.24.0(@floating-ui/dom@1.7.6)(@tiptap/core@3.24.0(@tiptap/pm@3.24.0))(@tiptap/pm@3.24.0)(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)

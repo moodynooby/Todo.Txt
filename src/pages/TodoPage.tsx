@@ -1,8 +1,10 @@
 import { ActionIcon, Flex, Transition } from "@mantine/core";
 import { Filter as FilterIcon } from "lucide-react";
+import { useEffect } from "react";
 import { Editor } from "@/components/Editor";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { useEditor } from "@/context/EditorContext";
+import { useSidebarState } from "@/hooks/useSidebarState";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 
 interface TodoPageProps {
@@ -17,6 +19,28 @@ const TodoPage = ({
 	onFilterChange,
 }: TodoPageProps) => {
 	const { editor, sidebarCollapsed, onToggleSidebar } = useEditor();
+
+	const sidebarState = useSidebarState({
+		taskData,
+		activeFilter,
+		onFilterChange,
+	});
+
+	// Sync filter and search state to TipTap's storage dynamically
+	useEffect(() => {
+		const storage = editor?.storage as { taskFilter?: { activeFilter: Filter | null; searchQuery: string; showCompleted: boolean } };
+		if (editor && !editor.isDestroyed && storage?.taskFilter) {
+			storage.taskFilter.activeFilter = activeFilter;
+			storage.taskFilter.searchQuery = sidebarState.searchQuery;
+			storage.taskFilter.showCompleted = sidebarState.showCompleted;
+			editor.view.dispatch(editor.state.tr.setMeta("filterUpdate", Date.now()));
+		}
+	}, [
+		editor,
+		activeFilter,
+		sidebarState.searchQuery,
+		sidebarState.showCompleted,
+	]);
 
 	if (!editor) return null;
 
@@ -46,7 +70,7 @@ const TodoPage = ({
 					onToggle={onToggleSidebar}
 					taskData={taskData}
 					activeFilter={activeFilter}
-					onFilterChange={onFilterChange}
+					sidebarState={sidebarState}
 				/>
 			</Flex>
 			<Flex direction="column" style={{ flex: 1, minWidth: 0 }}>
