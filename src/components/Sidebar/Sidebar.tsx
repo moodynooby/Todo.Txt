@@ -26,6 +26,7 @@ import {
 	SearchInput,
 	SidebarSection,
 } from "./SidebarParts";
+import TipsPanel from "./TipsPanel";
 
 interface SidebarProps {
 	isCollapsed: boolean;
@@ -264,6 +265,17 @@ const Sidebar = ({
 									onClick={() => handleFilterClick("due", due)}
 								/>
 							))}
+						</SidebarSection>
+
+						<SidebarSection
+							title="Tips"
+							id="tips"
+							expandedSections={expandedSections}
+							onToggle={toggleSection}
+							isEmpty={false}
+							emptyMessage=""
+						>
+							<TipsPanel />
 						</SidebarSection>
 					</>
 				)}

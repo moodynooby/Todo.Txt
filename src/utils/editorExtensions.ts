@@ -20,7 +20,7 @@ export const getEditorExtensions = ({
 	}),
 	Placeholder.configure({ placeholder }),
 	Markdown.configure({
-		markedOptions: { gfm: true, breaks: true },
+		markedOptions: { gfm: true },
 	}),
 	Link.configure({
 		openOnClick: false,

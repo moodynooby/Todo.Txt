@@ -18,7 +18,13 @@ export interface PersistedState {
 export const defaults: PersistedState = {
 	viewMode: "todo",
 	sidebar: {
-		expandedSections: ["priorities", "projects", "contexts", "dueDates"],
+		expandedSections: [
+			"priorities",
+			"projects",
+			"contexts",
+			"dueDates",
+			"tips",
+		],
 		search: "",
 		showCompleted: false,
 	},
