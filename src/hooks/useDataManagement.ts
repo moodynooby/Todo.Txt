@@ -46,7 +46,6 @@ export function useDataManagement(
 	const handleRemoteContent = useCallback(
 		(content: string) => {
 			setExternalContent(content);
-			setRteContentState(content);
 		},
 		[setExternalContent],
 	);

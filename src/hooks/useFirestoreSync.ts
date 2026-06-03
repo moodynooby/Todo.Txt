@@ -80,6 +80,7 @@ export const useFirestoreSync = ({
 	const retryCountRef = useRef(0);
 	const writeSeqRef = useRef(0);
 	const lastSyncSeqRef = useRef(0);
+	const remoteSeqRef = useRef(0);
 	const disconnectGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const pendingMigrationRef = useRef<string | null>(null);
 	const backupReadyRef = useRef(false);
@@ -106,7 +107,15 @@ export const useFirestoreSync = ({
 		}
 	}, []);
 
-	const readFieldsFromDoc = useCallback((data: Record<string, unknown>) => {
+	const readFieldsFromDoc = useCallback((data: Record<string, unknown>, isRemote = false) => {
+		if (isRemote && writeSeqRef.current > lastSyncSeqRef.current) {
+			return;
+		}
+		const remoteSeq = (data._seq as number) ?? 0;
+		if (isRemote && remoteSeq <= remoteSeqRef.current) {
+			return;
+		}
+		remoteSeqRef.current = remoteSeq;
 		const state: Partial<FirestoreSyncState> = {};
 		if (data.content !== undefined) {
 			state.content = data.content as string;
@@ -140,15 +149,15 @@ export const useFirestoreSync = ({
 
 			setSyncStatus("syncing");
 
+			const thisSeq = ++writeSeqRef.current;
 			const data: Record<string, unknown> = {
 				content,
+				_seq: thisSeq,
 				updatedAt: serverTimestamp(),
 			};
 			if (notes !== undefined) data.notes = notes;
 			if (excalidraw !== undefined) data.excalidraw = excalidraw;
 			if (groqApiKey !== undefined) data.groqApiKey = groqApiKey;
-
-			const thisSeq = ++writeSeqRef.current;
 
 			setDoc(docRef, data, { merge: true })
 				.then(() => {
@@ -241,7 +250,7 @@ export const useFirestoreSync = ({
 					(snap) => {
 						if (!snap.exists()) return;
 						if (snap.metadata.hasPendingWrites) return;
-						readFieldsFromDoc(snap.data() as Record<string, unknown>);
+						readFieldsFromDoc(snap.data() as Record<string, unknown>, true);
 						setSyncStatus("synced");
 						cancelDisconnectGrace();
 					},

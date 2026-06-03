@@ -1,6 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import { useEditor } from "@tiptap/react";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { getEditorExtensions } from "@/utils/editorExtensions";
 
 interface UseTipTapProps {
@@ -19,6 +19,7 @@ export const useTipTap = ({
 	onContentChange,
 	onFilterClick,
 }: UseTipTapProps): UseTipTapReturn => {
+	const isExternalUpdate = useRef(false);
 	const editor = useEditor({
 		extensions: getEditorExtensions({
 			placeholder: "Start writing your todos...",
@@ -33,7 +34,10 @@ export const useTipTap = ({
 			},
 		},
 		onUpdate: ({ editor: currentEditor }) => {
-			onContentChange(currentEditor.getMarkdown());
+			if (!isExternalUpdate.current) {
+				onContentChange(currentEditor.getMarkdown());
+			}
+			isExternalUpdate.current = false;
 		},
 		immediatelyRender: false,
 	});
@@ -41,7 +45,8 @@ export const useTipTap = ({
 	const setExternalContent = useCallback(
 		(html: string) => {
 			if (!editor) return;
-			editor.commands.setContent(html);
+			isExternalUpdate.current = true;
+			editor.commands.setContent(html, { emitUpdate: true });
 		},
 		[editor],
 	);
