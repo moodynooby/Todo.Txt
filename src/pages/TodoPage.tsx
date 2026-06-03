@@ -28,7 +28,13 @@ const TodoPage = ({
 
 	// Sync filter and search state to TipTap's storage dynamically
 	useEffect(() => {
-		const storage = editor?.storage as { taskFilter?: { activeFilter: Filter | null; searchQuery: string; showCompleted: boolean } };
+		const storage = editor?.storage as {
+			taskFilter?: {
+				activeFilter: Filter | null;
+				searchQuery: string;
+				showCompleted: boolean;
+			};
+		};
 		if (editor && !editor.isDestroyed && storage?.taskFilter) {
 			storage.taskFilter.activeFilter = activeFilter;
 			storage.taskFilter.searchQuery = sidebarState.searchQuery;

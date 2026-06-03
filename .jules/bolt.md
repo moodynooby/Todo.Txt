@@ -5,3 +5,7 @@
 ## 2025-05-16 - [Advanced Parser Optimizations and UI Responsiveness]
 **Learning:** Even $O(N)$ operations can become bottlenecks if they involve expensive regexes or redundant passes over large data. Using `useDeferredValue` is highly effective for keeping text inputs responsive when they drive expensive derived state.
 **Action:** Use "fast-path" string checks (`startsWith`, `includes`, `indexOf`) to avoid regex execution in loops. Consolidate multiple passes over the same data into a single loop. Leverage React's concurrent features like `useDeferredValue` for expensive computations triggered by user input.
+
+## 2025-05-20 - [Single-Pass Filtering and Date Context Hoisting]
+**Learning:** Consolidating multiple `.filter()` calls into a single $O(N)$ loop within `useMemo` significantly reduces overhead for large lists. Hoisting date formatting into a `DateContext` shared by the parser and UI components prevents redundant `new Date()` and formatting operations.
+**Action:** Consolidate interdependent filter passes into a single iteration. Use factory patterns for predicates to enable clean code without sacrificing performance. Provide context objects for environmental data (like current date) to hot loops.
