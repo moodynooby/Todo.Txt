@@ -8,7 +8,7 @@ import {
 } from "@mantine/core";
 import { Pause, Play, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { TimerState } from "@/hooks/useTimers";
+import type { TimerState } from "@/context/TimerContext";
 import { playBeep } from "@/lib/beep";
 import { computeElapsed, formatTime } from "@/utils/formatTime";
 

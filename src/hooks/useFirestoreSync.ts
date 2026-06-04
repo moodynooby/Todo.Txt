@@ -34,6 +34,16 @@ export interface FirestoreSyncState {
 interface FirestoreSyncOptions {
 	localState: FirestoreSyncState;
 	onRemoteState: (state: FirestoreSyncState) => void;
+	onAuthChange?: (auth: {
+		user: {
+			photoURL: string | null;
+			displayName: string | null;
+			isAnonymous: boolean;
+		} | null;
+		isConnected: boolean;
+		syncStatus: SyncStatus;
+		authError: string | null;
+	}) => void;
 }
 
 interface FirestoreSyncReturn {
@@ -62,6 +72,7 @@ const mapUser = (u: User) => ({
 export const useFirestoreSync = ({
 	localState,
 	onRemoteState,
+	onAuthChange,
 }: FirestoreSyncOptions): FirestoreSyncReturn => {
 	const [user, setUser] = useState<User | null>(null);
 	const [isConnected, setIsConnected] = useState(false);
@@ -84,9 +95,20 @@ export const useFirestoreSync = ({
 	const disconnectGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const pendingMigrationRef = useRef<string | null>(null);
 	const backupReadyRef = useRef(false);
+	const saveQueueRef = useRef<
+		Array<{
+			content: string;
+			notes: Note[] | undefined;
+			excalidraw: ExcalidrawData | null;
+			groqApiKey: string | undefined;
+		}>
+	>([]);
+	const isProcessingRef = useRef(false);
 
 	const onRemoteStateRef = useRef(onRemoteState);
 	onRemoteStateRef.current = onRemoteState;
+	const onAuthChangeRef = useRef(onAuthChange);
+	onAuthChangeRef.current = onAuthChange;
 
 	const { content, notes, excalidraw, groqApiKey } = localState;
 
@@ -107,72 +129,108 @@ export const useFirestoreSync = ({
 		}
 	}, []);
 
-	const readFieldsFromDoc = useCallback((data: Record<string, unknown>, isRemote = false) => {
-		if (isRemote && writeSeqRef.current > lastSyncSeqRef.current) {
+	const readFieldsFromDoc = useCallback(
+		(data: Record<string, unknown>, isRemote = false) => {
+			if (isRemote && writeSeqRef.current > lastSyncSeqRef.current) {
+				return;
+			}
+			const remoteSeq = (data._seq as number) ?? 0;
+			if (isRemote && remoteSeq <= remoteSeqRef.current) {
+				return;
+			}
+			remoteSeqRef.current = remoteSeq;
+			const state: Partial<FirestoreSyncState> = {};
+			if (data.content !== undefined) {
+				state.content = data.content as string;
+			}
+			if (data.notes !== undefined) {
+				state.notes = data.notes as Note[];
+			}
+			if (data.excalidraw !== undefined) {
+				state.excalidraw = data.excalidraw as ExcalidrawData;
+			}
+			if (data.groqApiKey !== undefined) {
+				state.groqApiKey = data.groqApiKey as string;
+			}
+			onRemoteStateRef.current({
+				content: state.content ?? "",
+				...(state.notes !== undefined && { notes: state.notes }),
+				...(state.excalidraw !== undefined && {
+					excalidraw: state.excalidraw,
+				}),
+				...(state.groqApiKey !== undefined && {
+					groqApiKey: state.groqApiKey,
+				}),
+			});
+			backupReadyRef.current = true;
+		},
+		[],
+	);
+
+	const processSaveQueue = useCallback(async () => {
+		if (saveQueueRef.current.length === 0 || isProcessingRef.current) return;
+
+		isProcessingRef.current = true;
+
+		const batch = saveQueueRef.current.shift();
+		if (!batch) {
+			isProcessingRef.current = false;
 			return;
 		}
-		const remoteSeq = (data._seq as number) ?? 0;
-		if (isRemote && remoteSeq <= remoteSeqRef.current) {
-			return;
+
+		const thisSeq = ++writeSeqRef.current;
+
+		const data: Record<string, unknown> = {
+			content: batch.content,
+			_seq: thisSeq,
+			updatedAt: serverTimestamp(),
+		};
+		if (batch.notes !== undefined) data.notes = batch.notes;
+		if (batch.excalidraw !== undefined) data.excalidraw = batch.excalidraw;
+		if (batch.groqApiKey !== undefined) data.groqApiKey = batch.groqApiKey;
+
+		const db = getFirestoreDb();
+		const docRef = doc(db, "todos", `todo_${userRef.current?.uid ?? ""}`);
+
+		setSyncStatus("syncing");
+
+		try {
+			await setDoc(docRef, data, { merge: true });
+			if (thisSeq > lastSyncSeqRef.current) {
+				lastSyncSeqRef.current = thisSeq;
+				setSyncStatus("synced");
+			}
+		} catch (e) {
+			console.error("Firestore write error:", e);
+			setSyncStatus("error");
 		}
-		remoteSeqRef.current = remoteSeq;
-		const state: Partial<FirestoreSyncState> = {};
-		if (data.content !== undefined) {
-			state.content = data.content as string;
+
+		if (saveQueueRef.current.length > 0) {
+			setTimeout(processSaveQueue, 50);
+		} else {
+			isProcessingRef.current = false;
 		}
-		if (data.notes !== undefined) {
-			state.notes = data.notes as Note[];
-		}
-		if (data.excalidraw !== undefined) {
-			state.excalidraw = data.excalidraw as ExcalidrawData;
-		}
-		if (data.groqApiKey !== undefined) {
-			state.groqApiKey = data.groqApiKey as string;
-		}
-		onRemoteStateRef.current({
-			content: state.content ?? "",
-			...(state.notes !== undefined && { notes: state.notes }),
-			...(state.excalidraw !== undefined && {
-				excalidraw: state.excalidraw,
-			}),
-			...(state.groqApiKey !== undefined && {
-				groqApiKey: state.groqApiKey,
-			}),
-		});
-		backupReadyRef.current = true;
 	}, []);
 
-	const writeDoc = useCallback(
-		async (uid: string) => {
-			const db = getFirestoreDb();
-			const docRef = doc(db, "todos", `todo_${uid}`);
+	const writeDoc = useCallback(() => {
+		const pendingWrite: {
+			content: string;
+			notes: Note[] | undefined;
+			excalidraw: ExcalidrawData | null;
+			groqApiKey: string | undefined;
+		} = {
+			content,
+			notes,
+			excalidraw: excalidraw ?? null,
+			groqApiKey,
+		};
 
-			setSyncStatus("syncing");
+		saveQueueRef.current.push(pendingWrite);
 
-			const thisSeq = ++writeSeqRef.current;
-			const data: Record<string, unknown> = {
-				content,
-				_seq: thisSeq,
-				updatedAt: serverTimestamp(),
-			};
-			if (notes !== undefined) data.notes = notes;
-			if (excalidraw !== undefined) data.excalidraw = excalidraw;
-			if (groqApiKey !== undefined) data.groqApiKey = groqApiKey;
-
-			setDoc(docRef, data, { merge: true })
-				.then(() => {
-					if (thisSeq > lastSyncSeqRef.current) {
-						lastSyncSeqRef.current = thisSeq;
-						setSyncStatus("synced");
-					}
-				})
-				.catch((e) => {
-					console.error("Firestore write error:", e);
-					setSyncStatus("error");
-				});
-		},
-		[content, notes, excalidraw, groqApiKey],
-	);
+		if (!isProcessingRef.current) {
+			processSaveQueue();
+		}
+	}, [content, notes, excalidraw, groqApiKey, processSaveQueue]);
 
 	const setupFirestore = useCallback(
 		async (uid: string) => {
@@ -317,7 +375,7 @@ export const useFirestoreSync = ({
 
 			if (!isConnected || !user) return;
 
-			writeDoc(user.uid);
+			writeDoc();
 		}, WRITE_DEBOUNCE_MS);
 
 		return () => {
@@ -349,6 +407,15 @@ export const useFirestoreSync = ({
 			}
 		}
 	}, [teardownFirestore, user, cancelDisconnectGrace]);
+
+	useEffect(() => {
+		onAuthChangeRef.current?.({
+			user: user ? mapUser(user) : null,
+			isConnected,
+			syncStatus,
+			authError,
+		});
+	}, [user, isConnected, syncStatus, authError]);
 
 	return {
 		isConnected,

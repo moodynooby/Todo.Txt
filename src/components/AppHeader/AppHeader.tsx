@@ -1,12 +1,13 @@
 import { ActionIcon, Group, Image, Paper, Title, Tooltip } from "@mantine/core";
 import { Plus, Timer as TimerIcon } from "lucide-react";
 import { useEditor } from "@/context/EditorContext";
-import { useViewMode } from "@/context/ViewModeContext";
+import { useViewContext } from "@/context/ViewContext";
 import HeaderActions from "./HeaderActions";
 import ViewSwitcher from "./ViewSwitcher";
 
 const AppHeader = () => {
-	const { viewMode } = useViewMode();
+	const { state: viewState } = useViewContext();
+	const viewMode = viewState.viewMode;
 	const { addTimer } = useEditor();
 
 	return (

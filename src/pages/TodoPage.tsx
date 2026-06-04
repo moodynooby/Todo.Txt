@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Editor } from "@/components/Editor";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { useEditor } from "@/context/EditorContext";
+import { useViewContext } from "@/context/ViewContext";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 
@@ -18,7 +19,10 @@ const TodoPage = ({
 	activeFilter,
 	onFilterChange,
 }: TodoPageProps) => {
-	const { editor, sidebarCollapsed, onToggleSidebar } = useEditor();
+	const { editor } = useEditor();
+	const { state: viewState, dispatchView } = useViewContext();
+	const sidebarCollapsed = viewState.sidebarCollapsed;
+	const onToggleSidebar = () => dispatchView({ type: "TOGGLE_SIDEBAR" });
 
 	const sidebarState = useSidebarState({
 		taskData,
@@ -28,7 +32,13 @@ const TodoPage = ({
 
 	// Sync filter and search state to TipTap's storage dynamically
 	useEffect(() => {
-		const storage = editor?.storage as { taskFilter?: { activeFilter: Filter | null; searchQuery: string; showCompleted: boolean } };
+		const storage = editor?.storage as {
+			taskFilter?: {
+				activeFilter: Filter | null;
+				searchQuery: string;
+				showCompleted: boolean;
+			};
+		};
 		if (editor && !editor.isDestroyed && storage?.taskFilter) {
 			storage.taskFilter.activeFilter = activeFilter;
 			storage.taskFilter.searchQuery = sidebarState.searchQuery;

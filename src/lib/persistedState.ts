@@ -4,6 +4,7 @@ export const STORAGE_KEY = "todo_persist";
 
 export interface PersistedState {
 	viewMode: string;
+	sidebarCollapsed: boolean;
 	sidebar: {
 		expandedSections: string[];
 		search: string;
@@ -17,6 +18,7 @@ export interface PersistedState {
 
 export const defaults: PersistedState = {
 	viewMode: "todo",
+	sidebarCollapsed: false,
 	sidebar: {
 		expandedSections: [
 			"priorities",

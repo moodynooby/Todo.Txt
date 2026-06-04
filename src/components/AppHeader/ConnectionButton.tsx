@@ -9,10 +9,12 @@ import {
 import { LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useEditor } from "@/context/EditorContext";
+import { useSyncContext } from "@/context/SyncContext";
 import SignInModal from "@/features/auth/SignInModal";
 
 const ConnectionButton = () => {
-	const { user, syncStatus, onDisconnectSync } = useEditor();
+	const { user, syncStatus } = useEditor();
+	const { disconnect } = useSyncContext();
 	const [signInModalOpen, setSignInModalOpen] = useState(false);
 
 	const dotColor = () => {
@@ -88,7 +90,7 @@ const ConnectionButton = () => {
 				<Menu.Item
 					leftSection={<LogOut size={16} />}
 					color="red"
-					onClick={onDisconnectSync}
+					onClick={disconnect}
 				>
 					Sign out
 				</Menu.Item>

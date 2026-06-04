@@ -45,8 +45,22 @@ export const useTipTap = ({
 	const setExternalContent = useCallback(
 		(html: string) => {
 			if (!editor) return;
+
+			// Capture current selection state to preserve it
+			const currentSelection = editor.state.selection;
+
 			isExternalUpdate.current = true;
 			editor.commands.setContent(html, { emitUpdate: true });
+
+			// Restore selection if possible
+			if (currentSelection.from !== currentSelection.to) {
+				editor.commands.setTextSelection(currentSelection);
+			}
+
+			// Clear the external update flag after a short delay to allow updates to complete
+			setTimeout(() => {
+				isExternalUpdate.current = false;
+			}, 100);
 		},
 		[editor],
 	);

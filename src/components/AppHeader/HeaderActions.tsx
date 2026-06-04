@@ -6,17 +6,51 @@ import {
 	useMantineColorScheme,
 } from "@mantine/core";
 import { Download, Maximize, Minimize, Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { useCallback, useEffect, useState } from "react";
 import { toggleFullscreen } from "@/lib/fullscreen";
 import ConnectionButton from "./ConnectionButton";
+
+interface BeforeInstallPromptEvent extends Event {
+	prompt: () => Promise<void>;
+	userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 
 const HeaderActions = () => {
 	const { setColorScheme } = useMantineColorScheme();
 	const computedColorScheme = useComputedColorScheme("light");
 	const [isFullscreen, setIsFullscreen] = useState(false);
+	const [deferredPrompt, setDeferredPrompt] =
+		useState<BeforeInstallPromptEvent | null>(null);
 
-	const { isInstallable, install } = useInstallPrompt();
+	useEffect(() => {
+		const handleBeforeInstall = (e: Event) => {
+			e.preventDefault();
+			setDeferredPrompt(e as BeforeInstallPromptEvent);
+		};
+		const handleInstalled = () => setDeferredPrompt(null);
+		window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+		window.addEventListener("appinstalled", handleInstalled);
+		return () => {
+			window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+			window.removeEventListener("appinstalled", handleInstalled);
+		};
+	}, []);
+
+	const install = useCallback(async () => {
+		if (!deferredPrompt) return;
+		try {
+			await deferredPrompt.prompt();
+		} catch (e) {
+			console.error("Install prompt failed:", e);
+			setDeferredPrompt(null);
+			return;
+		}
+		const { outcome } = await deferredPrompt.userChoice;
+		if (outcome === "accepted") setDeferredPrompt(null);
+		setDeferredPrompt(null);
+	}, [deferredPrompt]);
+
+	const isInstallable = !!deferredPrompt;
 
 	const isDark = computedColorScheme === "dark";
 

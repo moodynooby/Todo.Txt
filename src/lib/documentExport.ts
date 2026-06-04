@@ -1,4 +1,8 @@
+import type { Editor } from "@tiptap/core";
 import { saveAs } from "file-saver";
+import { playBeep } from "@/lib/beep";
+
+export type SaveFormat = "markdown" | "text" | "html";
 
 interface SaveFormatConfig {
 	filename: string;
@@ -43,7 +47,6 @@ const saveToFile = (
 		console.warn(`Unknown save format: ${format}`);
 		return;
 	}
-
 	const filename = customFilename || config.filename;
 	const transformedContent = config.transform?.(content) ?? content;
 	downloadFile(transformedContent, filename, config.mimeType);
@@ -68,4 +71,18 @@ export const saveAsHtml = (
 	filename: string | null = null,
 ): void => {
 	saveToFile(htmlContent, "html", filename);
+};
+
+export const saveEditorContent = (
+	editor: Editor | null,
+	format: SaveFormat,
+): void => {
+	if (!editor) return;
+	const saveActions: Record<SaveFormat, () => void> = {
+		markdown: () => saveAsMarkdown(editor.getMarkdown()),
+		text: () => saveAsText(editor.getText()),
+		html: () => saveAsHtml(editor.getHTML()),
+	};
+	saveActions[format]();
+	playBeep(150, 660);
 };

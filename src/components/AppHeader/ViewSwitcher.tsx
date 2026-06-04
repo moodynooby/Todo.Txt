@@ -2,10 +2,13 @@ import { Image, SegmentedControl, Tooltip } from "@mantine/core";
 import NotebookIcon from "@/assets/3dicons-notebook-dynamic-color.webp";
 import DrawingIcon from "@/assets/3dicons-painting-kit-dynamic-color.webp";
 import TicIcon from "@/assets/3dicons-tick-dynamic-color.webp";
-import { useViewMode } from "@/context/ViewModeContext";
+import { useViewContext } from "@/context/ViewContext";
 
 const ViewSwitcher = () => {
-	const { viewMode, setViewMode } = useViewMode();
+	const { state: viewState, dispatchView } = useViewContext();
+	const viewMode = viewState.viewMode;
+	const setViewMode = (mode: string) =>
+		dispatchView({ type: "SET_VIEW_MODE", payload: mode });
 
 	return (
 		<SegmentedControl

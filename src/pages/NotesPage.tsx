@@ -11,21 +11,15 @@ import {
 import { useDebouncedValue } from "@mantine/hooks";
 import { ChevronDown, ChevronRight, Plus, Search, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { useNotesContext } from "@/context/NotesContext";
+import { createNote, useNotesContext } from "@/context/NotesContext";
 import NoteCard from "@/features/notes/NoteCard";
 import SectionHeading from "@/features/notes/SectionHeading";
-import { createNote } from "@/hooks/useNotes";
+import type { NoteColor } from "@/types/notes";
 import "./NotesPage.css";
 
 const NotesPage = () => {
-	const {
-		notes,
-		upsertNote,
-		deleteNote,
-		archiveNote,
-		togglePin,
-		setNoteColor,
-	} = useNotesContext();
+	const { state, dispatchNotes } = useNotesContext();
+	const { notes } = state;
 
 	const [search, setSearch] = useState("");
 	const [showArchived, setShowArchived] = useState(false);
@@ -59,15 +53,36 @@ const NotesPage = () => {
 	);
 
 	const handleAddNote = useCallback(
-		() => upsertNote(createNote()),
-		[upsertNote],
+		() => dispatchNotes({ type: "UPSERT_NOTE", payload: createNote() }),
+		[dispatchNotes],
 	);
 
 	const handleUpdateNote = useCallback(
 		(id: string, partial: Partial<{ title: string; content: string }>) => {
-			upsertNote({ id, ...partial });
+			dispatchNotes({ type: "UPSERT_NOTE", payload: { id, ...partial } });
 		},
-		[upsertNote],
+		[dispatchNotes],
+	);
+
+	const handleDeleteNote = useCallback(
+		(id: string) => dispatchNotes({ type: "DELETE_NOTE", payload: id }),
+		[dispatchNotes],
+	);
+
+	const handleArchiveNote = useCallback(
+		(id: string) => dispatchNotes({ type: "ARCHIVE_NOTE", payload: id }),
+		[dispatchNotes],
+	);
+
+	const handleTogglePin = useCallback(
+		(id: string) => dispatchNotes({ type: "TOGGLE_PIN", payload: id }),
+		[dispatchNotes],
+	);
+
+	const handleSetNoteColor = useCallback(
+		(id: string, color: NoteColor) =>
+			dispatchNotes({ type: "SET_NOTE_COLOR", payload: { id, color } }),
+		[dispatchNotes],
 	);
 
 	const hasContent = pinned.length > 0 || unpinned.length > 0;
@@ -120,10 +135,10 @@ const NotesPage = () => {
 									key={note.id}
 									note={note}
 									onUpdate={handleUpdateNote}
-									onDelete={deleteNote}
-									onArchive={archiveNote}
-									onTogglePin={togglePin}
-									onColorChange={setNoteColor}
+									onDelete={handleDeleteNote}
+									onArchive={handleArchiveNote}
+									onTogglePin={handleTogglePin}
+									onColorChange={handleSetNoteColor}
 								/>
 							))}
 						</div>
@@ -141,10 +156,10 @@ const NotesPage = () => {
 								key={note.id}
 								note={note}
 								onUpdate={handleUpdateNote}
-								onDelete={deleteNote}
-								onArchive={archiveNote}
-								onTogglePin={togglePin}
-								onColorChange={setNoteColor}
+								onDelete={handleDeleteNote}
+								onArchive={handleArchiveNote}
+								onTogglePin={handleTogglePin}
+								onColorChange={handleSetNoteColor}
 							/>
 						))}
 					</div>
@@ -204,10 +219,10 @@ const NotesPage = () => {
 										key={note.id}
 										note={note}
 										onUpdate={handleUpdateNote}
-										onDelete={deleteNote}
-										onArchive={archiveNote}
-										onTogglePin={togglePin}
-										onColorChange={setNoteColor}
+										onDelete={handleDeleteNote}
+										onArchive={handleArchiveNote}
+										onTogglePin={handleTogglePin}
+										onColorChange={handleSetNoteColor}
 									/>
 								))}
 							</Box>
