@@ -10,6 +10,13 @@ import {
 	useRef,
 	useState,
 } from "react";
+// TODO TodoContext refactor:
+//  - Remove EditorStateProvider, add TodoProvider (internalizes useTipTap + content state)
+//  - Remove EditorContext.Provider — consumers read from TodoContext/AuthContext/TimerContext directly
+//  - Move handleAiInsert into TodoContext
+//  - Move handleFileLoaded + content dispatch into TodoContext
+//  - handleSave/onOpen/onAiTools stay here but receive editor via useTodoContext()
+//  - Pass toolbar callbacks as props through TodoPage → Editor
 import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuthContext } from "@/context/AuthContext";
@@ -28,7 +35,6 @@ import { useTipTap } from "@/hooks/useTipTap";
 import { playBeep } from "@/lib/beep";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
 import type { ExcalidrawData } from "@/lib/excalidrawSync";
-import { readBackup } from "@/lib/persistedState";
 import NotesPage from "@/pages/NotesPage";
 import TodoPage from "@/pages/TodoPage";
 import type { Filter, ParsedTodoContent, Task } from "@/types/todo";
@@ -71,8 +77,8 @@ function AppContent() {
 		[dispatchEditor],
 	);
 
-	const { editor, setExternalContent } = useTipTap({
-		initialContent: editorState.content,
+	const { editor } = useTipTap({
+		content: editorState.content,
 		onContentChange: handleContentChange,
 		onFilterClick: handleTagFilterClick,
 	});
@@ -86,14 +92,13 @@ function AppContent() {
 	}, []);
 
 	const handleFileLoaded = useCallback(
-		(html: string) => {
-			setExternalContent(html);
+		(content: string) => {
 			dispatchEditor({
 				type: "SYNC_COMPLETE",
-				payload: { content: html, timestamp: Date.now() },
+				payload: { content, timestamp: Date.now() },
 			});
 		},
-		[setExternalContent, dispatchEditor],
+		[dispatchEditor],
 	);
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -245,7 +250,12 @@ function AppContent() {
 			groqApiKey={groqApiKey}
 			onExcalidrawChange={handleRemoteExcalidraw}
 			onGroqApiKeyChange={handleRemoteGroqApiKey}
-			onExternalContent={setExternalContent}
+			onExternalContent={(content: string) =>
+				dispatchEditor({
+					type: "SYNC_COMPLETE",
+					payload: { content, timestamp: Date.now() },
+				})
+			}
 		>
 			<EditorContext.Provider value={editorContextValue}>
 				<AppShell header={{ height: 38 }} padding={0}>
@@ -319,8 +329,16 @@ function AppContent() {
 	);
 }
 
+const readContentBackup = (): string | null => {
+	try {
+		return localStorage.getItem("todo_content_backup");
+	} catch {
+		return null;
+	}
+};
+
 const App = () => {
-	const initialContent = readBackup()?.data?.content ?? "";
+	const initialContent = readContentBackup() ?? "";
 
 	return (
 		<AuthProvider>

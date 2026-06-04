@@ -26,6 +26,8 @@ export function Editor({
 	className,
 	style,
 }: EditorProps) {
+	// TODO: Receive onSave/onOpen/onAiTools as props instead of reading from EditorContext.
+	// EditorContext will be removed; these callbacks route through TodoPage from App.
 	const context = useEditor();
 
 	if (!editor) return null;

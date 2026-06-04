@@ -25,7 +25,7 @@ export const getEditorExtensions = ({
 	}),
 	Placeholder.configure({ placeholder }),
 	Markdown.configure({
-		markedOptions: { gfm: true },
+		markedOptions: { gfm: true, breaks: true },
 	}),
 	TaskList,
 	TaskItem.configure({ nested: true }),

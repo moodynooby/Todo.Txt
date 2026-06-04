@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useReducer } from "react";
-import type { SyncStatus } from "@/hooks/useFirestoreSync";
 import type { Note, NoteColor } from "@/types/notes";
+import type { SyncStatus } from "@/types/sync";
 
 function generateId(): string {
 	return `note_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;

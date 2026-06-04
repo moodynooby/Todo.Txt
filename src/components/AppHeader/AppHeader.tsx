@@ -8,6 +8,7 @@ import ViewSwitcher from "./ViewSwitcher";
 const AppHeader = () => {
 	const { state: viewState } = useViewContext();
 	const viewMode = viewState.viewMode;
+	// TODO: Read addTimer from useTimerContext() instead of useEditor() — EditorContext will be removed.
 	const { addTimer } = useEditor();
 
 	return (

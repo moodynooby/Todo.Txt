@@ -1,6 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import { createContext, type ReactNode, useContext, useReducer } from "react";
-import type { SyncStatus } from "@/hooks/useFirestoreSync";
+import type { SyncStatus } from "@/types/sync";
 
 export interface EditorContextValue {
 	editor: Editor | null;
@@ -11,14 +11,17 @@ export interface EditorContextValue {
 	syncStatus: SyncStatus;
 	isSynced: boolean;
 	user: {
+		uid: string;
 		photoURL: string | null;
 		displayName: string | null;
-		isAnonymous: boolean;
 	} | null;
 	authError: string | null;
 	viewMode: string;
 }
 
+// TODO: Replace with TodoContext (owns editor + content) + remove this convenience bag.
+// Each consumer should read from the appropriate specific context instead.
+// See plan in AGENTS.md or src/context/TodoContext.tsx.
 export const EditorContext = createContext<EditorContextValue | null>(null);
 
 export const useEditor = (): EditorContextValue => {
@@ -28,7 +31,6 @@ export const useEditor = (): EditorContextValue => {
 	}
 	return ctx;
 };
-
 
 export interface EditorState {
 	syncStatus: SyncStatus;
@@ -73,6 +75,8 @@ interface EditorStateContextValue {
 	dispatchEditor: (action: EditorAction) => void;
 }
 
+// TODO: Remove EditorStateContext — TodoContext owns content state via useReducer (same pattern as NotesContext).
+// SyncContext reads content from TodoContext directly.
 export const EditorStateContext = createContext<EditorStateContextValue | null>(
 	null,
 );

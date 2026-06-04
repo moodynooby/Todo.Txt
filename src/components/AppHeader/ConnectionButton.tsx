@@ -1,11 +1,4 @@
-import {
-	ActionIcon,
-	Avatar,
-	Button,
-	Indicator,
-	Menu,
-	Text,
-} from "@mantine/core";
+import { Avatar, Button, Indicator, Menu, Text } from "@mantine/core";
 import { LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useEditor } from "@/context/EditorContext";
@@ -13,6 +6,7 @@ import { useSyncContext } from "@/context/SyncContext";
 import SignInModal from "@/features/auth/SignInModal";
 
 const ConnectionButton = () => {
+	// TODO: Read user/syncStatus from useAuthContext() instead of useEditor() — EditorContext will be removed.
 	const { user, syncStatus } = useEditor();
 	const { disconnect } = useSyncContext();
 	const [signInModalOpen, setSignInModalOpen] = useState(false);
@@ -59,31 +53,19 @@ const ConnectionButton = () => {
 					size={12}
 					withBorder
 				>
-					{user.isAnonymous ? (
-						<ActionIcon
-							variant="subtle"
-							size="lg"
-							aria-label="Signed in anonymously"
-						>
-							<User size={20} />
-						</ActionIcon>
-					) : (
-						<Avatar
-							src={user.photoURL}
-							alt={user.displayName ?? "User"}
-							size="md"
-						>
-							{user.displayName?.charAt(0).toUpperCase() ?? "U"}
-						</Avatar>
-					)}
+					<Avatar
+						src={user.photoURL}
+						alt={user.displayName ?? "User"}
+						size="md"
+					>
+						{user.displayName?.charAt(0).toUpperCase() ?? "U"}
+					</Avatar>
 				</Indicator>
 			</Menu.Target>
 			<Menu.Dropdown>
 				<Menu.Label>
 					<Text size="sm" fw={600} truncate>
-						{user.isAnonymous
-							? "Signed in anonymously"
-							: (user.displayName ?? "Signed in")}
+						{user.displayName ?? "Signed in"}
 					</Text>
 				</Menu.Label>
 				<Menu.Divider />

@@ -220,7 +220,7 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 							const value = target.getAttribute("data-filter-value");
 							if (type && value && extension.options.onFilterClick) {
 								extension.options.onFilterClick(type, value);
-								return true; 
+								return true;
 							}
 						}
 						return false;

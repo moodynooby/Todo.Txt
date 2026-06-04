@@ -12,12 +12,10 @@ import {
 	TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { Ghost, Globe, Mail, TriangleAlert } from "lucide-react";
+import { Globe, Mail, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import {
 	createAccount,
-	getFirebaseAuth,
-	loginAnonymously,
 	sendPasswordReset,
 	signInWithEmail,
 	signInWithGoogle,
@@ -145,27 +143,6 @@ const SignInModal = ({ opened, onClose }: SignInModalProps) => {
 		}
 	};
 
-	const isCurrentlyAnonymous = (() => {
-		try {
-			return !!getFirebaseAuth().currentUser?.isAnonymous;
-		} catch {
-			return false;
-		}
-	})();
-
-	const handleAnonymousSignIn = async () => {
-		setError(null);
-		setLoading(true);
-		try {
-			await loginAnonymously();
-			onClose();
-		} catch (e) {
-			setError(getFirebaseErrorMessage(e));
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	const handleClose = () => {
 		setError(null);
 		setLoading(false);
@@ -226,127 +203,106 @@ const SignInModal = ({ opened, onClose }: SignInModalProps) => {
 					</Anchor>
 				</Stack>
 			) : (
-				<>
-					{isCurrentlyAnonymous && (
-						<Alert variant="light" color="blue" mt="md">
-							You're currently signed in anonymously. Signing in with Google
-							will keep your existing data. Email sign-in creates a new account
-							without transferring existing data.
+				<Tabs value={activeTab} onChange={setActiveTab}>
+					<Tabs.List grow>
+						<Tabs.Tab value="signin">Sign In</Tabs.Tab>
+						<Tabs.Tab value="create">Create Account</Tabs.Tab>
+					</Tabs.List>
+
+					{error && (
+						<Alert
+							variant="light"
+							color="red"
+							icon={<TriangleAlert size={16} />}
+							mt="md"
+						>
+							{error}
 						</Alert>
 					)}
 
-					<Tabs value={activeTab} onChange={setActiveTab}>
-						<Tabs.List grow>
-							<Tabs.Tab value="signin">Sign In</Tabs.Tab>
-							<Tabs.Tab value="create">Create Account</Tabs.Tab>
-						</Tabs.List>
+					<Tabs.Panel value="signin" pt="md">
+						<form onSubmit={signInForm.onSubmit(handleSignIn)}>
+							<Stack>
+								<TextInput
+									label="Email"
+									placeholder="your@email.com"
+									required
+									key={signInForm.key("email")}
+									{...signInForm.getInputProps("email")}
+								/>
+								<PasswordInput
+									label="Password"
+									placeholder="Your password"
+									required
+									key={signInForm.key("password")}
+									{...signInForm.getInputProps("password")}
+								/>
+								<Group justify="space-between" mt="xs">
+									<Anchor
+										component="button"
+										onClick={() => setShowForgotPassword(true)}
+										size="sm"
+									>
+										Forgot password?
+									</Anchor>
+								</Group>
+								<Button type="submit" loading={loading} fullWidth>
+									Sign In
+								</Button>
+							</Stack>
+						</form>
 
-						{error && (
-							<Alert
-								variant="light"
-								color="red"
-								icon={<TriangleAlert size={16} />}
-								mt="md"
-							>
-								{error}
-							</Alert>
-						)}
+						<Divider label="or" labelPosition="center" my="md" />
 
-						<Tabs.Panel value="signin" pt="md">
-							<form onSubmit={signInForm.onSubmit(handleSignIn)}>
-								<Stack>
-									<TextInput
-										label="Email"
-										placeholder="your@email.com"
-										required
-										key={signInForm.key("email")}
-										{...signInForm.getInputProps("email")}
-									/>
-									<PasswordInput
-										label="Password"
-										placeholder="Your password"
-										required
-										key={signInForm.key("password")}
-										{...signInForm.getInputProps("password")}
-									/>
-									<Group justify="space-between" mt="xs">
-										<Anchor
-											component="button"
-											onClick={() => setShowForgotPassword(true)}
-											size="sm"
-										>
-											Forgot password?
-										</Anchor>
-									</Group>
-									<Button type="submit" loading={loading} fullWidth>
-										Sign In
-									</Button>
-								</Stack>
-							</form>
+						<Button
+							variant="outline"
+							fullWidth
+							leftSection={<Globe size={18} />}
+							onClick={handleGoogleSignIn}
+							loading={loading}
+						>
+							Sign in with Google
+						</Button>
+					</Tabs.Panel>
 
-							<Divider label="or" labelPosition="center" my="md" />
-
-							<Button
-								variant="outline"
-								fullWidth
-								leftSection={<Globe size={18} />}
-								onClick={handleGoogleSignIn}
-								loading={loading}
-							>
-								Sign in with Google
-							</Button>
-
-							<Button
-								variant="subtle"
-								fullWidth
-								mt="xs"
-								leftSection={<Ghost size={18} />}
-								onClick={handleAnonymousSignIn}
-								loading={loading}
-							>
-								Continue anonymously
-							</Button>
-						</Tabs.Panel>
-
-						<Tabs.Panel value="create" pt="md">
-							<form onSubmit={createForm.onSubmit(handleCreateAccount)}>
-								<Stack>
-									<TextInput
-										label="Name"
-										placeholder="Your name"
-										required
-										key={createForm.key("name")}
-										{...createForm.getInputProps("name")}
-									/>
-									<TextInput
-										label="Email"
-										placeholder="your@email.com"
-										required
-										key={createForm.key("email")}
-										{...createForm.getInputProps("email")}
-									/>
-									<PasswordInput
-										label="Password"
-										placeholder="At least 6 characters"
-										required
-										key={createForm.key("password")}
-										{...createForm.getInputProps("password")}
-									/>
-									<PasswordInput
-										label="Confirm password"
-										placeholder="Repeat your password"
-										required
-										key={createForm.key("confirmPassword")}
-										{...createForm.getInputProps("confirmPassword")}
-									/>
-									<Button type="submit" loading={loading} fullWidth>
-										Create Account
-									</Button>
-								</Stack>
-							</form>
-						</Tabs.Panel>
-					</Tabs>
-				</>
+					<Tabs.Panel value="create" pt="md">
+						<form onSubmit={createForm.onSubmit(handleCreateAccount)}>
+							<Stack>
+								<TextInput
+									label="Name"
+									placeholder="Your name"
+									required
+									key={createForm.key("name")}
+									{...createForm.getInputProps("name")}
+								/>
+								<TextInput
+									label="Email"
+									placeholder="your@email.com"
+									required
+									key={createForm.key("email")}
+									{...createForm.getInputProps("email")}
+								/>
+								<PasswordInput
+									label="Password"
+									placeholder="At least 6 characters"
+									required
+									key={createForm.key("password")}
+									{...createForm.getInputProps("password")}
+								/>
+								<PasswordInput
+									label="Confirm password"
+									placeholder="Repeat your password"
+									required
+									key={createForm.key("confirmPassword")}
+									{...createForm.getInputProps("confirmPassword")}
+								/>
+								<Button type="submit" loading={loading} fullWidth>
+									Create Account
+								</Button>
+							</Stack>
+						</form>
+					</Tabs.Panel>
+				</Tabs>
 			)}
 		</Modal>
 	);

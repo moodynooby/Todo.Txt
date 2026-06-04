@@ -3,6 +3,7 @@ import { Filter as FilterIcon } from "lucide-react";
 import { useEffect } from "react";
 import { Editor } from "@/components/Editor";
 import Sidebar from "@/components/Sidebar/Sidebar";
+// TODO: Import from TodoContext instead — EditorContext will be removed.
 import { useEditor } from "@/context/EditorContext";
 import { useViewContext } from "@/context/ViewContext";
 import { useSidebarState } from "@/hooks/useSidebarState";

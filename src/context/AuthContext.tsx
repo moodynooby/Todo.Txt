@@ -1,11 +1,19 @@
-import { createContext, type ReactNode, useContext, useReducer } from "react";
-import type { SyncStatus } from "@/hooks/useFirestoreSync";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+	createContext,
+	type ReactNode,
+	useContext,
+	useEffect,
+	useReducer,
+} from "react";
+import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase";
+import type { SyncStatus } from "@/types/sync";
 
 export interface AuthState {
 	user: {
+		uid: string;
 		photoURL: string | null;
 		displayName: string | null;
-		isAnonymous: boolean;
 	} | null;
 	isConnected: boolean;
 	syncStatus: SyncStatus;
@@ -16,9 +24,9 @@ export type AuthAction =
 	| {
 			type: "SET_USER";
 			payload: {
+				uid: string;
 				photoURL: string | null;
 				displayName: string | null;
-				isAnonymous: boolean;
 			} | null;
 	  }
 	| { type: "SET_CONNECTED"; payload: boolean }
@@ -66,8 +74,35 @@ interface AuthProviderProps {
 	children: ReactNode;
 }
 
+const mapUser = (u: {
+	uid: string;
+	photoURL: string | null;
+	displayName: string | null;
+}) => ({
+	uid: u.uid,
+	photoURL: u.photoURL,
+	displayName: u.displayName,
+});
+
 export function AuthProvider({ children }: AuthProviderProps) {
 	const [state, dispatchAuth] = useReducer(authReducer, initialAuthState);
+
+	useEffect(() => {
+		if (!isFirebaseConfigured()) return;
+
+		const auth = getFirebaseAuth();
+		return onAuthStateChanged(auth, (user) => {
+			if (user) {
+				dispatchAuth({
+					type: "SET_USER",
+					payload: mapUser(user),
+				});
+				dispatchAuth({ type: "SET_ERROR", payload: null });
+			} else {
+				dispatchAuth({ type: "SET_USER", payload: null });
+			}
+		});
+	}, []);
 
 	return (
 		<AuthContext.Provider value={{ state, dispatchAuth }}>

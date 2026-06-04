@@ -5,10 +5,8 @@ import {
 	createUserWithEmailAndPassword,
 	GoogleAuthProvider,
 	getAuth,
-	linkWithPopup,
 	sendPasswordResetEmail,
 	setPersistence,
-	signInAnonymously,
 	signInWithEmailAndPassword,
 	signInWithPopup,
 	signOut,
@@ -64,21 +62,12 @@ export const isFirebaseConfigured = (): boolean => {
 	);
 };
 
-export const loginAnonymously = async (): Promise<void> => {
-	const a = getFirebaseAuth();
-	await signInAnonymously(a);
-};
-
 export const signInWithGoogle = async (): Promise<void> => {
 	const a = getFirebaseAuth();
 	const provider = new GoogleAuthProvider();
 
 	try {
-		if (a.currentUser?.isAnonymous) {
-			await linkWithPopup(a.currentUser, provider);
-		} else {
-			await signInWithPopup(a, provider);
-		}
+		await signInWithPopup(a, provider);
 	} catch (error: unknown) {
 		if (error instanceof Error) {
 			const code = (error as { code?: string }).code;

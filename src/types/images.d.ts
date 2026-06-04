@@ -3,4 +3,4 @@ declare module "*.png" {
 	export default value;
 }
 
-declare module "*.css" {} 
+declare module "*.css" {}

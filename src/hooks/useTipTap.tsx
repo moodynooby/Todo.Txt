@@ -1,66 +1,47 @@
 import type { Editor } from "@tiptap/core";
 import { useEditor } from "@tiptap/react";
-import { useCallback, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { getEditorExtensions } from "@/utils/editorExtensions";
 
 interface UseTipTapProps {
-	initialContent: string;
+	content: string;
 	onContentChange: (content: string) => void;
 	onFilterClick?: (type: string, value: string) => void;
 }
 
 interface UseTipTapReturn {
 	editor: Editor | null;
-	setExternalContent: (html: string) => void;
 }
 
+// TODO: Internalize inside TodoContext — App.tsx should not call this directly.
 export const useTipTap = ({
-	initialContent,
+	content,
 	onContentChange,
 	onFilterClick,
 }: UseTipTapProps): UseTipTapReturn => {
-	const isExternalUpdate = useRef(false);
+	const lastMarkdownRef = useRef(content);
+
 	const editor = useEditor({
 		extensions: getEditorExtensions({
 			placeholder: "Start writing your todos...",
 			onFilterClick,
 		}),
-		content: initialContent,
+		content: content || "",
 		contentType: "markdown",
-		shouldRerenderOnTransaction: true,
-		editorProps: {
-			attributes: {
-				class: "tiptap-editor-content",
-			},
-		},
 		onUpdate: ({ editor: currentEditor }) => {
-			if (!isExternalUpdate.current) {
-				onContentChange(currentEditor.getMarkdown());
-			}
-			isExternalUpdate.current = false;
+			const md = currentEditor.getMarkdown();
+			lastMarkdownRef.current = md;
+			onContentChange(md);
 		},
 		immediatelyRender: false,
 	});
 
-	const setExternalContent = useCallback(
-		(html: string) => {
-			if (!editor) return;
+	useEffect(() => {
+		if (editor && content !== lastMarkdownRef.current) {
+			lastMarkdownRef.current = content;
+			editor.commands.setContent(content || "");
+		}
+	}, [content, editor]);
 
-			const currentSelection = editor.state.selection;
-
-			isExternalUpdate.current = true;
-			editor.commands.setContent(html, { emitUpdate: true });
-
-			if (currentSelection.from !== currentSelection.to) {
-				editor.commands.setTextSelection(currentSelection);
-			}
-
-			setTimeout(() => {
-				isExternalUpdate.current = false;
-			}, 100);
-		},
-		[editor],
-	);
-
-	return { editor, setExternalContent };
+	return { editor };
 };

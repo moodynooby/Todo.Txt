@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useReducer } from "react";
-import type { SyncStatus } from "@/hooks/useFirestoreSync";
+import type { SyncStatus } from "@/types/sync";
 
 export interface TimerState {
 	id: number;
