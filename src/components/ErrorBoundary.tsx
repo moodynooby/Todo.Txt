@@ -30,12 +30,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
 	render() {
 		if (this.state.hasError) {
+			const isDev = import.meta.env.DEV;
 			return (
 				<Center h="100vh">
 					<Stack align="center" gap="md">
 						<Title order={2}>Something went wrong</Title>
 						<Text c="dimmed" size="sm" maw={400} ta="center">
-							{this.state.error?.message || "An unexpected error occurred"}
+							{isDev
+								? this.state.error?.message || "An unexpected error occurred"
+								: "An unexpected error occurred. Our team has been notified."}
 						</Text>
 						<Button onClick={this.handleReset}>Try Again</Button>
 					</Stack>
