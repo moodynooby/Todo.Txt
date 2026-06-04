@@ -49,7 +49,6 @@
 	color: var(--mantine-color-dimmed);
 }
 
-/* Custom interactive tags & filtering */
 .filter-hidden {
 	display: none !important;
 }

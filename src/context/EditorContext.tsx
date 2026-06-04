@@ -29,7 +29,6 @@ export const useEditor = (): EditorContextValue => {
 	return ctx;
 };
 
-// ── State Management (useReducer) ───────────────────────────────────────────
 
 export interface EditorState {
 	syncStatus: SyncStatus;

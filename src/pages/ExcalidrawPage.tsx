@@ -22,21 +22,14 @@ const ExcalidrawPage = ({ initialData, onChange }: ExcalidrawPageProps) => {
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
 
-	// Track content hashes to detect real changes vs re-render noise.
-	// This prevents the "Maximum update depth exceeded" error caused by
-	// Excalidraw firing onChange after receiving the same data back.
 	const elementsHashRef = useRef("");
 	const appStateHashRef = useRef("");
-	// Skip Excalidraw's immediate onChange re-fire after initialData is set
 	const isMountedRef = useRef(false);
 
 	const handleChange = useCallback(
 		(elements: readonly unknown[], appState: unknown) => {
-			// Excalidraw fires onChange once on mount with initialData.
-			// Skip that first call to avoid reflecting our own data back.
 			if (!isMountedRef.current) {
 				isMountedRef.current = true;
-				// Still record the hash so subsequent real changes are detected
 				elementsHashRef.current = JSON.stringify(elements);
 				appStateHashRef.current = JSON.stringify(appState);
 				return;
@@ -45,7 +38,6 @@ const ExcalidrawPage = ({ initialData, onChange }: ExcalidrawPageProps) => {
 			const elementsHash = JSON.stringify(elements);
 			const appStateHash = JSON.stringify(appState);
 
-			// Skip if nothing actually changed — breaks the infinite loop
 			if (
 				elementsHash === elementsHashRef.current &&
 				appStateHash === appStateHashRef.current

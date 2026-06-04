@@ -1,7 +1,6 @@
 import type { ParsedTodoContent, Task } from "@/types/todo";
 import { getToday, getTomorrow, getYesterday } from "./dateUtils";
 
-// Pre-compiled regexes for better performance
 const RE_IS_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RE_CHECKBOX_MARKER = /^-?\[.?\]\s/;
 const RE_CHECKED_MARKER = /^-?\[x\]\s/i;
@@ -23,7 +22,6 @@ const parseRelativeDate = (
 };
 
 export const parseTodoLine = (trimmed: string, id = 0): Task => {
-	// Fast-path check for markers
 	const hasCheckboxMarker = RE_CHECKBOX_MARKER.test(trimmed);
 	const isChecked = hasCheckboxMarker && RE_CHECKED_MARKER.test(trimmed);
 	const hasXPrefix = !hasCheckboxMarker && RE_X_PREFIX.test(trimmed);
@@ -41,7 +39,6 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		completed,
 	};
 
-	// Only check for priority if the line starts with '('
 	if (cleanText.startsWith("(")) {
 		const priorityMatch = cleanText.match(RE_PRIORITY);
 		if (priorityMatch) {
@@ -49,7 +46,6 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		}
 	}
 
-	// Only check for projects if '+' is present
 	if (cleanText.includes("+")) {
 		const projectMatches = cleanText.match(RE_PROJECTS);
 		if (projectMatches) {
@@ -57,7 +53,6 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		}
 	}
 
-	// Only check for contexts if '@' is present
 	if (cleanText.includes("@")) {
 		const contextMatches = cleanText.match(RE_CONTEXTS);
 		if (contextMatches) {
@@ -65,7 +60,6 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		}
 	}
 
-	// Only check for due date if 'due:' is present
 	if (cleanText.includes("due:")) {
 		const dueMatch = cleanText.match(RE_DUE);
 		if (dueMatch) {

@@ -8,7 +8,6 @@ export const useAiGroq = (apiKey: string) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const mountedRef = useRef(true);
-	// Holds the abort controller for the current in-flight request
 	const abortRef = useRef<AbortController | null>(null);
 
 	useEffect(() => {
@@ -26,7 +25,6 @@ export const useAiGroq = (apiKey: string) => {
 				return null;
 			}
 
-			// Abort any previous in-flight request
 			abortRef.current?.abort();
 			const controller = new AbortController();
 			abortRef.current = controller;

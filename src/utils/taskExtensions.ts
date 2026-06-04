@@ -39,7 +39,6 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 							return DecorationSet.empty;
 						},
 						apply(_tr: Transaction, _oldState: DecorationSet) {
-							// Always recompute decorations since we filter dynamically based on storage
 							return DecorationSet.empty;
 						},
 					},
@@ -59,12 +58,10 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 
 									let matches = true;
 
-									// 1. Completion status
 									if (!showCompleted && task.completed) {
 										matches = false;
 									}
 
-									// 2. Active filter
 									if (matches && activeFilter) {
 										if (activeFilter.type === "priority") {
 											matches = task.priority === activeFilter.value;
@@ -88,7 +85,6 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 										}
 									}
 
-									// 3. Search query
 									if (matches && searchQuery) {
 										matches = text
 											.toLowerCase()
@@ -142,7 +138,6 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 								const text = node.text || "";
 								const blockPos = pos;
 
-								// 1. Projects: +project
 								const projectRegex = /\+([\w-]+)/g;
 								let match = projectRegex.exec(text);
 								while (match !== null) {
@@ -158,7 +153,6 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									match = projectRegex.exec(text);
 								}
 
-								// 2. Contexts: @context
 								const contextRegex = /@([\w-]+)/g;
 								match = contextRegex.exec(text);
 								while (match !== null) {
@@ -174,7 +168,6 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									match = contextRegex.exec(text);
 								}
 
-								// 3. Priorities: (A), (B), (C) at the beginning or standalone
 								const priorityRegex = /\(([A-Z])\)/g;
 								match = priorityRegex.exec(text);
 								while (match !== null) {
@@ -191,7 +184,6 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									match = priorityRegex.exec(text);
 								}
 
-								// 4. Due dates: due:YYYY-MM-DD or due:today etc
 								const dueRegex = /due:([\w-]+)/g;
 								match = dueRegex.exec(text);
 								while (match !== null) {
@@ -199,7 +191,6 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									const end = start + match[0].length;
 									const value = match[1].toLowerCase();
 
-									// We can determine if it's overdue
 									let isOverdue = false;
 									if (value !== "today" && value !== "tomorrow") {
 										if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -229,7 +220,7 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 							const value = target.getAttribute("data-filter-value");
 							if (type && value && extension.options.onFilterClick) {
 								extension.options.onFilterClick(type, value);
-								return true; // prevent default editor behavior on clicking the badge
+								return true; 
 							}
 						}
 						return false;

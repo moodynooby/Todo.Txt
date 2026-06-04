@@ -10,7 +10,6 @@ const generateLargeTodoList = (count: number): string => {
 		const due = i % 4 === 0 ? " due:2025-05-20" : "";
 		lines.push(`${completed}${priority}Task ${i}${project}${context}${due}`);
 	}
-	// Wrap in some HTML as the parser expects HTML from TipTap
 	return lines.map((line) => `<p>${line}</p>`).join("");
 };
 

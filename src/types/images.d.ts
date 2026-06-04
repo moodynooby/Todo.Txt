@@ -3,4 +3,4 @@ declare module "*.png" {
 	export default value;
 }
 
-declare module "*.css" {} // side-effect CSS imports (Mantine, app styles)
+declare module "*.css" {} 
