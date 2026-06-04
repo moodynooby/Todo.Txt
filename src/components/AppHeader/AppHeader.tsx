@@ -1,6 +1,6 @@
 import { ActionIcon, Group, Image, Paper, Title, Tooltip } from "@mantine/core";
 import { Plus, Timer as TimerIcon } from "lucide-react";
-import { useEditor } from "@/context/EditorContext";
+import { useTimerContext } from "@/context/TimerContext";
 import { useViewContext } from "@/context/ViewContext";
 import HeaderActions from "./HeaderActions";
 import ViewSwitcher from "./ViewSwitcher";
@@ -8,8 +8,7 @@ import ViewSwitcher from "./ViewSwitcher";
 const AppHeader = () => {
 	const { state: viewState } = useViewContext();
 	const viewMode = viewState.viewMode;
-	// TODO: Read addTimer from useTimerContext() instead of useEditor() — EditorContext will be removed.
-	const { addTimer } = useEditor();
+	const { dispatchTimer } = useTimerContext();
 
 	return (
 		<Paper
@@ -31,7 +30,11 @@ const AppHeader = () => {
 				<Group gap="sm">
 					{viewMode === "todo" && (
 						<Tooltip label="Add timer">
-							<ActionIcon variant="subtle" size="lg" onClick={addTimer}>
+							<ActionIcon
+								variant="subtle"
+								size="lg"
+								onClick={() => dispatchTimer({ type: "ADD_TIMER" })}
+							>
 								<Group gap={2}>
 									<TimerIcon size={18} />
 									<Plus size={12} />

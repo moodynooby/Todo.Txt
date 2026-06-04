@@ -16,8 +16,8 @@ import {
 	useState,
 } from "react";
 import { useAuthContext } from "@/context/AuthContext";
-import { useEditorContext } from "@/context/EditorContext";
 import { useNotesContext } from "@/context/NotesContext";
+import { useTodoContext } from "@/context/TodoContext";
 import type { ExcalidrawData } from "@/lib/excalidrawSync";
 import { getFirestoreDb, signOutUser } from "@/lib/firebase";
 import type { Note } from "@/types/notes";
@@ -56,8 +56,6 @@ interface SyncProviderProps {
 	groqApiKey: string;
 	onExcalidrawChange: (data: ExcalidrawData | null) => void;
 	onGroqApiKeyChange: (key: string) => void;
-	// TODO: Remove onExternalContent — SyncContext dispatches to dispatchTodo directly.
-	onExternalContent: (html: string) => void;
 }
 
 const readBackup = (): string | null => {
@@ -80,22 +78,18 @@ export function SyncProvider({
 	groqApiKey,
 	onExcalidrawChange,
 	onGroqApiKeyChange,
-	// TODO: Remove onExternalContent — dispatch directly to useTodoContext().dispatchTodo
-	onExternalContent,
 }: SyncProviderProps) {
-	const { state: editorState } = useEditorContext();
+	const { state: todoState, dispatchTodo } = useTodoContext();
 	const { state: notesState, dispatchNotes } = useNotesContext();
 	const { state: authState, dispatchAuth } = useAuthContext();
 
 	const storesRef = useRef({
 		onExcalidrawChange,
 		onGroqApiKeyChange,
-		onExternalContent,
 	});
 	storesRef.current = {
 		onExcalidrawChange,
 		onGroqApiKeyChange,
-		onExternalContent,
 	};
 
 	const [isConnected, setIsConnected] = useState(false);
@@ -110,7 +104,7 @@ export function SyncProvider({
 	const retryCountRef = useRef(0);
 	const disconnectGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const { content } = editorState;
+	const { content } = todoState;
 
 	const cancelDisconnectGrace = useCallback(() => {
 		if (disconnectGraceRef.current) {
@@ -140,7 +134,13 @@ export function SyncProvider({
 
 			const stores = storesRef.current;
 			if (data.content !== undefined) {
-				stores.onExternalContent(data.content as string);
+				dispatchTodo({
+					type: "SET_CONTENT",
+					payload: {
+						content: data.content as string,
+						timestamp: Date.now(),
+					},
+				});
 			}
 			if (data.notes !== undefined) {
 				dispatchNotes({ type: "SET_NOTES", payload: data.notes as Note[] });
@@ -152,7 +152,7 @@ export function SyncProvider({
 				stores.onGroqApiKeyChange(data.groqApiKey as string);
 			}
 		},
-		[dispatchNotes],
+		[dispatchNotes, dispatchTodo],
 	);
 
 	const processSaveQueue = useCallback(async () => {

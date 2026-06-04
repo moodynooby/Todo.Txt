@@ -3,24 +3,30 @@ import { Filter as FilterIcon } from "lucide-react";
 import { useEffect } from "react";
 import { Editor } from "@/components/Editor";
 import Sidebar from "@/components/Sidebar/Sidebar";
-// TODO: Import from TodoContext instead — EditorContext will be removed.
-import { useEditor } from "@/context/EditorContext";
+import { useTodoContext } from "@/context/TodoContext";
 import { useViewContext } from "@/context/ViewContext";
 import { useSidebarState } from "@/hooks/useSidebarState";
+import type { SaveFormat } from "@/lib/documentExport";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 
 interface TodoPageProps {
 	taskData: ParsedTodoContent;
 	activeFilter: Filter | null;
 	onFilterChange: (filter: Filter | null) => void;
+	onSave?: (format: SaveFormat) => void;
+	onOpen?: () => void;
+	onAiTools?: () => void;
 }
 
 const TodoPage = ({
 	taskData,
 	activeFilter,
 	onFilterChange,
+	onSave,
+	onOpen,
+	onAiTools,
 }: TodoPageProps) => {
-	const { editor } = useEditor();
+	const { editor } = useTodoContext();
 	const { state: viewState, dispatchView } = useViewContext();
 	const sidebarCollapsed = viewState.sidebarCollapsed;
 	const onToggleSidebar = () => dispatchView({ type: "TOGGLE_SIDEBAR" });
@@ -87,6 +93,9 @@ const TodoPage = ({
 				<Editor
 					editor={editor}
 					toolbarVariant="full"
+					onSave={onSave}
+					onOpen={onOpen}
+					onAiTools={onAiTools}
 					className="tiptap-container"
 					style={{
 						flex: 1,

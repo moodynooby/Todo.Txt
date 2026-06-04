@@ -15,20 +15,16 @@ import {
 export interface ViewState {
 	viewMode: string;
 	sidebarCollapsed: boolean;
-	editorContent: string;
 }
 
 export type ViewAction =
 	| { type: "SET_VIEW_MODE"; payload: string }
-	| { type: "TOGGLE_SIDEBAR" }
-	| { type: "SET_EDITOR_CONTENT"; payload: string };
+	| { type: "TOGGLE_SIDEBAR" };
 
 export function viewReducer(state: ViewState, action: ViewAction): ViewState {
 	switch (action.type) {
 		case "SET_VIEW_MODE":
 			return { ...state, viewMode: action.payload };
-		case "SET_EDITOR_CONTENT":
-			return { ...state, editorContent: action.payload };
 		case "TOGGLE_SIDEBAR":
 			return { ...state, sidebarCollapsed: !state.sidebarCollapsed };
 		default:
@@ -39,7 +35,6 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
 export const initialViewState: ViewState = {
 	viewMode: "todo",
 	sidebarCollapsed: false,
-	editorContent: "",
 };
 
 interface ViewContextValue {

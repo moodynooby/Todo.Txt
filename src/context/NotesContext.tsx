@@ -1,6 +1,5 @@
 import { createContext, type ReactNode, useContext, useReducer } from "react";
 import type { Note, NoteColor } from "@/types/notes";
-import type { SyncStatus } from "@/types/sync";
 
 function generateId(): string {
 	return `note_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -23,8 +22,6 @@ export function createNote(partial?: Partial<Note>): Note {
 
 export interface NotesState {
 	notes: Note[];
-	syncStatus: SyncStatus;
-	lastSyncAt: number | null;
 }
 
 export type NotesAction =
@@ -33,10 +30,7 @@ export type NotesAction =
 	| { type: "DELETE_NOTE"; payload: string }
 	| { type: "ARCHIVE_NOTE"; payload: string }
 	| { type: "TOGGLE_PIN"; payload: string }
-	| { type: "SET_NOTE_COLOR"; payload: { id: string; color: NoteColor } }
-	| { type: "SYNC_START" }
-	| { type: "SYNC_COMPLETE"; payload: { remote: Note[]; timestamp: number } }
-	| { type: "SYNC_ERROR" };
+	| { type: "SET_NOTE_COLOR"; payload: { id: string; color: NoteColor } };
 
 export function notesReducer(
 	state: NotesState,
@@ -95,17 +89,6 @@ export function notesReducer(
 						: n,
 				),
 			};
-		case "SYNC_START":
-			return { ...state, syncStatus: "syncing" };
-		case "SYNC_COMPLETE":
-			return {
-				...state,
-				notes: action.payload.remote,
-				syncStatus: "synced",
-				lastSyncAt: action.payload.timestamp,
-			};
-		case "SYNC_ERROR":
-			return { ...state, syncStatus: "error" };
 		default:
 			return state;
 	}
@@ -113,8 +96,6 @@ export function notesReducer(
 
 export const initialNotesState: NotesState = {
 	notes: [],
-	syncStatus: "disconnected",
-	lastSyncAt: null,
 };
 
 export interface NotesContextValue {
@@ -145,8 +126,6 @@ export function NotesProvider({
 }: NotesProviderProps) {
 	const [state, dispatchNotes] = useReducer(notesReducer, {
 		notes: initialNotes,
-		syncStatus: "disconnected",
-		lastSyncAt: null,
 	});
 
 	return (

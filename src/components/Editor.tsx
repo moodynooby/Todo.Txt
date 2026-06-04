@@ -11,13 +11,17 @@ import {
 	Save,
 	Sparkles,
 } from "lucide-react";
-import { useEditor } from "@/context/EditorContext";
+
+import type { SaveFormat } from "@/lib/documentExport";
 
 interface EditorProps {
 	editor: TipTapEditor | null;
 	toolbarVariant?: "full" | "minimal" | "none";
 	className?: string;
 	style?: React.CSSProperties;
+	onSave?: (format: SaveFormat) => void;
+	onOpen?: () => void;
+	onAiTools?: () => void;
 }
 
 export function Editor({
@@ -25,11 +29,10 @@ export function Editor({
 	toolbarVariant = "full",
 	className,
 	style,
+	onSave,
+	onOpen,
+	onAiTools,
 }: EditorProps) {
-	// TODO: Receive onSave/onOpen/onAiTools as props instead of reading from EditorContext.
-	// EditorContext will be removed; these callbacks route through TodoPage from App.
-	const context = useEditor();
-
 	if (!editor) return null;
 
 	return (
@@ -80,7 +83,7 @@ export function Editor({
 								</RichTextEditor.Control>
 
 								<RichTextEditor.Control
-									onClick={context.onOpen}
+									onClick={onOpen}
 									active={false}
 									aria-label="Open file"
 								>
@@ -102,19 +105,19 @@ export function Editor({
 									<Menu.Dropdown>
 										<Menu.Item
 											leftSection={<FileText size={14} />}
-											onClick={() => context.onSave("markdown")}
+											onClick={() => onSave?.("markdown")}
 										>
 											Markdown
 										</Menu.Item>
 										<Menu.Item
 											leftSection={<FileIcon size={14} />}
-											onClick={() => context.onSave("text")}
+											onClick={() => onSave?.("text")}
 										>
 											Text
 										</Menu.Item>
 										<Menu.Item
 											leftSection={<Code size={14} />}
-											onClick={() => context.onSave("html")}
+											onClick={() => onSave?.("html")}
 										>
 											HTML
 										</Menu.Item>
@@ -122,7 +125,7 @@ export function Editor({
 								</Menu>
 
 								<RichTextEditor.Control
-									onClick={context.onAiTools}
+									onClick={onAiTools}
 									active={false}
 									aria-label="AI Tools"
 								>

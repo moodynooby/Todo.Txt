@@ -10,28 +10,16 @@ import {
 	useRef,
 	useState,
 } from "react";
-// TODO TodoContext refactor:
-//  - Remove EditorStateProvider, add TodoProvider (internalizes useTipTap + content state)
-//  - Remove EditorContext.Provider — consumers read from TodoContext/AuthContext/TimerContext directly
-//  - Move handleAiInsert into TodoContext
-//  - Move handleFileLoaded + content dispatch into TodoContext
-//  - handleSave/onOpen/onAiTools stay here but receive editor via useTodoContext()
-//  - Pass toolbar callbacks as props through TodoPage → Editor
 import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AuthProvider, useAuthContext } from "@/context/AuthContext";
-import {
-	EditorContext,
-	EditorStateProvider,
-	useEditorContext,
-} from "@/context/EditorContext";
+import { AuthProvider } from "@/context/AuthContext";
 import { NotesProvider } from "@/context/NotesContext";
 import { SyncProvider } from "@/context/SyncContext";
 import { TimerProvider, useTimerContext } from "@/context/TimerContext";
+import { TodoProvider, useTodoContext } from "@/context/TodoContext";
 import { useViewContext, ViewProvider } from "@/context/ViewContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
 import Timer from "@/features/timer/Timer";
-import { useTipTap } from "@/hooks/useTipTap";
 import { playBeep } from "@/lib/beep";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
 import type { ExcalidrawData } from "@/lib/excalidrawSync";
@@ -43,45 +31,28 @@ import { parseTodoContent } from "@/utils/todoParser";
 
 const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
 
-function AppContent() {
-	const { state: viewState, dispatchView } = useViewContext();
+interface AppContentProps {
+	activeFilter: Filter | null;
+	onFilterChange: (filter: Filter | null) => void;
+}
+
+function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
+	const { state: viewState } = useViewContext();
 	const viewMode = viewState.viewMode;
-	const { state: editorState, dispatchEditor } = useEditorContext();
-	const content = editorState.content;
-	const { state: authState } = useAuthContext();
+	const {
+		state: todoState,
+		editor,
+		dispatchTodo,
+		handleAiInsert,
+	} = useTodoContext();
+	const content = todoState.content;
 	const { state: timersState, dispatchTimer } = useTimerContext();
 
 	const [excalidrawData, setExcalidrawData] = useState<ExcalidrawData | null>(
 		null,
 	);
 	const [groqApiKey, setGroqApiKey] = useState("");
-	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const [aiToolsOpen, setAiToolsOpen] = useState(false);
-
-	const handleTagFilterClick = useCallback((type: string, value: string) => {
-		setActiveFilter((prev) => {
-			if (prev?.type === type && prev?.value === value) {
-				return null;
-			}
-			return { type: type as Filter["type"], value };
-		});
-	}, []);
-
-	const handleContentChange = useCallback(
-		(content: string) => {
-			dispatchEditor({
-				type: "SYNC_COMPLETE",
-				payload: { content, timestamp: Date.now() },
-			});
-		},
-		[dispatchEditor],
-	);
-
-	const { editor } = useTipTap({
-		content: editorState.content,
-		onContentChange: handleContentChange,
-		onFilterClick: handleTagFilterClick,
-	});
 
 	const handleRemoteExcalidraw = useCallback((data: ExcalidrawData | null) => {
 		setExcalidrawData(data);
@@ -93,12 +64,12 @@ function AppContent() {
 
 	const handleFileLoaded = useCallback(
 		(content: string) => {
-			dispatchEditor({
-				type: "SYNC_COMPLETE",
+			dispatchTodo({
+				type: "SET_CONTENT",
 				payload: { content, timestamp: Date.now() },
 			});
 		},
-		[dispatchEditor],
+		[dispatchTodo],
 	);
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -177,10 +148,6 @@ function AppContent() {
 		setAiToolsOpen(true);
 	}, []);
 
-	const handleAddTimer = useCallback(() => {
-		dispatchTimer({ type: "ADD_TIMER" });
-	}, [dispatchTimer]);
-
 	const handleRemoveTimer = useCallback(
 		(id: number) => {
 			dispatchTimer({ type: "REMOVE_TIMER", payload: id });
@@ -198,133 +165,87 @@ function AppContent() {
 		[dispatchTimer],
 	);
 
-	useEffect(() => {
-		if (viewMode === undefined) return;
-		if (viewState.viewMode === viewMode) return;
-		dispatchView({ type: "SET_VIEW_MODE", payload: viewMode });
-	}, [viewMode, viewState.viewMode, dispatchView]);
-
-	const handleAiInsert = (text: string, mode: "replace" | "append") => {
-		if (!editor) return;
-
-		if (mode === "replace" && !editor.state.selection.empty) {
-			editor.chain().focus().deleteSelection().insertContent(text).run();
-		} else if (mode === "append") {
-			editor.chain().focus().insertContent(`\n${text}`).run();
-		} else {
-			editor.chain().focus().setContent(text).run();
-		}
-		setAiToolsOpen(false);
-	};
-
-	const editorContextValue = useMemo(
-		() => ({
-			editor,
-			addTimer: handleAddTimer,
-			onSave: handleSave,
-			onOpen: handleOpenRepo,
-			onAiTools: handleAiTools,
-			syncStatus: authState.syncStatus,
-			isSynced: authState.isConnected,
-			user: authState.user,
-			authError: authState.authError,
-			viewMode: viewState.viewMode,
-		}),
-		[
-			editor,
-			handleAddTimer,
-			handleSave,
-			handleOpenRepo,
-			handleAiTools,
-			authState.syncStatus,
-			authState.isConnected,
-			authState.user,
-			authState.authError,
-			viewState.viewMode,
-		],
-	);
-
 	return (
 		<SyncProvider
 			excalidrawData={excalidrawData}
 			groqApiKey={groqApiKey}
 			onExcalidrawChange={handleRemoteExcalidraw}
 			onGroqApiKeyChange={handleRemoteGroqApiKey}
-			onExternalContent={(content: string) =>
-				dispatchEditor({
-					type: "SYNC_COMPLETE",
-					payload: { content, timestamp: Date.now() },
-				})
-			}
 		>
-			<EditorContext.Provider value={editorContextValue}>
-				<AppShell header={{ height: 38 }} padding={0}>
-					<AppShell.Header>
-						<AppHeader />
-					</AppShell.Header>
+			<AppShell header={{ height: 38 }} padding={0}>
+				<AppShell.Header>
+					<AppHeader />
+				</AppShell.Header>
 
-					<AppShell.Main
-						pos="relative"
-						style={{
-							overflow: "hidden",
-							...(viewMode === "todo"
-								? { display: "flex", flexDirection: "column" }
-								: {}),
-						}}
-					>
-						<ErrorBoundary>
-							<AiToolsDialog
-								isOpen={aiToolsOpen}
-								onClose={() => setAiToolsOpen(false)}
-								initialContent={
-									editor?.state.selection.empty
-										? (editor?.getText() ?? "")
-										: (editor?.state.doc.textBetween(
-												editor.state.selection.from,
-												editor.state.selection.to,
-												"\n",
-											) ?? "")
-								}
-								onInsert={handleAiInsert}
-								groqApiKey={groqApiKey}
-								onGroqApiKeyChange={setGroqApiKey}
-							/>
-							<input
-								type="file"
-								ref={fileInputRef}
-								className="file-input"
-								accept=".txt,.md,.html"
-								onChange={handleFileChange}
-							/>
-							{viewMode === "excalidraw" && (
-								<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
-									<ExcalidrawPage
-										initialData={excalidrawData}
-										onChange={(data) => setExcalidrawData(data)}
-									/>
-								</Suspense>
-							)}
-							{viewMode === "notes" && <NotesPage />}
-							{viewMode === "todo" && (
-								<TodoPage
-									taskData={taskData}
-									activeFilter={activeFilter}
-									onFilterChange={setActiveFilter}
+				<AppShell.Main
+					pos="relative"
+					style={{
+						overflow: "hidden",
+						...(viewMode === "todo"
+							? { display: "flex", flexDirection: "column" }
+							: {}),
+					}}
+				>
+					<ErrorBoundary>
+						<AiToolsDialog
+							isOpen={aiToolsOpen}
+							onClose={() => {
+								setAiToolsOpen(false);
+							}}
+							initialContent={
+								editor?.state.selection.empty
+									? (editor?.getText() ?? "")
+									: (editor?.state.doc.textBetween(
+											editor.state.selection.from,
+											editor.state.selection.to,
+											"\n",
+										) ?? "")
+							}
+							onInsert={(text, mode) => {
+								handleAiInsert(text, mode);
+								setAiToolsOpen(false);
+							}}
+							groqApiKey={groqApiKey}
+							onGroqApiKeyChange={setGroqApiKey}
+						/>
+						<input
+							type="file"
+							ref={fileInputRef}
+							className="file-input"
+							accept=".txt,.md,.html"
+							onChange={handleFileChange}
+						/>
+						{viewMode === "excalidraw" && (
+							<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
+								<ExcalidrawPage
+									initialData={excalidrawData}
+									onChange={(data) => setExcalidrawData(data)}
 								/>
-							)}
-						</ErrorBoundary>
-					</AppShell.Main>
-				</AppShell>
+							</Suspense>
+						)}
+						{viewMode === "notes" && <NotesPage />}
+						{viewMode === "todo" && (
+							<TodoPage
+								taskData={taskData}
+								activeFilter={activeFilter}
+								onFilterChange={onFilterChange}
+								onSave={handleSave}
+								onOpen={handleOpenRepo}
+								onAiTools={handleAiTools}
+							/>
+						)}
+					</ErrorBoundary>
+				</AppShell.Main>
+			</AppShell>
 
-				{timersState.timers.map((timer) => (
-					<Timer
-						key={timer.id}
-						timer={timer}
-						onRemove={handleRemoveTimer}
-						onUpdate={handleUpdateTimer}
-					/>
-				))}
-			</EditorContext.Provider>
+			{timersState.timers.map((timer) => (
+				<Timer
+					key={timer.id}
+					timer={timer}
+					onRemove={handleRemoveTimer}
+					onUpdate={handleUpdateTimer}
+				/>
+			))}
 		</SyncProvider>
 	);
 }
@@ -339,18 +260,31 @@ const readContentBackup = (): string | null => {
 
 const App = () => {
 	const initialContent = readContentBackup() ?? "";
+	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
+	const handleTagFilterClick = useCallback((type: string, value: string) => {
+		setActiveFilter((prev) => {
+			if (prev?.type === type && prev?.value === value) return null;
+			return { type: type as Filter["type"], value };
+		});
+	}, []);
 
 	return (
 		<AuthProvider>
-			<EditorStateProvider initialContent={initialContent}>
+			<TodoProvider
+				initialContent={initialContent}
+				onFilterClick={handleTagFilterClick}
+			>
 				<NotesProvider>
 					<TimerProvider>
 						<ViewProvider>
-							<AppContent />
+							<AppContent
+								activeFilter={activeFilter}
+								onFilterChange={setActiveFilter}
+							/>
 						</ViewProvider>
 					</TimerProvider>
 				</NotesProvider>
-			</EditorStateProvider>
+			</TodoProvider>
 		</AuthProvider>
 	);
 };

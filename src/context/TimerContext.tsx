@@ -1,5 +1,4 @@
 import { createContext, type ReactNode, useContext, useReducer } from "react";
-import type { SyncStatus } from "@/types/sync";
 
 export interface TimerState {
 	id: number;
@@ -7,13 +6,6 @@ export interface TimerState {
 	isActive: boolean;
 	startTime: number | null;
 	position: { top: number; left: number };
-}
-
-export interface TimerData {
-	id: number;
-	elapsed: number;
-	isActive: boolean;
-	startTime: number | null;
 }
 
 const BASE_TOP = 100;
@@ -32,8 +24,6 @@ export function generatePosition(id: number): { top: number; left: number } {
 
 export interface TimersState {
 	timers: TimerState[];
-	syncStatus: SyncStatus;
-	lastSyncAt: number | null;
 }
 
 export type TimerAction =
@@ -43,13 +33,7 @@ export type TimerAction =
 	| {
 			type: "UPDATE_TIMER";
 			payload: { id: number; updates: Partial<Omit<TimerState, "id">> };
-	  }
-	| { type: "SYNC_START" }
-	| {
-			type: "SYNC_COMPLETE";
-			payload: { timers: TimerState[]; timestamp: number };
-	  }
-	| { type: "SYNC_ERROR" };
+	  };
 
 let nextTimerId = 0;
 
@@ -84,17 +68,6 @@ export function timerReducer(
 					t.id === action.payload.id ? { ...t, ...action.payload.updates } : t,
 				),
 			};
-		case "SYNC_START":
-			return { ...state, syncStatus: "syncing" };
-		case "SYNC_COMPLETE":
-			return {
-				...state,
-				timers: action.payload.timers,
-				syncStatus: "synced",
-				lastSyncAt: action.payload.timestamp,
-			};
-		case "SYNC_ERROR":
-			return { ...state, syncStatus: "error" };
 		default:
 			return state;
 	}
@@ -102,8 +75,6 @@ export function timerReducer(
 
 export const initialTimersState: TimersState = {
 	timers: [],
-	syncStatus: "disconnected",
-	lastSyncAt: null,
 };
 
 interface TimerContextValue {
@@ -134,8 +105,6 @@ export function TimerProvider({
 }: TimerProviderProps) {
 	const [state, dispatchTimer] = useReducer(timerReducer, {
 		timers: initialTimers,
-		syncStatus: "disconnected",
-		lastSyncAt: null,
 	});
 
 	return (

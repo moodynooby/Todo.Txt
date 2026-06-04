@@ -1,13 +1,14 @@
 import { Avatar, Button, Indicator, Menu, Text } from "@mantine/core";
 import { LogOut, User } from "lucide-react";
 import { useState } from "react";
-import { useEditor } from "@/context/EditorContext";
+import { useAuthContext } from "@/context/AuthContext";
 import { useSyncContext } from "@/context/SyncContext";
 import SignInModal from "@/features/auth/SignInModal";
 
 const ConnectionButton = () => {
-	// TODO: Read user/syncStatus from useAuthContext() instead of useEditor() — EditorContext will be removed.
-	const { user, syncStatus } = useEditor();
+	const {
+		state: { user, syncStatus },
+	} = useAuthContext();
 	const { disconnect } = useSyncContext();
 	const [signInModalOpen, setSignInModalOpen] = useState(false);
 
