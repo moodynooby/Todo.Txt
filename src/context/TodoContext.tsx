@@ -83,7 +83,9 @@ export function TodoProvider({
 	useEffect(() => {
 		if (editor && state.content !== lastMarkdownRef.current) {
 			lastMarkdownRef.current = state.content;
-			editor.commands.setContent(state.content || "");
+			editor.commands.setContent(state.content || "", {
+				contentType: "markdown",
+			});
 		}
 	}, [state.content, editor]);
 
