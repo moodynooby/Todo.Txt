@@ -12,7 +12,7 @@ import {
 	signOut,
 	updateProfile,
 } from "firebase/auth";
-import { type Firestore, getFirestore } from "firebase/firestore";
+import { type Firestore, initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -32,7 +32,7 @@ let initError: string | null = null;
 try {
 	app = initializeApp(firebaseConfig);
 	auth = getAuth(app);
-	db = getFirestore(app);
+	db = initializeFirestore(app, { cacheSizeBytes: 100000000 });
 	setPersistence(auth, browserLocalPersistence).catch((err) => {
 		console.error("Failed to set auth persistence:", err);
 	});

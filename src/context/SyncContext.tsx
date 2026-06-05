@@ -16,17 +16,15 @@ import {
 	useState,
 } from "react";
 import { useAuthContext } from "@/context/AuthContext";
-import { useNotesContext } from "@/context/NotesContext";
 import { useTodoContext } from "@/context/TodoContext";
 import { getFirestoreDb, signOutUser } from "@/lib/firebase";
-import type { Note } from "@/types/notes";
 import type { BackupData, ExcalidrawData, SyncStatus } from "@/types/sync";
 
 const BACKUP_KEY = "todo_content_backup";
-const NOTES_BACKUP_KEY = "notes_backup";
 const WRITE_DEBOUNCE_MS = 1000;
 const RETRY_BASE_MS = 500;
 const RETRY_MAX_MS = 30000;
+const MIGRATED_KEY = "migration_completed";
 
 interface SyncContextValue {
 	connect: () => void;
@@ -45,7 +43,6 @@ export const useSyncContext = (): SyncContextValue => {
 
 interface SaveQueueItem {
 	content: string;
-	notes: Note[] | undefined;
 	excalidraw: ExcalidrawData | null;
 	groqApiKey: string | undefined;
 }
@@ -83,35 +80,6 @@ const writeBackup = (content: string): void => {
 	} catch {}
 };
 
-const mergeNotesArrays = (local: Note[], remote: Note[]): Note[] => {
-	const map = new Map<string, Note>();
-	for (const note of local) map.set(note.id, note);
-	for (const note of remote) {
-		const existing = map.get(note.id);
-		if (!existing || note.updatedAt > existing.updatedAt) {
-			map.set(note.id, note);
-		}
-	}
-	return Array.from(map.values());
-};
-
-export const readNotesBackup = (): Note[] => {
-	try {
-		const raw = localStorage.getItem(NOTES_BACKUP_KEY);
-		if (!raw) return [];
-		const parsed = JSON.parse(raw);
-		return Array.isArray(parsed) ? parsed : [];
-	} catch {
-		return [];
-	}
-};
-
-const writeNotesBackup = (notes: Note[]): void => {
-	try {
-		localStorage.setItem(NOTES_BACKUP_KEY, JSON.stringify(notes));
-	} catch {}
-};
-
 export function SyncProvider({
 	children,
 	excalidrawData,
@@ -120,7 +88,6 @@ export function SyncProvider({
 	onGroqApiKeyChange,
 }: SyncProviderProps) {
 	const { state: todoState, dispatchTodo } = useTodoContext();
-	const { state: notesState, dispatchNotes } = useNotesContext();
 	const { state: authState, dispatchAuth } = useAuthContext();
 
 	const storesRef = useRef({
@@ -166,37 +133,6 @@ export function SyncProvider({
 		}
 	}, []);
 
-	const readFieldsFromDoc = useCallback(
-		(data: Record<string, unknown>, isRemote = false) => {
-			if (isRemote) {
-				const remoteTs = (data.updatedAt as Timestamp)?.toMillis?.() ?? 0;
-				if (remoteTs <= lastRemoteTimestampRef.current) return;
-				lastRemoteTimestampRef.current = remoteTs;
-			}
-
-			const stores = storesRef.current;
-			if (data.content !== undefined) {
-				dispatchTodo({
-					type: "SET_CONTENT",
-					payload: {
-						content: data.content as string,
-						timestamp: Date.now(),
-					},
-				});
-			}
-			if (data.notes !== undefined) {
-				dispatchNotes({ type: "SET_NOTES", payload: data.notes as Note[] });
-			}
-			if (data.excalidraw !== undefined) {
-				stores.onExcalidrawChange(data.excalidraw as ExcalidrawData);
-			}
-			if (data.groqApiKey !== undefined) {
-				stores.onGroqApiKeyChange(data.groqApiKey as string);
-			}
-		},
-		[dispatchNotes, dispatchTodo],
-	);
-
 	const processSaveQueue = useCallback(async () => {
 		if (saveQueueRef.current.length === 0 || isProcessingRef.current) return;
 
@@ -208,21 +144,34 @@ export function SyncProvider({
 			return;
 		}
 
-		const data: Record<string, unknown> = {
-			content: batch.content,
-			updatedAt: serverTimestamp(),
-		};
-		if (batch.notes !== undefined) data.notes = batch.notes;
-		if (batch.excalidraw !== undefined) data.excalidraw = batch.excalidraw;
-		if (batch.groqApiKey !== undefined) data.groqApiKey = batch.groqApiKey;
-
 		const db = getFirestoreDb();
-		const docRef = doc(db, "todos", `todo_${authState.user?.uid ?? ""}`);
+		const uid = authState.user?.uid ?? "";
+		const todoDocRef = doc(db, "users", uid, "todos", "main");
+		const excalidrawDocRef = doc(db, "users", uid, "excalidraw", "main");
+		const groqDocRef = doc(db, "users", uid, "settings", "groq");
 
 		setSyncStatus("syncing");
 
 		try {
-			await setDoc(docRef, data, { merge: true });
+			await setDoc(
+				todoDocRef,
+				{ content: batch.content, updatedAt: serverTimestamp() },
+				{ merge: true },
+			);
+			if (batch.excalidraw !== undefined) {
+				await setDoc(
+					excalidrawDocRef,
+					{ data: batch.excalidraw, updatedAt: serverTimestamp() },
+					{ merge: true },
+				);
+			}
+			if (batch.groqApiKey !== undefined) {
+				await setDoc(
+					groqDocRef,
+					{ apiKey: batch.groqApiKey, updatedAt: serverTimestamp() },
+					{ merge: true },
+				);
+			}
 			setSyncStatus("synced");
 		} catch (e) {
 			console.error("Firestore write error:", e);
@@ -241,7 +190,6 @@ export function SyncProvider({
 	const writeDoc = useCallback(() => {
 		const pendingWrite: SaveQueueItem = {
 			content,
-			notes: notesState.notes,
 			excalidraw: excalidrawData ?? null,
 			groqApiKey,
 		};
@@ -251,17 +199,47 @@ export function SyncProvider({
 		if (!isProcessingRef.current) {
 			processSaveQueue();
 		}
-	}, [content, notesState.notes, excalidrawData, groqApiKey, processSaveQueue]);
+	}, [content, excalidrawData, groqApiKey, processSaveQueue]);
+
+	const performMigration = useCallback((uid: string) => {
+		const db = getFirestoreDb();
+		const todoDocRef = doc(db, "users", uid, "todos", "main");
+		const backup = readBackup();
+
+		if (!backup?.content && !backup?.updatedAt) {
+			return Promise.resolve();
+		}
+
+		return setDoc(
+			todoDocRef,
+			{
+				content: backup.content ?? "",
+				createdAt: serverTimestamp(),
+				updatedAt: serverTimestamp(),
+			},
+			{ merge: true },
+		).then(() => {
+			localStorage.removeItem(BACKUP_KEY);
+			localStorage.setItem(`${MIGRATED_KEY}_${uid}`, "true");
+		});
+	}, []);
 
 	const setupFirestore = useCallback(
 		async (uid: string) => {
 			const db = getFirestoreDb();
-			const docRef = doc(db, "todos", `todo_${uid}`);
+			const todoDocRef = doc(db, "users", uid, "todos", "main");
+			const excalidrawDocRef = doc(db, "users", uid, "excalidraw", "main");
+			const groqDocRef = doc(db, "users", uid, "settings", "groq");
 
 			try {
-				const docSnap = await getDoc(docRef);
-				if (docSnap.exists()) {
-					const remoteData = docSnap.data() as Record<string, unknown>;
+				const [todoSnap, excalidrawSnap, groqSnap] = await Promise.all([
+					getDoc(todoDocRef),
+					getDoc(excalidrawDocRef),
+					getDoc(groqDocRef),
+				]);
+
+				if (todoSnap.exists()) {
+					const remoteData = todoSnap.data() as Record<string, unknown>;
 					const remoteTs =
 						(remoteData.updatedAt as Timestamp)?.toMillis?.() ?? 0;
 					lastRemoteTimestampRef.current = remoteTs;
@@ -281,50 +259,50 @@ export function SyncProvider({
 							payload: { content: remoteContent, timestamp: Date.now() },
 						});
 					}
+				} else if (localStorage.getItem(`${MIGRATED_KEY}_${uid}`) !== "true") {
+					await performMigration(uid);
+					const todoSnapAfter = await getDoc(todoDocRef);
+					if (todoSnapAfter.exists()) {
+						const remoteData = todoSnapAfter.data() as Record<string, unknown>;
+						const remoteTs =
+							(remoteData.updatedAt as Timestamp)?.toMillis?.() ?? 0;
+						lastRemoteTimestampRef.current = remoteTs;
+					}
+				}
 
-					const remoteNotes = remoteData.notes as Note[] | undefined;
-					const localNotes = readNotesBackup();
-					if (remoteNotes && remoteNotes.length > 0) {
-						if (localNotes.length > 0) {
-							dispatchNotes({
-								type: "SET_NOTES",
-								payload: mergeNotesArrays(localNotes, remoteNotes),
-							});
-						} else {
-							dispatchNotes({ type: "SET_NOTES", payload: remoteNotes });
-						}
-					} else if (localNotes.length > 0) {
-						dispatchNotes({ type: "SET_NOTES", payload: localNotes });
-					}
+				if (
+					excalidrawSnap.exists() &&
+					excalidrawSnap.data().data !== undefined
+				) {
+					storesRef.current.onExcalidrawChange(
+						excalidrawSnap.data().data as ExcalidrawData,
+					);
+				}
 
-					if (remoteData.excalidraw !== undefined) {
-						storesRef.current.onExcalidrawChange(
-							remoteData.excalidraw as ExcalidrawData,
-						);
-					}
-					if (remoteData.groqApiKey !== undefined) {
-						storesRef.current.onGroqApiKeyChange(
-							remoteData.groqApiKey as string,
-						);
-					}
-				} else {
-					const backup = readBackup();
-					const localNotes = readNotesBackup();
-					const initialData: Record<string, unknown> = {
-						content: backup?.content ?? "",
-						createdAt: serverTimestamp(),
-						updatedAt: serverTimestamp(),
-					};
-					if (localNotes.length > 0) initialData.notes = localNotes;
-					await setDoc(docRef, initialData);
+				if (groqSnap.exists() && groqSnap.data().apiKey !== undefined) {
+					storesRef.current.onGroqApiKeyChange(
+						groqSnap.data().apiKey as string,
+					);
 				}
 
 				unsubFirestoreRef.current = onSnapshot(
-					docRef,
+					todoDocRef,
 					(snap) => {
 						if (!snap.exists()) return;
 						if (snap.metadata.hasPendingWrites) return;
-						readFieldsFromDoc(snap.data() as Record<string, unknown>, true);
+						const data = snap.data() as Record<string, unknown>;
+						const remoteTs = (data.updatedAt as Timestamp)?.toMillis?.() ?? 0;
+						if (remoteTs <= lastRemoteTimestampRef.current) return;
+						lastRemoteTimestampRef.current = remoteTs;
+						if (data.content !== undefined) {
+							dispatchTodo({
+								type: "SET_CONTENT",
+								payload: {
+									content: data.content as string,
+									timestamp: Date.now(),
+								},
+							});
+						}
 						setSyncStatus("synced");
 						cancelDisconnectGrace();
 					},
@@ -351,7 +329,7 @@ export function SyncProvider({
 				setSyncStatus("error");
 			}
 		},
-		[dispatchNotes, dispatchTodo, cancelDisconnectGrace, readFieldsFromDoc],
+		[dispatchTodo, cancelDisconnectGrace, performMigration],
 	);
 
 	useEffect(() => {
@@ -380,7 +358,6 @@ export function SyncProvider({
 
 		writeTimerRef.current = setTimeout(() => {
 			writeBackup(content);
-			writeNotesBackup(notesState.notes);
 
 			if (!isConnected || !authState.user) return;
 
@@ -393,7 +370,7 @@ export function SyncProvider({
 				writeTimerRef.current = null;
 			}
 		};
-	}, [content, notesState.notes, isConnected, authState.user, writeDoc]);
+	}, [content, isConnected, authState.user, writeDoc]);
 
 	useEffect(() => {
 		dispatchAuth({ type: "SET_CONNECTED", payload: isConnected });

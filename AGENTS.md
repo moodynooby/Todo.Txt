@@ -1,7 +1,7 @@
 # Agent Guidelines for Todo.Txt
 Check Docs in /LLMS.TXT/
 WHEN MOVING FILES USE git mv
-CHECK DOCS ON STRUCUTRE IN @/LLMS.TXT/IdealStructure.md first before adding new files
+enableIndexedDbPersistence() will be deprecated in the future, you can use `FirestoreSettings.cache` instead.
 ## Commands
 
 | Action | Command |

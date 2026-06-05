@@ -13,8 +13,8 @@ import {
 import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
-import { NotesProvider } from "@/context/NotesContext";
-import { readNotesBackup, SyncProvider } from "@/context/SyncContext";
+import { NotesProvider, readNotesBackup } from "@/context/NotesContext";
+import { SyncProvider } from "@/context/SyncContext";
 import { TimerProvider, useTimerContext } from "@/context/TimerContext";
 import { TodoProvider, useTodoContext } from "@/context/TodoContext";
 import { useViewContext, ViewProvider } from "@/context/ViewContext";
