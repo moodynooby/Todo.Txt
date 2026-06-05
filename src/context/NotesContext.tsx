@@ -53,7 +53,7 @@ export function notesReducer(
 				...state,
 				notes: [
 					...state.notes,
-					createNote({ ...action.payload, updatedAt: Date.now() }),
+					{ ...action.payload, updatedAt: Date.now() } as Note,
 				],
 			};
 		}

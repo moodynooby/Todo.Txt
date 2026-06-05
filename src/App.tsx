@@ -14,7 +14,7 @@ import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotesProvider } from "@/context/NotesContext";
-import { SyncProvider } from "@/context/SyncContext";
+import { readNotesBackup, SyncProvider } from "@/context/SyncContext";
 import { TimerProvider, useTimerContext } from "@/context/TimerContext";
 import { TodoProvider, useTodoContext } from "@/context/TodoContext";
 import { useViewContext, ViewProvider } from "@/context/ViewContext";
@@ -22,9 +22,9 @@ import AiToolsDialog from "@/features/ai/AiToolsDialog";
 import Timer from "@/features/timer/Timer";
 import { playBeep } from "@/lib/beep";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
-import type { ExcalidrawData } from "@/lib/excalidrawSync";
 import NotesPage from "@/pages/NotesPage";
 import TodoPage from "@/pages/TodoPage";
+import type { ExcalidrawData } from "@/types/sync";
 import type { Filter, ParsedTodoContent, Task } from "@/types/todo";
 import { getToday } from "@/utils/dateUtils";
 import { parseTodoContent } from "@/utils/todoParser";
@@ -172,7 +172,7 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 			onExcalidrawChange={handleRemoteExcalidraw}
 			onGroqApiKeyChange={handleRemoteGroqApiKey}
 		>
-			<AppShell header={{ height: 38 }} padding={0}>
+			<AppShell header={{ height: 48 }} padding={0}>
 				<AppShell.Header>
 					<AppHeader />
 				</AppShell.Header>
@@ -260,6 +260,7 @@ const readContentBackup = (): string | null => {
 
 const App = () => {
 	const initialContent = readContentBackup() ?? "";
+	const initialNotes = readNotesBackup();
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const handleTagFilterClick = useCallback((type: string, value: string) => {
 		setActiveFilter((prev) => {
@@ -274,7 +275,7 @@ const App = () => {
 				initialContent={initialContent}
 				onFilterClick={handleTagFilterClick}
 			>
-				<NotesProvider>
+				<NotesProvider initialNotes={initialNotes}>
 					<TimerProvider>
 						<ViewProvider>
 							<AppContent

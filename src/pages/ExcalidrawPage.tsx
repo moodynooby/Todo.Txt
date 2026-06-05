@@ -3,8 +3,8 @@ import { useCallback, useRef } from "react";
 import "./ExcalidrawPage.css";
 import "@excalidraw/excalidraw/index.css";
 import { Box, useComputedColorScheme } from "@mantine/core";
-import type { ExcalidrawData } from "@/lib/excalidrawSync";
 import { toggleFullscreen } from "@/lib/fullscreen";
+import type { ExcalidrawData } from "@/types/sync";
 
 const EXCALIDRAW_UI_OPTIONS = {
 	canvasActions: { export: false, toggleTheme: false },

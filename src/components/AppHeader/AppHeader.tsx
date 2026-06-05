@@ -18,7 +18,7 @@ const AppHeader = () => {
 			h="100%"
 			style={{ overflowX: "auto" }}
 		>
-			<Group h="100%" justify="space-between" px="md" wrap="nowrap">
+			<Group h="100%" justify="space-between" px="lg" wrap="nowrap">
 				<Group gap="sm">
 					<Image src="/todotxt2.svg" alt="Logo" w={28} h={28} />
 					<Title order={4} c="var(--mantine-primary-color-6)">
@@ -33,6 +33,7 @@ const AppHeader = () => {
 							<ActionIcon
 								variant="subtle"
 								size="lg"
+								hiddenFrom="xs"
 								onClick={() => dispatchTimer({ type: "ADD_TIMER" })}
 							>
 								<Group gap={2}>

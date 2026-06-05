@@ -59,7 +59,7 @@ const Timer = ({ timer, onRemove, onUpdate }: TimerProps) => {
 		[timer.id, onUpdate],
 	);
 
-	const handlePlayPause = () => {
+	const handlePlayPause = useCallback(() => {
 		const startTime = startTimeRef.current;
 		if (timer.isActive && startTime !== null) {
 			const currentElapsed = computeElapsed(baseElapsedRef.current, startTime);
@@ -82,9 +82,9 @@ const Timer = ({ timer, onRemove, onUpdate }: TimerProps) => {
 				startTime: now,
 			});
 		}
-	};
+	}, [timer.isActive, timer.id, onUpdate]);
 
-	const handleReset = () => {
+	const handleReset = useCallback(() => {
 		baseElapsedRef.current = 0;
 		startTimeRef.current = null;
 		setDisplaySeconds(0);
@@ -94,7 +94,7 @@ const Timer = ({ timer, onRemove, onUpdate }: TimerProps) => {
 			isActive: false,
 			startTime: null,
 		});
-	};
+	}, [timer.id, onUpdate]);
 
 	const progress =
 		displaySeconds > 0 ? Math.min((displaySeconds / 3600) * 100, 100) : 0;

@@ -18,12 +18,12 @@ import {
 import { useAuthContext } from "@/context/AuthContext";
 import { useNotesContext } from "@/context/NotesContext";
 import { useTodoContext } from "@/context/TodoContext";
-import type { ExcalidrawData } from "@/lib/excalidrawSync";
 import { getFirestoreDb, signOutUser } from "@/lib/firebase";
 import type { Note } from "@/types/notes";
-import type { SyncStatus } from "@/types/sync";
+import type { BackupData, ExcalidrawData, SyncStatus } from "@/types/sync";
 
 const BACKUP_KEY = "todo_content_backup";
+const NOTES_BACKUP_KEY = "notes_backup";
 const WRITE_DEBOUNCE_MS = 1000;
 const RETRY_BASE_MS = 500;
 const RETRY_MAX_MS = 30000;
@@ -58,9 +58,19 @@ interface SyncProviderProps {
 	onGroqApiKeyChange: (key: string) => void;
 }
 
-const readBackup = (): string | null => {
+const readBackup = (): BackupData | null => {
 	try {
-		return localStorage.getItem(BACKUP_KEY);
+		const raw = localStorage.getItem(BACKUP_KEY);
+		if (!raw) return null;
+		try {
+			const parsed = JSON.parse(raw);
+			if (parsed && typeof parsed === "object" && "content" in parsed) {
+				return parsed as BackupData;
+			}
+		} catch {
+			// Legacy format: plain string
+		}
+		return { content: raw, updatedAt: 0 };
 	} catch {
 		return null;
 	}
@@ -68,7 +78,37 @@ const readBackup = (): string | null => {
 
 const writeBackup = (content: string): void => {
 	try {
-		localStorage.setItem(BACKUP_KEY, content);
+		const data: BackupData = { content, updatedAt: Date.now() };
+		localStorage.setItem(BACKUP_KEY, JSON.stringify(data));
+	} catch {}
+};
+
+const mergeNotesArrays = (local: Note[], remote: Note[]): Note[] => {
+	const map = new Map<string, Note>();
+	for (const note of local) map.set(note.id, note);
+	for (const note of remote) {
+		const existing = map.get(note.id);
+		if (!existing || note.updatedAt > existing.updatedAt) {
+			map.set(note.id, note);
+		}
+	}
+	return Array.from(map.values());
+};
+
+export const readNotesBackup = (): Note[] => {
+	try {
+		const raw = localStorage.getItem(NOTES_BACKUP_KEY);
+		if (!raw) return [];
+		const parsed = JSON.parse(raw);
+		return Array.isArray(parsed) ? parsed : [];
+	} catch {
+		return [];
+	}
+};
+
+const writeNotesBackup = (notes: Note[]): void => {
+	try {
+		localStorage.setItem(NOTES_BACKUP_KEY, JSON.stringify(notes));
 	} catch {}
 };
 
@@ -105,6 +145,8 @@ export function SyncProvider({
 	const disconnectGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const { content } = todoState;
+
+	const processSaveQueueRef = useRef<() => Promise<void>>(async () => {});
 
 	const cancelDisconnectGrace = useCallback(() => {
 		if (disconnectGraceRef.current) {
@@ -188,11 +230,13 @@ export function SyncProvider({
 		}
 
 		if (saveQueueRef.current.length > 0) {
-			setTimeout(processSaveQueue, 50);
+			setTimeout(() => processSaveQueueRef.current(), 50);
 		} else {
 			isProcessingRef.current = false;
 		}
 	}, [authState.user?.uid]);
+
+	processSaveQueueRef.current = processSaveQueue;
 
 	const writeDoc = useCallback(() => {
 		const pendingWrite: SaveQueueItem = {
@@ -217,17 +261,61 @@ export function SyncProvider({
 			try {
 				const docSnap = await getDoc(docRef);
 				if (docSnap.exists()) {
-					const data = docSnap.data();
-					lastRemoteTimestampRef.current =
-						(data.updatedAt as Timestamp)?.toMillis?.() ?? 0;
-					readFieldsFromDoc(data as Record<string, unknown>);
+					const remoteData = docSnap.data() as Record<string, unknown>;
+					const remoteTs =
+						(remoteData.updatedAt as Timestamp)?.toMillis?.() ?? 0;
+					lastRemoteTimestampRef.current = remoteTs;
+
+					const localBackup = readBackup();
+					const localTs = localBackup?.updatedAt ?? 0;
+					const remoteContent = remoteData.content as string | undefined;
+
+					if (localBackup?.content && localTs > remoteTs) {
+						dispatchTodo({
+							type: "SET_CONTENT",
+							payload: { content: localBackup.content, timestamp: Date.now() },
+						});
+					} else if (remoteContent !== undefined) {
+						dispatchTodo({
+							type: "SET_CONTENT",
+							payload: { content: remoteContent, timestamp: Date.now() },
+						});
+					}
+
+					const remoteNotes = remoteData.notes as Note[] | undefined;
+					const localNotes = readNotesBackup();
+					if (remoteNotes && remoteNotes.length > 0) {
+						if (localNotes.length > 0) {
+							dispatchNotes({
+								type: "SET_NOTES",
+								payload: mergeNotesArrays(localNotes, remoteNotes),
+							});
+						} else {
+							dispatchNotes({ type: "SET_NOTES", payload: remoteNotes });
+						}
+					} else if (localNotes.length > 0) {
+						dispatchNotes({ type: "SET_NOTES", payload: localNotes });
+					}
+
+					if (remoteData.excalidraw !== undefined) {
+						storesRef.current.onExcalidrawChange(
+							remoteData.excalidraw as ExcalidrawData,
+						);
+					}
+					if (remoteData.groqApiKey !== undefined) {
+						storesRef.current.onGroqApiKeyChange(
+							remoteData.groqApiKey as string,
+						);
+					}
 				} else {
 					const backup = readBackup();
+					const localNotes = readNotesBackup();
 					const initialData: Record<string, unknown> = {
-						content: backup ?? "",
+						content: backup?.content ?? "",
 						createdAt: serverTimestamp(),
 						updatedAt: serverTimestamp(),
 					};
+					if (localNotes.length > 0) initialData.notes = localNotes;
 					await setDoc(docRef, initialData);
 				}
 
@@ -263,7 +351,7 @@ export function SyncProvider({
 				setSyncStatus("error");
 			}
 		},
-		[readFieldsFromDoc, cancelDisconnectGrace],
+		[dispatchNotes, dispatchTodo, cancelDisconnectGrace, readFieldsFromDoc],
 	);
 
 	useEffect(() => {
@@ -292,6 +380,7 @@ export function SyncProvider({
 
 		writeTimerRef.current = setTimeout(() => {
 			writeBackup(content);
+			writeNotesBackup(notesState.notes);
 
 			if (!isConnected || !authState.user) return;
 
@@ -304,15 +393,12 @@ export function SyncProvider({
 				writeTimerRef.current = null;
 			}
 		};
-	}, [content, isConnected, authState.user, writeDoc]);
+	}, [content, notesState.notes, isConnected, authState.user, writeDoc]);
 
 	useEffect(() => {
 		dispatchAuth({ type: "SET_CONNECTED", payload: isConnected });
-	}, [isConnected, dispatchAuth]);
-
-	useEffect(() => {
 		dispatchAuth({ type: "SET_SYNC_STATUS", payload: syncStatus });
-	}, [syncStatus, dispatchAuth]);
+	}, [isConnected, syncStatus, dispatchAuth]);
 
 	const connect = useCallback(async () => {
 		cancelDisconnectGrace();

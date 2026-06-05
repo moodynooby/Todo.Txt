@@ -77,6 +77,7 @@ const HeaderActions = () => {
 					<ActionIcon
 						variant="subtle"
 						size="lg"
+						hiddenFrom="sm"
 						onClick={install}
 						aria-label="Install app"
 					>
@@ -103,6 +104,7 @@ const HeaderActions = () => {
 				<ActionIcon
 					variant="subtle"
 					size="lg"
+					hiddenFrom="sm"
 					onClick={toggleFullscreen}
 					aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
 				>
