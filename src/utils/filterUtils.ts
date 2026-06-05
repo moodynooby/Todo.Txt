@@ -10,22 +10,31 @@ export const toggleFilter = (
 		? null
 		: { type, value };
 
-export const applyFilter = (
-	tasks: Task[],
+export const getFilterPredicate = (
 	activeFilter: Filter | null,
-): Task[] => {
-	if (!activeFilter) return tasks;
+): ((t: Task) => boolean) => {
+	if (!activeFilter) return () => true;
+
+	const today = getToday();
 	const filters: Record<FilterType, (t: Task) => boolean> = {
 		priority: (t) => t.priority === activeFilter.value,
 		project: (t) => t.projects?.includes(activeFilter.value) ?? false,
 		context: (t) => t.contexts?.includes(activeFilter.value) ?? false,
 		due: (t) => {
-			if (activeFilter.value === "overdue")
-				return !!t.due && t.due < getToday();
+			if (activeFilter.value === "overdue") return !!t.due && t.due < today;
 			return t.due === activeFilter.value;
 		},
 		completion: (t) =>
 			activeFilter.value === "done" ? t.completed : !t.completed,
 	};
-	return tasks.filter(filters[activeFilter.type] || (() => true));
+
+	return filters[activeFilter.type] || (() => true);
+};
+
+export const applyFilter = (
+	tasks: Task[],
+	activeFilter: Filter | null,
+): Task[] => {
+	if (!activeFilter) return tasks;
+	return tasks.filter(getFilterPredicate(activeFilter));
 };
