@@ -6,7 +6,7 @@ import {
 	STORAGE_KEY,
 } from "@/lib/persistedState";
 import type { Filter, FilterType, Task } from "@/types/todo";
-import { applyFilter, toggleFilter } from "@/utils/filterUtils";
+import { getFilterPredicate, toggleFilter } from "@/utils/filterUtils";
 
 interface UseSidebarStateParams {
 	taskData: {
@@ -64,30 +64,30 @@ export const useSidebarState = ({
 		onFilterChange(null);
 	};
 
-	const visibleTasks = useMemo(
-		() => (showCompleted ? tasks : tasks.filter((t) => !t.completed)),
-		[tasks, showCompleted],
-	);
+	const { filteredTasks, completedCount } = useMemo(() => {
+		const filtered: Task[] = [];
+		let completed = 0;
 
-	const searchedTasks = useMemo(
-		() =>
-			searchQuery
-				? visibleTasks.filter((t) =>
-						t.text.toLowerCase().includes(searchQuery.toLowerCase()),
-					)
-				: visibleTasks,
-		[visibleTasks, searchQuery],
-	);
+		const filterPredicate = getFilterPredicate(activeFilter);
+		const query = searchQuery.toLowerCase();
 
-	const filteredTasks = useMemo(
-		() => applyFilter(searchedTasks, activeFilter),
-		[searchedTasks, activeFilter],
-	);
+		for (const t of tasks) {
+			const isVisible = showCompleted || !t.completed;
+			if (!isVisible) continue;
 
-	const completedCount = useMemo(
-		() => filteredTasks.filter((t) => t.completed).length,
-		[filteredTasks],
-	);
+			const matchesQuery = !query || t.text.toLowerCase().includes(query);
+			if (!matchesQuery) continue;
+
+			if (filterPredicate(t)) {
+				filtered.push(t);
+				if (t.completed) {
+					completed++;
+				}
+			}
+		}
+
+		return { filteredTasks: filtered, completedCount: completed };
+	}, [tasks, showCompleted, searchQuery, activeFilter]);
 
 	const toggleShowCompleted = (): void => {
 		setPersisted((prev) => ({
