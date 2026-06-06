@@ -9,3 +9,8 @@
 **Vulnerability:** External links were missing `noopener` in the `rel` attribute (specifically the Groq console link).
 **Learning:** While modern browsers often default to `noopener` for `target="_blank"`, explicitly including it with `noreferrer` is a best practice for defense-in-depth and privacy.
 **Prevention:** Use `rel="noopener noreferrer"` for all external links.
+
+## 2025-05-14 - Information Disclosure via Error Messages
+**Vulnerability:** Raw error messages from the application and external AI services were being displayed directly to users in production. This could leak implementation details, stack traces, or internal API structures.
+**Learning:** Production error messages should be generic and safe. Detailed debugging information should be restricted to development environments.
+**Prevention:** Use environment flags like `import.meta.env.DEV` to conditionally show detailed error messages only in development, and provide sanitized, generic messages in production.
