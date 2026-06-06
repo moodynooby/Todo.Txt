@@ -48,9 +48,12 @@ export const useAiGroq = (apiKey: string) => {
 				return text;
 			} catch (err) {
 				if (!mountedRef.current || controller.signal.aborted) return null;
-				console.error("Groq API Error:", err);
+				// Log detailed error in dev, but mask it in production to prevent info leakage
+				if (import.meta.env.DEV) {
+					console.error("Groq API Error:", err);
+				}
 				const errorMessage = err instanceof Error ? err.message : String(err);
-				setError(errorMessage);
+				setError(import.meta.env.DEV ? errorMessage : "AI Service Error");
 				return null;
 			} finally {
 				if (mountedRef.current && !controller.signal.aborted) {

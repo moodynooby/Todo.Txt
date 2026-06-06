@@ -35,7 +35,10 @@ export class ErrorBoundary extends Component<Props, State> {
 					<Stack align="center" gap="md">
 						<Title order={2}>Something went wrong</Title>
 						<Text c="dimmed" size="sm" maw={400} ta="center">
-							{this.state.error?.message || "An unexpected error occurred"}
+							{/* Prevent sensitive info leakage in production */}
+							{import.meta.env.DEV
+								? this.state.error?.message || "An unexpected error occurred"
+								: "An unexpected error occurred"}
 						</Text>
 						<Button onClick={this.handleReset}>Try Again</Button>
 					</Stack>
