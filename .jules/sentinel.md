@@ -9,3 +9,8 @@
 **Vulnerability:** External links were missing `noopener` in the `rel` attribute (specifically the Groq console link).
 **Learning:** While modern browsers often default to `noopener` for `target="_blank"`, explicitly including it with `noreferrer` is a best practice for defense-in-depth and privacy.
 **Prevention:** Use `rel="noopener noreferrer"` for all external links.
+
+## 2025-05-15 - Masking Error Messages in Production
+**Vulnerability:** Raw error messages and stack traces were being exposed in the UI and console in production environments, potentially leaking internal implementation details.
+**Learning:** Production environments should never expose raw error details to the end-user. `import.meta.env.DEV` is a reliable way to differentiate between environments in Vite-based projects.
+**Prevention:** Always wrap sensitive error logging and UI error display in a check for `import.meta.env.DEV`. Show generic, safe messages to users in production.
