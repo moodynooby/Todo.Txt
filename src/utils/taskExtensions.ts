@@ -8,7 +8,7 @@ import {
 } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { Filter } from "@/types/todo";
-import { getToday } from "./dateUtils";
+import { getToday, getTomorrow, getYesterday } from "./dateUtils";
 import { parseTodoLine } from "./todoParser";
 
 export interface TaskFilterStorage {
@@ -48,13 +48,18 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 								extension.storage;
 							const decos: Decoration[] = [];
 							const today = getToday();
+							const dateContext = {
+								today,
+								tomorrow: getTomorrow(),
+								yesterday: getYesterday(),
+							};
 
 							state.doc.descendants((node: PMNode, pos: number) => {
 								if (node.isBlock) {
 									const text = node.textContent;
 									if (!text.trim()) return;
 
-									const task = parseTodoLine(text, pos);
+									const task = parseTodoLine(text, pos, dateContext);
 
 									let matches = true;
 
