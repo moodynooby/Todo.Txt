@@ -15,13 +15,16 @@ export const applyFilter = (
 	activeFilter: Filter | null,
 ): Task[] => {
 	if (!activeFilter) return tasks;
+
+	// Hoist today's date for overdue filtering to avoid repeated calls in the loop
+	const today = activeFilter.type === "due" ? getToday() : "";
+
 	const filters: Record<FilterType, (t: Task) => boolean> = {
 		priority: (t) => t.priority === activeFilter.value,
 		project: (t) => t.projects?.includes(activeFilter.value) ?? false,
 		context: (t) => t.contexts?.includes(activeFilter.value) ?? false,
 		due: (t) => {
-			if (activeFilter.value === "overdue")
-				return !!t.due && t.due < getToday();
+			if (activeFilter.value === "overdue") return !!t.due && t.due < today;
 			return t.due === activeFilter.value;
 		},
 		completion: (t) =>
