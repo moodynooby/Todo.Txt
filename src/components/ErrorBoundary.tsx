@@ -21,7 +21,9 @@ export class ErrorBoundary extends Component<Props, State> {
 	}
 
 	componentDidCatch(error: Error, info: ErrorInfo) {
-		console.error("ErrorBoundary caught:", error, info);
+		if (import.meta.env.DEV) {
+			console.error("ErrorBoundary caught:", error, info);
+		}
 	}
 
 	handleReset = () => {
@@ -30,12 +32,17 @@ export class ErrorBoundary extends Component<Props, State> {
 
 	render() {
 		if (this.state.hasError) {
+			const errorMessage =
+				import.meta.env.DEV && this.state.error
+					? this.state.error.message
+					: "An unexpected error occurred";
+
 			return (
 				<Center h="100vh">
 					<Stack align="center" gap="md">
 						<Title order={2}>Something went wrong</Title>
 						<Text c="dimmed" size="sm" maw={400} ta="center">
-							{this.state.error?.message || "An unexpected error occurred"}
+							{errorMessage}
 						</Text>
 						<Button onClick={this.handleReset}>Try Again</Button>
 					</Stack>
