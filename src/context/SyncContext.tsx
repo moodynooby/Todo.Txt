@@ -174,7 +174,9 @@ export function SyncProvider({
 			}
 			setSyncStatus("synced");
 		} catch (e) {
-			console.error("Firestore write error:", e);
+			if (import.meta.env.DEV) {
+				console.error("Firestore write error:", e);
+			}
 			setSyncStatus("error");
 		}
 
@@ -307,7 +309,9 @@ export function SyncProvider({
 						cancelDisconnectGrace();
 					},
 					(err) => {
-						console.error("Firestore snapshot error:", err);
+						if (import.meta.env.DEV) {
+							console.error("Firestore snapshot error:", err);
+						}
 						setSyncStatus("error");
 						const delay = Math.min(
 							RETRY_BASE_MS * 2 ** retryCountRef.current,
@@ -325,7 +329,9 @@ export function SyncProvider({
 				cancelDisconnectGrace();
 				setSyncStatus("synced");
 			} catch (e) {
-				console.error("Firestore setup error:", e);
+				if (import.meta.env.DEV) {
+					console.error("Firestore setup error:", e);
+				}
 				setSyncStatus("error");
 			}
 		},
@@ -399,7 +405,9 @@ export function SyncProvider({
 			try {
 				await signOutUser();
 			} catch (e) {
-				console.error("Sign out error:", e);
+				if (import.meta.env.DEV) {
+					console.error("Sign out error:", e);
+				}
 			}
 		}
 	}, [teardownFirestore, authState.user, cancelDisconnectGrace]);
