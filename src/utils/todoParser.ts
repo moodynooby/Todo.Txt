@@ -21,7 +21,17 @@ const parseRelativeDate = (
 	return undefined;
 };
 
-export const parseTodoLine = (trimmed: string, id = 0): Task => {
+export interface DateContext {
+	today: string;
+	tomorrow: string;
+	yesterday: string;
+}
+
+export const parseTodoLine = (
+	trimmed: string,
+	id = 0,
+	dateContext?: DateContext,
+): Task => {
 	const hasCheckboxMarker = RE_CHECKBOX_MARKER.test(trimmed);
 	const isChecked = hasCheckboxMarker && RE_CHECKED_MARKER.test(trimmed);
 	const hasXPrefix = !hasCheckboxMarker && RE_X_PREFIX.test(trimmed);
@@ -64,11 +74,12 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		const dueMatch = cleanText.match(RE_DUE);
 		if (dueMatch) {
 			const value = dueMatch[1].toLowerCase();
-			const today = getToday();
-			const tomorrow = getTomorrow();
-			const yesterday = getYesterday();
-			const dateContext = { today, tomorrow, yesterday };
-			task.due = parseRelativeDate(value, dateContext);
+			const ctx = dateContext ?? {
+				today: getToday(),
+				tomorrow: getTomorrow(),
+				yesterday: getYesterday(),
+			};
+			task.due = parseRelativeDate(value, ctx);
 		}
 	}
 
@@ -98,6 +109,8 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 
 	const today = getToday();
 	const tomorrow = getTomorrow();
+	const yesterday = getYesterday();
+	const dateContext = { today, tomorrow, yesterday };
 
 	const categorizeDueDate = (due: string): string => {
 		if (RE_IS_DATE.test(due)) {
@@ -112,7 +125,7 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		const trimmed = rawLines[i].trim();
 		if (!trimmed) continue;
 
-		const task = parseTodoLine(trimmed, i);
+		const task = parseTodoLine(trimmed, i, dateContext);
 
 		if (task.completed) {
 			completedCount++;
