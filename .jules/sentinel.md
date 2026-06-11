@@ -9,3 +9,8 @@
 **Vulnerability:** External links were missing `noopener` in the `rel` attribute (specifically the Groq console link).
 **Learning:** While modern browsers often default to `noopener` for `target="_blank"`, explicitly including it with `noreferrer` is a best practice for defense-in-depth and privacy.
 **Prevention:** Use `rel="noopener noreferrer"` for all external links.
+
+## 2025-05-15 - Environment-Aware Error Masking
+**Vulnerability:** Technical error details from Firestore and AI APIs were being exposed in the UI and console, potentially leaking infrastructure details or API internals to end-users.
+**Learning:** Production environments should never expose raw technical errors. Generic user-facing messages combined with selective developer-only logging prevents information leakage.
+**Prevention:** Use `import.meta.env.DEV` to gate detailed error messages and technical console logs. Ensure `ErrorBoundary`, data sync layers, and external API hooks implement this pattern.
