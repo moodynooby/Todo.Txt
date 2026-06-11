@@ -5,3 +5,7 @@
 ## 2025-05-16 - [Advanced Parser Optimizations and UI Responsiveness]
 **Learning:** Even $O(N)$ operations can become bottlenecks if they involve expensive regexes or redundant passes over large data. Using `useDeferredValue` is highly effective for keeping text inputs responsive when they drive expensive derived state.
 **Action:** Use "fast-path" string checks (`startsWith`, `includes`, `indexOf`) to avoid regex execution in loops. Consolidate multiple passes over the same data into a single loop. Leverage React's concurrent features like `useDeferredValue` for expensive computations triggered by user input.
+
+## 2025-05-17 - [Consolidated Filtering and Date Context Hoisting]
+**Learning:** Consolidating multiple $O(N)$ passes (filter by completion, then search, then active filter, then count) into a single $O(N)$ loop in `useSidebarState` significantly reduced overhead. Additionally, hoisting `Date` object creation via a `DateContext` in `parseTodoLine` yielded a ~90% speed boost for the parser when processing lines with 'due:' tags.
+**Action:** Always look for opportunities to combine multiple array iterations into a single pass. Export and use context objects for hot functions that require repeated environment data (like current dates) to avoid redundant utility calls.

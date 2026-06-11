@@ -8,7 +8,8 @@ import {
 } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { Filter } from "@/types/todo";
-import { getToday } from "./dateUtils";
+import { getToday, getTomorrow, getYesterday } from "./dateUtils";
+import { matchesFilter } from "./filterUtils";
 import { parseTodoLine } from "./todoParser";
 
 export interface TaskFilterStorage {
@@ -48,13 +49,17 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 								extension.storage;
 							const decos: Decoration[] = [];
 							const today = getToday();
+							const tomorrow = getTomorrow();
+							const yesterday = getYesterday();
+							const dateContext = { today, tomorrow, yesterday };
+							const lowerSearch = searchQuery.toLowerCase();
 
 							state.doc.descendants((node: PMNode, pos: number) => {
 								if (node.isBlock) {
 									const text = node.textContent;
 									if (!text.trim()) return;
 
-									const task = parseTodoLine(text, pos);
+									const task = parseTodoLine(text, pos, dateContext);
 
 									let matches = true;
 
@@ -63,32 +68,11 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 									}
 
 									if (matches && activeFilter) {
-										if (activeFilter.type === "priority") {
-											matches = task.priority === activeFilter.value;
-										} else if (activeFilter.type === "project") {
-											matches =
-												task.projects?.includes(activeFilter.value) ?? false;
-										} else if (activeFilter.type === "context") {
-											matches =
-												task.contexts?.includes(activeFilter.value) ?? false;
-										} else if (activeFilter.type === "due") {
-											if (activeFilter.value === "overdue") {
-												matches = !!task.due && task.due < today;
-											} else {
-												matches = task.due === activeFilter.value;
-											}
-										} else if (activeFilter.type === "completion") {
-											matches =
-												activeFilter.value === "done"
-													? task.completed
-													: !task.completed;
-										}
+										matches = matchesFilter(task, activeFilter, today);
 									}
 
 									if (matches && searchQuery) {
-										matches = text
-											.toLowerCase()
-											.includes(searchQuery.toLowerCase());
+										matches = text.toLowerCase().includes(lowerSearch);
 									}
 
 									if (!matches) {

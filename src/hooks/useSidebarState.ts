@@ -6,7 +6,8 @@ import {
 	STORAGE_KEY,
 } from "@/lib/persistedState";
 import type { Filter, FilterType, Task } from "@/types/todo";
-import { applyFilter, toggleFilter } from "@/utils/filterUtils";
+import { getToday } from "@/utils/dateUtils";
+import { matchesFilter, toggleFilter } from "@/utils/filterUtils";
 
 interface UseSidebarStateParams {
 	taskData: {
@@ -64,30 +65,31 @@ export const useSidebarState = ({
 		onFilterChange(null);
 	};
 
-	const visibleTasks = useMemo(
-		() => (showCompleted ? tasks : tasks.filter((t) => !t.completed)),
-		[tasks, showCompleted],
-	);
+	const { filteredTasks, completedCount } = useMemo(() => {
+		const filtered: Task[] = [];
+		let completed = 0;
+		const today = getToday();
+		const lowerSearch = searchQuery.toLowerCase();
 
-	const searchedTasks = useMemo(
-		() =>
-			searchQuery
-				? visibleTasks.filter((t) =>
-						t.text.toLowerCase().includes(searchQuery.toLowerCase()),
-					)
-				: visibleTasks,
-		[visibleTasks, searchQuery],
-	);
+		for (const task of tasks) {
+			// 1. Completion filter (visibility)
+			if (!showCompleted && task.completed) continue;
 
-	const filteredTasks = useMemo(
-		() => applyFilter(searchedTasks, activeFilter),
-		[searchedTasks, activeFilter],
-	);
+			// 2. Search filter
+			if (searchQuery && !task.text.toLowerCase().includes(lowerSearch))
+				continue;
 
-	const completedCount = useMemo(
-		() => filteredTasks.filter((t) => t.completed).length,
-		[filteredTasks],
-	);
+			// 3. Active filter
+			if (activeFilter && !matchesFilter(task, activeFilter, today)) continue;
+
+			filtered.push(task);
+			if (task.completed) {
+				completed++;
+			}
+		}
+
+		return { filteredTasks: filtered, completedCount: completed };
+	}, [tasks, showCompleted, searchQuery, activeFilter]);
 
 	const toggleShowCompleted = (): void => {
 		setPersisted((prev) => ({
