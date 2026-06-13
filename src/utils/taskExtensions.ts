@@ -8,7 +8,7 @@ import {
 } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { Filter } from "@/types/todo";
-import { getToday } from "./dateUtils";
+import { getDateContext } from "./dateUtils";
 import { parseTodoLine } from "./todoParser";
 
 export interface TaskFilterStorage {
@@ -47,14 +47,14 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 							const { activeFilter, searchQuery, showCompleted } =
 								extension.storage;
 							const decos: Decoration[] = [];
-							const today = getToday();
+							const dateContext = getDateContext();
 
 							state.doc.descendants((node: PMNode, pos: number) => {
 								if (node.isBlock) {
 									const text = node.textContent;
 									if (!text.trim()) return;
 
-									const task = parseTodoLine(text, pos);
+									const task = parseTodoLine(text, pos, dateContext);
 
 									let matches = true;
 
@@ -73,7 +73,7 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 												task.contexts?.includes(activeFilter.value) ?? false;
 										} else if (activeFilter.type === "due") {
 											if (activeFilter.value === "overdue") {
-												matches = !!task.due && task.due < today;
+												matches = !!task.due && task.due < dateContext.today;
 											} else {
 												matches = task.due === activeFilter.value;
 											}
@@ -131,7 +131,7 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 				props: {
 					decorations(state: EditorState) {
 						const decos: Decoration[] = [];
-						const today = getToday();
+						const dateContext = getDateContext();
 
 						state.doc.descendants((node: PMNode, pos: number) => {
 							if (node.isText) {
@@ -194,7 +194,7 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									let isOverdue = false;
 									if (value !== "today" && value !== "tomorrow") {
 										if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-											isOverdue = value < today;
+											isOverdue = value < dateContext.today;
 										}
 									}
 
