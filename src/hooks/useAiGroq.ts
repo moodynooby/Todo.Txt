@@ -49,7 +49,12 @@ export const useAiGroq = (apiKey: string) => {
 			} catch (err) {
 				if (!mountedRef.current || controller.signal.aborted) return null;
 				console.error("Groq API Error:", err);
-				const errorMessage = err instanceof Error ? err.message : String(err);
+				const isDev = import.meta.env.DEV;
+				const errorMessage = isDev
+					? err instanceof Error
+						? err.message
+						: String(err)
+					: "An error occurred while processing the request. Please try again later.";
 				setError(errorMessage);
 				return null;
 			} finally {
