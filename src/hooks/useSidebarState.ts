@@ -6,6 +6,7 @@ import {
 	STORAGE_KEY,
 } from "@/lib/persistedState";
 import type { Filter, FilterType, Task } from "@/types/todo";
+import { getToday } from "@/utils/dateUtils";
 import { applyFilter, toggleFilter } from "@/utils/filterUtils";
 
 interface UseSidebarStateParams {
@@ -79,10 +80,10 @@ export const useSidebarState = ({
 		[visibleTasks, searchQuery],
 	);
 
-	const filteredTasks = useMemo(
-		() => applyFilter(searchedTasks, activeFilter),
-		[searchedTasks, activeFilter],
-	);
+	const filteredTasks = useMemo(() => {
+		const today = getToday();
+		return applyFilter(searchedTasks, activeFilter, today);
+	}, [searchedTasks, activeFilter]);
 
 	const completedCount = useMemo(
 		() => filteredTasks.filter((t) => t.completed).length,

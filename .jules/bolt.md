@@ -5,3 +5,7 @@
 ## 2025-05-16 - [Advanced Parser Optimizations and UI Responsiveness]
 **Learning:** Even $O(N)$ operations can become bottlenecks if they involve expensive regexes or redundant passes over large data. Using `useDeferredValue` is highly effective for keeping text inputs responsive when they drive expensive derived state.
 **Action:** Use "fast-path" string checks (`startsWith`, `includes`, `indexOf`) to avoid regex execution in loops. Consolidate multiple passes over the same data into a single loop. Leverage React's concurrent features like `useDeferredValue` for expensive computations triggered by user input.
+
+## 2025-05-22 - [Hoisting Date Context in Hot Loops]
+**Learning:** Repeatedly calling date utility functions (like `getToday()`) inside $O(N)$ loops (parsing thousands of lines or scanning the document for decorations) is expensive due to repeated `Date` object creation and string formatting.
+**Action:** Hoist date calculations into a `DateContext` object outside of loops and pass it as an optional parameter to leaf-node processing functions. This reduced parse time for 10k tasks by ~40%.
