@@ -13,15 +13,17 @@ export const toggleFilter = (
 export const applyFilter = (
 	tasks: Task[],
 	activeFilter: Filter | null,
+	today?: string,
 ): Task[] => {
 	if (!activeFilter) return tasks;
+	const currentToday = today || getToday();
 	const filters: Record<FilterType, (t: Task) => boolean> = {
 		priority: (t) => t.priority === activeFilter.value,
 		project: (t) => t.projects?.includes(activeFilter.value) ?? false,
 		context: (t) => t.contexts?.includes(activeFilter.value) ?? false,
 		due: (t) => {
 			if (activeFilter.value === "overdue")
-				return !!t.due && t.due < getToday();
+				return !!t.due && t.due < currentToday;
 			return t.due === activeFilter.value;
 		},
 		completion: (t) =>
