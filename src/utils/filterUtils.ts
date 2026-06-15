@@ -15,17 +15,27 @@ export const applyFilter = (
 	activeFilter: Filter | null,
 ): Task[] => {
 	if (!activeFilter) return tasks;
-	const filters: Record<FilterType, (t: Task) => boolean> = {
-		priority: (t) => t.priority === activeFilter.value,
-		project: (t) => t.projects?.includes(activeFilter.value) ?? false,
-		context: (t) => t.contexts?.includes(activeFilter.value) ?? false,
-		due: (t) => {
-			if (activeFilter.value === "overdue")
-				return !!t.due && t.due < getToday();
-			return t.due === activeFilter.value;
-		},
-		completion: (t) =>
-			activeFilter.value === "done" ? t.completed : !t.completed,
+
+	const today = getToday();
+	const value = activeFilter.value;
+
+	const matchesFilter = (t: Task): boolean => {
+		switch (activeFilter.type) {
+			case "priority":
+				return t.priority === value;
+			case "project":
+				return t.projects?.includes(value) ?? false;
+			case "context":
+				return t.contexts?.includes(value) ?? false;
+			case "due":
+				if (value === "overdue") return !!t.due && t.due < today;
+				return t.due === value;
+			case "completion":
+				return value === "done" ? t.completed : !t.completed;
+			default:
+				return true;
+		}
 	};
-	return tasks.filter(filters[activeFilter.type] || (() => true));
+
+	return tasks.filter(matchesFilter);
 };
