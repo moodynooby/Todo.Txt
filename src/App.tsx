@@ -27,6 +27,7 @@ import TodoPage from "@/pages/TodoPage";
 import type { ExcalidrawData } from "@/types/sync";
 import type { Filter, ParsedTodoContent, Task } from "@/types/todo";
 import { getToday } from "@/utils/dateUtils";
+import { escapeHtml } from "@/utils/html";
 import { parseTodoContent } from "@/utils/todoParser";
 
 const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
@@ -81,8 +82,14 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 		if (!file) return;
 		const reader = new FileReader();
 		reader.onload = (ev) => {
-			const result = ev.target?.result;
+			let result = ev.target?.result;
 			if (typeof result !== "string") return;
+
+			// Escape HTML if importing a plain text file to prevent XSS
+			if (file.name.toLowerCase().endsWith(".txt")) {
+				result = escapeHtml(result);
+			}
+
 			handleFileLoaded(result);
 		};
 		reader.readAsText(file);
