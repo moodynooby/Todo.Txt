@@ -15,3 +15,15 @@ export const getYesterday = (): string => {
 	d.setDate(d.getDate() - 1);
 	return formatDate(d);
 };
+
+export interface DateContext {
+	today: string;
+	tomorrow: string;
+	yesterday: string;
+}
+
+export const getDateContext = (): DateContext => ({
+	today: getToday(),
+	tomorrow: getTomorrow(),
+	yesterday: getYesterday(),
+});
