@@ -8,8 +8,8 @@ import {
 } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { Filter } from "@/types/todo";
-import { getToday } from "./dateUtils";
-import { parseTodoLine } from "./todoParser";
+import { getToday, getTomorrow, getYesterday } from "./dateUtils";
+import { type DateContext, parseTodoLine } from "./todoParser";
 
 export interface TaskFilterStorage {
 	activeFilter: Filter | null;
@@ -48,13 +48,16 @@ export const TaskFilterExtension = Extension.create<unknown, TaskFilterStorage>(
 								extension.storage;
 							const decos: Decoration[] = [];
 							const today = getToday();
+							const tomorrow = getTomorrow();
+							const yesterday = getYesterday();
+							const dateContext: DateContext = { today, tomorrow, yesterday };
 
 							state.doc.descendants((node: PMNode, pos: number) => {
 								if (node.isBlock) {
 									const text = node.textContent;
 									if (!text.trim()) return;
 
-									const task = parseTodoLine(text, pos);
+									const task = parseTodoLine(text, pos, dateContext);
 
 									let matches = true;
 
@@ -133,12 +136,17 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 						const decos: Decoration[] = [];
 						const today = getToday();
 
+						const projectRegex = /\+([\w-]+)/g;
+						const contextRegex = /@([\w-]+)/g;
+						const priorityRegex = /\(([A-Z])\)/g;
+						const dueRegex = /due:([\w-]+)/g;
+
 						state.doc.descendants((node: PMNode, pos: number) => {
 							if (node.isText) {
 								const text = node.text || "";
 								const blockPos = pos;
 
-								const projectRegex = /\+([\w-]+)/g;
+								projectRegex.lastIndex = 0;
 								let match = projectRegex.exec(text);
 								while (match !== null) {
 									const start = blockPos + match.index;
@@ -153,7 +161,7 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									match = projectRegex.exec(text);
 								}
 
-								const contextRegex = /@([\w-]+)/g;
+								contextRegex.lastIndex = 0;
 								match = contextRegex.exec(text);
 								while (match !== null) {
 									const start = blockPos + match.index;
@@ -168,7 +176,7 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									match = contextRegex.exec(text);
 								}
 
-								const priorityRegex = /\(([A-Z])\)/g;
+								priorityRegex.lastIndex = 0;
 								match = priorityRegex.exec(text);
 								while (match !== null) {
 									const start = blockPos + match.index;
@@ -184,7 +192,7 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									match = priorityRegex.exec(text);
 								}
 
-								const dueRegex = /due:([\w-]+)/g;
+								dueRegex.lastIndex = 0;
 								match = dueRegex.exec(text);
 								while (match !== null) {
 									const start = blockPos + match.index;
