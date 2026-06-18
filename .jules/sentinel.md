@@ -9,3 +9,8 @@
 **Vulnerability:** External links were missing `noopener` in the `rel` attribute (specifically the Groq console link).
 **Learning:** While modern browsers often default to `noopener` for `target="_blank"`, explicitly including it with `noreferrer` is a best practice for defense-in-depth and privacy.
 **Prevention:** Use `rel="noopener noreferrer"` for all external links.
+
+## 2025-05-20 - Prevented Information Leakage in Error Boundary
+**Vulnerability:** The global `ErrorBoundary` was displaying raw error messages to users. In production, this could expose sensitive internal details about the application's state, stack traces (if included in message), or environment.
+**Learning:** Error boundaries are great for resilience but must be environment-aware to avoid over-sharing during failures.
+**Prevention:** Use `import.meta.env.DEV` to conditionally show detailed errors in development and generic, safe messages in production.
