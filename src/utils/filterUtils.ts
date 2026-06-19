@@ -15,17 +15,22 @@ export const applyFilter = (
 	activeFilter: Filter | null,
 ): Task[] => {
 	if (!activeFilter) return tasks;
+
+	const { type, value } = activeFilter;
+	// Optimize: hoist today's date calculation outside the filter loop
+	const today = type === "due" && value === "overdue" ? getToday() : "";
+
 	const filters: Record<FilterType, (t: Task) => boolean> = {
-		priority: (t) => t.priority === activeFilter.value,
-		project: (t) => t.projects?.includes(activeFilter.value) ?? false,
-		context: (t) => t.contexts?.includes(activeFilter.value) ?? false,
+		priority: (t) => t.priority === value,
+		project: (t) => t.projects?.includes(value) ?? false,
+		context: (t) => t.contexts?.includes(value) ?? false,
 		due: (t) => {
-			if (activeFilter.value === "overdue")
-				return !!t.due && t.due < getToday();
-			return t.due === activeFilter.value;
+			if (value === "overdue") return !!t.due && t.due < today;
+			return t.due === value;
 		},
-		completion: (t) =>
-			activeFilter.value === "done" ? t.completed : !t.completed,
+		completion: (t) => (value === "done" ? t.completed : !t.completed),
 	};
-	return tasks.filter(filters[activeFilter.type] || (() => true));
+
+	const filterFn = filters[type];
+	return filterFn ? tasks.filter(filterFn) : tasks;
 };
