@@ -9,3 +9,8 @@
 **Vulnerability:** External links were missing `noopener` in the `rel` attribute (specifically the Groq console link).
 **Learning:** While modern browsers often default to `noopener` for `target="_blank"`, explicitly including it with `noreferrer` is a best practice for defense-in-depth and privacy.
 **Prevention:** Use `rel="noopener noreferrer"` for all external links.
+
+## 2025-05-14 - Environment-Aware Error Masking
+**Vulnerability:** Detailed error messages, including potentially sensitive stack traces or API error details, were being displayed directly to users in production.
+**Learning:** React ErrorBoundaries and API hooks often default to showing raw error messages which can leak system information.
+**Prevention:** Always use `import.meta.env.DEV` (in Vite) or similar environment checks to mask raw error messages with generic user-friendly strings in production environments, while preserving detailed logs for development.
