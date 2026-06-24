@@ -10,22 +10,36 @@ export const toggleFilter = (
 		? null
 		: { type, value };
 
+export const getFilterPredicate = (
+	activeFilter: Filter | null,
+	today: string,
+): ((t: Task) => boolean) => {
+	if (!activeFilter) return () => true;
+
+	const val = activeFilter.value;
+	switch (activeFilter.type) {
+		case "priority":
+			return (t) => t.priority === val;
+		case "project":
+			return (t) => t.projects?.includes(val) ?? false;
+		case "context":
+			return (t) => t.contexts?.includes(val) ?? false;
+		case "due":
+			if (val === "overdue") return (t) => !!t.due && t.due < today;
+			return (t) => t.due === val;
+		case "completion":
+			return val === "done" ? (t) => t.completed : (t) => !t.completed;
+		default:
+			return () => true;
+	}
+};
+
 export const applyFilter = (
 	tasks: Task[],
 	activeFilter: Filter | null,
 ): Task[] => {
 	if (!activeFilter) return tasks;
-	const filters: Record<FilterType, (t: Task) => boolean> = {
-		priority: (t) => t.priority === activeFilter.value,
-		project: (t) => t.projects?.includes(activeFilter.value) ?? false,
-		context: (t) => t.contexts?.includes(activeFilter.value) ?? false,
-		due: (t) => {
-			if (activeFilter.value === "overdue")
-				return !!t.due && t.due < getToday();
-			return t.due === activeFilter.value;
-		},
-		completion: (t) =>
-			activeFilter.value === "done" ? t.completed : !t.completed,
-	};
-	return tasks.filter(filters[activeFilter.type] || (() => true));
+	const today = getToday();
+	const predicate = getFilterPredicate(activeFilter, today);
+	return tasks.filter(predicate);
 };
