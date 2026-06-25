@@ -1,6 +1,12 @@
 import type { ParsedTodoContent, Task } from "@/types/todo";
 import { getToday, getTomorrow, getYesterday } from "./dateUtils";
 
+export interface DateContext {
+	today: string;
+	tomorrow: string;
+	yesterday: string;
+}
+
 const RE_IS_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RE_CHECKBOX_MARKER = /^-?\[.?\]\s/;
 const RE_CHECKED_MARKER = /^-?\[x\]\s/i;
@@ -21,7 +27,11 @@ const parseRelativeDate = (
 	return undefined;
 };
 
-export const parseTodoLine = (trimmed: string, id = 0): Task => {
+export const parseTodoLine = (
+	trimmed: string,
+	id = 0,
+	context?: DateContext,
+): Task => {
 	const hasCheckboxMarker = RE_CHECKBOX_MARKER.test(trimmed);
 	const isChecked = hasCheckboxMarker && RE_CHECKED_MARKER.test(trimmed);
 	const hasXPrefix = !hasCheckboxMarker && RE_X_PREFIX.test(trimmed);
@@ -64,10 +74,11 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		const dueMatch = cleanText.match(RE_DUE);
 		if (dueMatch) {
 			const value = dueMatch[1].toLowerCase();
-			const today = getToday();
-			const tomorrow = getTomorrow();
-			const yesterday = getYesterday();
-			const dateContext = { today, tomorrow, yesterday };
+			const dateContext = context || {
+				today: getToday(),
+				tomorrow: getTomorrow(),
+				yesterday: getYesterday(),
+			};
 			task.due = parseRelativeDate(value, dateContext);
 		}
 	}
@@ -98,12 +109,14 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 
 	const today = getToday();
 	const tomorrow = getTomorrow();
+	const yesterday = getYesterday();
+	const dateContext = { today, tomorrow, yesterday };
 
 	const categorizeDueDate = (due: string): string => {
 		if (RE_IS_DATE.test(due)) {
-			if (due < today) return "overdue";
-			if (due === today) return "today";
-			if (due === tomorrow) return "tomorrow";
+			if (due < dateContext.today) return "overdue";
+			if (due === dateContext.today) return "today";
+			if (due === dateContext.tomorrow) return "tomorrow";
 		}
 		return due;
 	};
@@ -112,7 +125,7 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		const trimmed = rawLines[i].trim();
 		if (!trimmed) continue;
 
-		const task = parseTodoLine(trimmed, i);
+		const task = parseTodoLine(trimmed, i, dateContext);
 
 		if (task.completed) {
 			completedCount++;
