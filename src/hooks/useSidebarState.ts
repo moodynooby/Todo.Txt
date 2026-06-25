@@ -64,29 +64,23 @@ export const useSidebarState = ({
 		onFilterChange(null);
 	};
 
-	const visibleTasks = useMemo(
-		() => (showCompleted ? tasks : tasks.filter((t) => !t.completed)),
-		[tasks, showCompleted],
-	);
+	const filteredTasks = useMemo(() => {
+		const query = searchQuery?.toLowerCase();
+		return tasks.filter((t) => {
+			if (!showCompleted && t.completed) return false;
+			if (query && !t.text.toLowerCase().includes(query)) return false;
+			return true;
+		});
+	}, [tasks, showCompleted, searchQuery]);
 
-	const searchedTasks = useMemo(
-		() =>
-			searchQuery
-				? visibleTasks.filter((t) =>
-						t.text.toLowerCase().includes(searchQuery.toLowerCase()),
-					)
-				: visibleTasks,
-		[visibleTasks, searchQuery],
-	);
-
-	const filteredTasks = useMemo(
-		() => applyFilter(searchedTasks, activeFilter),
-		[searchedTasks, activeFilter],
+	const finalTasks = useMemo(
+		() => applyFilter(filteredTasks, activeFilter),
+		[filteredTasks, activeFilter],
 	);
 
 	const completedCount = useMemo(
-		() => filteredTasks.filter((t) => t.completed).length,
-		[filteredTasks],
+		() => finalTasks.filter((t) => t.completed).length,
+		[finalTasks],
 	);
 
 	const toggleShowCompleted = (): void => {
@@ -102,7 +96,7 @@ export const useSidebarState = ({
 		handleFilterClick,
 		clearFilter,
 		completedCount,
-		filteredTasks,
+		filteredTasks: finalTasks,
 		searchQuery,
 		setSearchQuery,
 		showCompleted,
