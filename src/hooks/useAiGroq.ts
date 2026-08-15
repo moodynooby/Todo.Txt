@@ -37,7 +37,7 @@ export const useAiGroq = (apiKey: string) => {
 
 				const { text } = await generateText({
 					model: groq(DEFAULT_MODEL),
-					system:
+					instructions:
 						systemPrompt ||
 						"You are a helpful assistant for managing todo lists. Return ONLY the processed text without any preamble or explanation.",
 					prompt,
