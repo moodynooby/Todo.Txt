@@ -1,4 +1,7 @@
+/** Field Notes Ritual: Habits joins Todo, Notes, and Drawing as a first-class workspace. */
+
 import { Image, SegmentedControl, Tooltip } from "@mantine/core";
+import { Leaf } from "lucide-react";
 import NotebookIcon from "@/assets/3dicons-notebook-dynamic-color.webp";
 import DrawingIcon from "@/assets/3dicons-painting-kit-dynamic-color.webp";
 import TicIcon from "@/assets/3dicons-tick-dynamic-color.webp";
@@ -23,8 +26,16 @@ const ViewSwitcher = () => {
 						</Tooltip>
 					),
 				},
-				{
-					value: "notes",
+			{
+				value: "habits",
+				label: (
+					<Tooltip label="Habits" position="bottom">
+						<Leaf size={21} strokeWidth={2.2} />
+					</Tooltip>
+				),
+			},
+			{
+				value: "notes",
 					label: (
 						<Tooltip label="Notes" position="bottom">
 							<Image src={NotebookIcon} w={24} h={24} alt="Notes" />

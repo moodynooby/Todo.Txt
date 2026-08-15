@@ -1,13 +1,16 @@
 import { useEffect } from "react";
+import { useHabitsContext } from "@/context/HabitsContext";
 import { useNotesContext } from "@/context/NotesContext";
 import { type TimerState, useTimerContext } from "@/context/TimerContext";
 import {
 	EXCALIDRAW_DOC,
 	GROQ_SETTINGS_DOC,
+	HABITS_DOC,
 	NOTES_DOC,
 	TIMERS_DOC,
 } from "@/lib/syncPaths";
 import { useSyncedDocument } from "@/lib/useSyncedDocument";
+import type { Habit } from "@/types/habits";
 import type { Note } from "@/types/notes";
 import type { ExcalidrawData } from "@/types/sync";
 
@@ -49,6 +52,31 @@ export function useSyncedTimers(): void {
 		beforeWrite: (timers) => timers.filter((t) => !t.isActive && !t.startTime),
 		afterRead: (timers) =>
 			timers.map((t) => ({ ...t, isActive: false, startTime: null })),
+	});
+}
+
+/** Habits: local-first daily records synced through the shared write queue. */
+export function useSyncedHabits(): void {
+	const { state, dispatchHabits } = useHabitsContext();
+	useSyncedDocument<Habit[]>({
+		path: HABITS_DOC,
+		value: state.habits,
+		applyRemote: (habits) =>
+			dispatchHabits({ type: "SET_HABITS", payload: habits }),
+		localKey: "habits_backup",
+		encode: (habits) => ({ habits }),
+		decode: (record) =>
+			Array.isArray(record.habits)
+				? (record.habits as unknown as Habit[])
+				: undefined,
+		afterRead: (habits) =>
+			habits.map((habit) => ({
+				...habit,
+				completedDates: Array.isArray(habit.completedDates)
+					? habit.completedDates
+					: [],
+				archived: Boolean(habit.archived),
+			})),
 	});
 }
 
@@ -98,6 +126,7 @@ export function SyncFeatures({
 }) {
 	useSyncedNotes();
 	useSyncedTimers();
+	useSyncedHabits();
 	useSyncedExcalidraw(excalidrawData, onExcalidrawChange);
 	useSyncedGroqApiKey(groqApiKey, onGroqApiKeyChange);
 

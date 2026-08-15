@@ -13,6 +13,7 @@ import {
 import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
+import { HabitsProvider } from "@/context/HabitsContext";
 import { NotesProvider, readNotesBackup } from "@/context/NotesContext";
 import { readContentBackupJson, SyncProvider } from "@/context/SyncContext";
 import { TimerProvider, useTimerContext } from "@/context/TimerContext";
@@ -20,13 +21,16 @@ import { TodoProvider, useTodoContext } from "@/context/TodoContext";
 import { useViewContext, ViewProvider } from "@/context/ViewContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
 import Timer from "@/features/timer/Timer";
+import HabitReminderManager from "@/features/habits/HabitReminderManager";
 import { playBeep } from "@/lib/beep";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
 import NotesPage from "@/pages/NotesPage";
+import HabitsPage from "@/pages/HabitsPage";
 import TodoPage from "@/pages/TodoPage";
 import type { ExcalidrawData } from "@/types/sync";
 import type { Filter, ParsedTodoContent, Task } from "@/types/todo";
 import { getToday } from "@/utils/dateUtils";
+import { readHabitsBackup } from "@/lib/habitsBackup";
 import { parseTodoContent } from "@/utils/todoParser";
 
 const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
@@ -223,7 +227,8 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 								/>
 							</Suspense>
 						)}
-						{viewMode === "notes" && <NotesPage />}
+							{viewMode === "notes" && <NotesPage />}
+							{viewMode === "habits" && <HabitsPage />}
 						{viewMode === "todo" && (
 							<TodoPage
 								taskData={taskData}
@@ -234,8 +239,9 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 								onAiTools={handleAiTools}
 							/>
 						)}
-					</ErrorBoundary>
-				</AppShell.Main>
+						</ErrorBoundary>
+						<HabitReminderManager />
+					</AppShell.Main>
 			</AppShell>
 
 			{timersState.timers.map((timer) => (
@@ -253,6 +259,7 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 const App = () => {
 	const initialContent = readContentBackupJson() ?? "";
 	const initialNotes = readNotesBackup();
+	const initialHabits = readHabitsBackup();
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const handleTagFilterClick = useCallback((type: string, value: string) => {
 		setActiveFilter((prev) => {
@@ -268,6 +275,7 @@ const App = () => {
 				onFilterClick={handleTagFilterClick}
 			>
 				<NotesProvider initialNotes={initialNotes}>
+					<HabitsProvider initialHabits={initialHabits}>
 					<TimerProvider>
 						<ViewProvider>
 							<AppContent
@@ -276,6 +284,7 @@ const App = () => {
 							/>
 						</ViewProvider>
 					</TimerProvider>
+					</HabitsProvider>
 				</NotesProvider>
 			</TodoProvider>
 		</AuthProvider>

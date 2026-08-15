@@ -1,3 +1,4 @@
+/* Field Notes Ritual: botanical editorial warmth, evergreen structure, and gentle data evidence. */
 @font-face {
 	font-family: WinkySans;
 	src: url(/WinkySans-Regular.ttf);
@@ -119,3 +120,78 @@
 	border-color: var(--mantine-color-orange-filled);
 	font-weight: 700;
 }
+
+.habits-page {
+	position: relative;
+	height: calc(100vh - 48px);
+	overflow-y: auto;
+	background: #f7f5ef;
+	color: #173d35;
+}
+
+.habits-texture {
+	position: fixed;
+	inset: 48px 0 0;
+	pointer-events: none;
+	background-image:
+		radial-gradient(circle at 12% 18%, rgb(103 137 110 / 10%) 0 1px, transparent 1.5px),
+		radial-gradient(circle at 87% 76%, rgb(217 120 79 / 9%) 0 1px, transparent 1.5px);
+	background-size: 19px 19px, 23px 23px;
+	opacity: 0.55;
+}
+
+.habits-shell { position: relative; max-width: 1180px; margin: 0 auto; padding: clamp(28px, 5vw, 68px) clamp(18px, 4vw, 52px) 72px; }
+.habits-header { display: flex; justify-content: space-between; align-items: end; gap: 20px; }
+.habits-mark { background: #173d35; color: #f8f4e9; }
+.habits-eyebrow, .habits-kicker { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; color: #53726a; }
+.habits-title, .today-panel-title, .insight-panel-title, .analytics-title, .consistency-title, .modal-title { font-family: ZillaSlab, Georgia, serif; font-weight: 400; letter-spacing: -0.025em; }
+.habits-title { font-size: clamp(30px, 4vw, 48px); line-height: 1.06; }
+.habits-subtitle { margin-top: 7px; font-size: 14px; color: #6c746d; }
+
+.habits-add-button { background: #173d35; border-radius: 12px; box-shadow: 0 8px 18px rgb(23 61 53 / 16%); transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms ease; }
+.habits-add-button:hover { background: #245348; transform: translateY(-1px); box-shadow: 0 10px 22px rgb(23 61 53 / 22%); }
+.habits-add-button:active { transform: scale(0.97); }
+
+.today-panel { grid-column: span 8; position: relative; overflow: hidden; border-color: #e3e2da; background: linear-gradient(145deg, #fffdf6 0%, #f2f4eb 100%); }
+.today-panel-art { position: absolute; width: 280px; height: 280px; right: -75px; top: -110px; border: 1px solid rgb(47 111 97 / 18%); border-radius: 46% 54% 52% 48%; transform: rotate(21deg); box-shadow: inset 0 0 0 30px rgb(47 111 97 / 4%), inset 0 0 0 66px rgb(47 111 97 / 5%); }
+.today-panel-heading { position: relative; }
+.today-panel-title { font-size: 31px; line-height: 1.08; margin-top: 3px; }
+.habits-empty { min-height: 245px; justify-content: center; }
+
+.habit-row { display: flex; align-items: center; gap: 13px; padding: 13px 12px; background: rgb(255 255 252 / 74%); border-color: rgb(23 61 53 / 10%); transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms ease, box-shadow 180ms ease; animation: habit-enter 300ms both cubic-bezier(0.23, 1, 0.32, 1); }
+.habit-row:hover { transform: translateX(3px); border-color: color-mix(in srgb, var(--habit-color), #ffffff 50%); box-shadow: 0 8px 20px rgb(28 54 44 / 6%); }
+.habit-row-complete { background: rgb(238 245 235 / 90%); }
+.habit-row-copy { flex: 1; min-width: 0; }
+.habit-name { transition: color 160ms ease; }
+.habit-row-complete .habit-name { color: #53726a; text-decoration: line-through; text-decoration-thickness: 1px; }
+.habit-check { display: grid; place-items: center; width: 27px; height: 27px; padding: 0; border: 1.5px solid var(--habit-color); border-radius: 50%; background: transparent; color: white; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background 160ms ease; }
+.habit-check:hover { transform: scale(1.08); background: color-mix(in srgb, var(--habit-color), white 72%); }
+.habit-row-complete .habit-check { background: var(--habit-color); }
+
+.insight-panel { grid-column: span 4; border-color: #e3e2da; background: #fffdf7; }
+.insight-panel-title { font-size: 26px; line-height: 1.08; margin-top: 4px; }
+.streak-callout { display: flex; align-items: center; gap: 11px; }
+.streak-number { font-family: ZillaSlab, Georgia, serif; font-size: 29px; line-height: 1; }
+.habit-garden-mini { display: flex; align-items: end; gap: 10px; color: #57795f; min-height: 55px; opacity: 0.82; }
+.habit-garden-mini > :nth-child(2) { color: #326b5a; }
+
+.analytics-panel { grid-column: span 8; border-color: #e3e2da; background: #fffdf7; }
+.consistency-panel { grid-column: span 4; border-color: #e3e2da; background: #e8eee3; }
+.analytics-title, .consistency-title { font-size: 26px; line-height: 1.1; margin-top: 4px; }
+.week-badge { color: #2f6f61; background: #e1eee9; text-transform: none; font-weight: 700; }
+.weekly-chart { display: flex; align-items: end; gap: clamp(12px, 3vw, 26px); height: 182px; padding: 8px 4px 0; }
+.weekly-column { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; height: 100%; }
+.weekly-bar-track { display: flex; align-items: end; flex: 1; width: min(38px, 100%); border-radius: 20px 20px 8px 8px; background: #edf0e8; overflow: hidden; }
+.weekly-bar { width: 100%; border-radius: 20px 20px 8px 8px; background: linear-gradient(180deg, #729f77, #2f6f61); transition: height 360ms cubic-bezier(0.23, 1, 0.32, 1); }
+.weekly-label { font-size: 11px; font-weight: 700; color: #89938a; }
+.weekly-label-today { color: #d9784f; }
+
+.habit-color-choice { display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease; }
+.habit-color-choice:hover { transform: scale(1.08); }
+.habit-color-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 4px #173d35; }
+.modal-title { font-size: 25px; }
+
+@keyframes habit-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 62em) { .today-panel, .insight-panel, .analytics-panel, .consistency-panel { grid-column: auto; } }
+@media (max-width: 38em) { .habits-header { align-items: flex-start; flex-direction: column; } .habits-add-button { align-self: stretch; } .habits-title { font-size: 34px; } .today-panel, .insight-panel, .analytics-panel, .consistency-panel { padding: 20px; } .weekly-chart { gap: 10px; height: 152px; } }
+@media (prefers-reduced-motion: reduce) { .habit-row, .weekly-bar, .habits-add-button, .habit-check { transition: none; animation: none; } }

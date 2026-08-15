@@ -18,6 +18,7 @@ export const GROQ_SETTINGS_DOC: UserDocPath = {
 
 export const NOTES_DOC: UserDocPath = { collection: "notes", id: "main" };
 export const TIMERS_DOC: UserDocPath = { collection: "timers", id: "main" };
+export const HABITS_DOC: UserDocPath = { collection: "habits", id: "main" };
 export const PREFERENCES_DOC: UserDocPath = {
 	collection: "settings",
 	id: "preferences",
