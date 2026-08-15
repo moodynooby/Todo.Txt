@@ -1,22 +1,12 @@
 # Adding a New Synced Feature (e.g. Habits)
 
-This document explains how to wire a new feature into the Firebase backend
-using the cleaned-up data layer, without touching the sync loop.
+Syncing a new feature is now a **single hook call** with a few plain mapping
+functions. The sync engine, write queue, retries, and live updates are all
+handled in exactly one place, so there is nothing to get wrong per feature.
 
-## Overview
+## Steps
 
-The persistence layer is now split into three files:
-
-| File | Responsibility |
-|------|----------------|
-| `src/lib/firebase.ts` | Initializes Firebase app/auth/firestore; exports `getFirestoreDb()` and auth helpers |
-| `src/lib/firestoreClient.ts` | Typed Firestore operations: `getDocWithRetry`, `subscribeDoc`, `writeDocs` (batch), `getDocsForCollection`, `userDocRef`, `UserDocPath`, `DocUpdate` |
-| `src/lib/syncPaths.ts` | Central registry of synced document paths (`TODO_DOC`, `EXCALIDRAW_DOC`, `GROQ_SETTINGS_DOC`) |
-| `src/context/SyncContext.tsx` | Owns the sync lifecycle + a `syncStores` array; each store maps one synced document |
-
-## Steps to add Habits
-
-### 1. Register the path
+### 1. Register the document path
 
 Add to `src/lib/syncPaths.ts`:
 
@@ -24,49 +14,66 @@ Add to `src/lib/syncPaths.ts`:
 export const HABITS_DOC: UserDocPath = { collection: "habits", id: "main" };
 ```
 
-### 2. Add a store entry
+### 2. Mount `useSyncedDocument`
 
-Append an entry to the `syncStores` array in `SyncProvider`
-(`src/context/SyncContext.tsx`). Only four small functions per store:
+Anywhere inside `<SyncProvider>` (typically a small `useSyncedHabits()` hook
+added to `SyncFeatures` in `src/lib/syncAdapters.ts`):
 
 ```ts
-{
-  path: HABITS_DOC,
-  setLocal: (data) => dispatchHabits({ type: "SET_HABITS", payload: data as HabitsData }),
-  fromQueue: (item) => item.habitsData,
-  toFields: (data) => ({ habits: data }),
-  fromFields: (data) =>
-    data.habits !== undefined ? (data.habits as HabitsData) : undefined,
-},
-```
+import { useSyncedDocument } from "@/lib/useSyncedDocument";
+import { HABITS_DOC } from "@/lib/syncPaths";
 
-### 3. Feed it into the queue
+export function useSyncedHabits() {
+	const { state, dispatchHabits } = useHabitsContext();
 
-Extend `SaveQueueItem` in `SyncContext.tsx` with the habits payload and push it
-from a `useEffect` that tracks your habits state (same pattern as
-`writeDoc` currently uses for content/excalidraw/groqApiKey).
-
-### 4. Security rules (optional but recommended)
-
-`firestore.rules` currently allows any document under
-`/users/{userId}/{document=**}`. You can keep this, or add per-collection
-validation as features grow:
-
-```
-match /habits/{docId} {
-  allow read, write: if request.auth.uid == userId
-    && request.resource.data.updatedAt is timestamp;
+	useSyncedDocument<HabitsData>({
+		path: HABITS_DOC,
+		value: state.habits,
+		applyRemote: (habits) =>
+			dispatchHabits({ type: "SET_HABITS", payload: habits }),
+		localKey: "habits_backup", // optional: offline backup + instant startup
+		encode: (habits) => ({ habits }), // optional: custom Firestore shape
+		decode: (record) =>
+			Array.isArray(record.habits)
+				? (record.habits as unknown as HabitsData)
+				: undefined,
+	});
 }
 ```
 
-## Design notes
+That's the entire integration. Options available on every feature:
 
-- All reads and writes go through `firestoreClient.ts` — no raw
-  `doc(db, "users", uid, ...)` strings anywhere else in the app.
-- Writes are batched (`writeBatch`) so N stores cost one round trip and stay
-  atomic.
-- `subscribeDoc` keeps the "ignore older versions" contract and handles
-  retries via the passed `onError`; `SyncContext` re-subscribes only after
-  tearing down the previous listener, avoiding the duplicate-listener bug.
-- `getDocsForCollection` is ready for multi-document collections (e.g. one
-  doc per habit, rather than one big `habits/main` blob).
+| Option | Purpose |
+|--------|---------|
+| `path` | Firestore document (`users/{uid}/{collection}/{id}`) |
+| `value` | The feature's current local state |
+| `applyRemote` | Replace local state with a newer server value |
+| `localKey` | Mirror to localStorage for offline/instant startup |
+| `encode` / `decode` | Custom Firestore field mapping (default `{ value }`) |
+| `beforeWrite` | Mutate before upload — e.g. drop per-device runtime state |
+| `afterRead` | Normalize values arriving from other devices |
+
+### 3. Wire it into `SyncFeatures`
+
+Append the hook call to `SyncFeatures` in `src/lib/syncAdapters.ts` so it
+mounts under the shared engine. No other file changes.
+
+## Security rules
+
+`firestore.rules` already allows any document under `/users/{userId}/{document=**}`.
+As features grow, tighten per-collection validation, e.g.:
+
+```
+match /habits/{docId} {
+	allow read, write: if request.auth.uid == userId
+		&& request.resource.data.updatedAt is timestamp;
+}
+```
+
+## Design guarantees
+
+Writes for **all** features merge into one atomic batched commit per
+debounce window (one round trip total, never per-feature). Remote snapshots
+are version-aware: older server values are ignored automatically, so
+cross-device races cannot corrupt state. Retries with exponential backoff
+apply to the whole engine, not per feature.
