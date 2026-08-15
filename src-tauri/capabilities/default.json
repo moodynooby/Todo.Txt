@@ -1,5 +1,5 @@
 {
-	"$schema": "../gen/schemas/desktop-schema.json",
+	"$schema": "../gen/schemas/mobile-schema.json",
 	"identifier": "default",
 	"description": "enables the default permissions",
 	"windows": ["main"],
@@ -10,11 +10,7 @@
 		"notification:allow-delete-channel",
 		"notification:allow-list-channels",
 		"store:default",
-		"window-state:default",
 		"deep-link:default",
-		"global-shortcut:allow-register",
-		"global-shortcut:allow-unregister",
-		"global-shortcut:allow-is-registered",
 		"log:default"
 	]
 }
