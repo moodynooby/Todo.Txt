@@ -1,19 +1,4 @@
-.DS_Store
-*.local
-*.log*
 
-node_modules
-dist/
-tsconfig.tsbuildinfo
-
-.env*
-!.env.example
-
-.vscode/*
-!.vscode/extensions.json
-.idea
-/.opencode
-.antigravitycli
-
-# Local Netlify folder
-.netlify
+# Tauri
+/src-tauri/target/
+Cargo.lock
