@@ -1,4 +1,4 @@
-import { Group, Menu, Paper, Tooltip } from "@mantine/core";
+import { Group, Menu, Tooltip } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { RichTextEditor } from "@mantine/tiptap";
 import type { Editor as TipTapEditor } from "@tiptap/core";
@@ -12,8 +12,18 @@ import {
 	Save,
 	Sparkles,
 } from "lucide-react";
+import { useEffect } from "react";
 
 import type { SaveFormat } from "@/lib/documentExport";
+
+/**
+ * M3 Expressive writing surface with a playfulness layer:
+ *
+ * - Adaptive icon-first toolbar (collapses on narrow screens)
+ * - Warm cycling placeholder instead of a static void
+ * - Pet companion strip, task-rhythm dots, and line/copy animations
+ *   live in the `EditorPlay` wrapper layer, so the TipTap content stays pure.
+ */
 
 interface EditorProps {
 	editor: TipTapEditor | null;
@@ -23,6 +33,9 @@ interface EditorProps {
 	onSave?: (format: SaveFormat) => void;
 	onOpen?: () => void;
 	onAiTools?: () => void;
+	/* Playfulness layer */
+	playLayer?: React.ReactNode;
+	warmPlaceholder?: string;
 }
 
 export function Editor({
@@ -33,6 +46,8 @@ export function Editor({
 	onSave,
 	onOpen,
 	onAiTools,
+	playLayer,
+	warmPlaceholder,
 }: EditorProps) {
 	// On narrow screens the toolbar collapses to essentials (M3 adaptive
 	// toolbar pattern): rich formatting is still reachable via keyboard
@@ -40,12 +55,36 @@ export function Editor({
 	const isNarrow = useMediaQuery("(max-width: 640px)");
 	const isMinimal = toolbarVariant === "minimal" || isNarrow;
 
+	// Inject the warm placeholder text into TipTap's empty-node placeholder.
+	// When the empty-state art is showing (truly bare doc), the TipTap default
+	// placeholder is hidden so the warm prompt is the only voice.
+	useEffect(() => {
+		if (!editor || editor.isDestroyed) return;
+		const ext = editor.extensionManager.extensions.find(
+			(e) => e.name === "placeholder",
+		);
+		if (ext?.options) ext.options.placeholder = warmPlaceholder;
+		// Force TipTap to re-render the placeholder after mutating options.
+		editor.view.dispatch(
+			editor.state.tr.setMeta("placeholder", warmPlaceholder),
+		);
+	}, [editor, warmPlaceholder]);
+
 	if (!editor) return null;
 
 	return (
-		<RichTextEditor editor={editor} className={className} style={style}>
+		<RichTextEditor
+			editor={editor}
+			className={className}
+			style={style}
+			classNames={{
+				root: "editor-playful-root",
+				content: "editor-playful-content",
+			}}
+		>
 			{toolbarVariant !== "none" && (
 				<RichTextEditor.Toolbar
+					className="toolbar-playful"
 					style={
 						isMinimal
 							? {
@@ -158,21 +197,8 @@ export function Editor({
 				</RichTextEditor.Toolbar>
 			)}
 
-			{/* Hero moment: the writing surface sits in a raised, rounded container */}
-			<Paper
-				component={RichTextEditor.Content}
-				radius="lg"
-				shadow="sm"
-				p="lg"
-				className="tiptap-container"
-				style={{
-					flex: 1,
-					display: "flex",
-					flexDirection: "column",
-					minHeight: 0,
-					overflow: "auto",
-				}}
-			/>
+			{/* Playfulness layer wraps the writing surface so TipTap stays pure */}
+			{playLayer}
 		</RichTextEditor>
 	);
 }

@@ -22,6 +22,18 @@
 			"a11y": {}
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["src/components/Editor/EditorPlay.tsx"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noArrayIndexKey": "off"
+					}
+				}
+			}
+		}
+	],
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"

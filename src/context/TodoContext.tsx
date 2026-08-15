@@ -69,7 +69,11 @@ export function TodoProvider({
 	const lastMarkdownRef = useRef(state.content);
 	const editor = useEditor({
 		extensions: getEditorExtensions({
-			placeholder: "Start writing your todos...",
+			// Empty on purpose: EditorPlay renders its own warm cycling prompt as
+			// empty-state art, and the static TipTap placeholder would compete
+			// with it (TipTap's CSS ::before would show "Start writing..."
+			// behind the 🌱 prompt while the doc is empty).
+			placeholder: "",
 			onFilterClick,
 		}),
 		content: state.content || "",

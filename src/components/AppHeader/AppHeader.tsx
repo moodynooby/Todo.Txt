@@ -35,7 +35,7 @@ const AppHeader = () => {
 				className="app-header-inner"
 				h="100%"
 				justify="space-between"
-				px="lg"
+				px={isMobile ? "md" : "lg"}
 				wrap="nowrap"
 			>
 				<Group gap="sm">
@@ -47,6 +47,9 @@ const AppHeader = () => {
 				</Group>
 
 				<Group gap="xs">
+					{/* The add-timer affordance lives on the mobile bottom bar /
+					 * FAB on narrow screens, so the header keeps zero reserved
+					 * space on the right below `xs`. */}
 					{viewMode === "todo" && (
 						<Tooltip label="Add timer">
 							<ActionIcon
@@ -54,7 +57,7 @@ const AppHeader = () => {
 								color="evergreen"
 								radius="md"
 								size="lg"
-								hiddenFrom="xs"
+								visibleFrom="xs"
 								onClick={() => dispatchTimer({ type: "ADD_TIMER" })}
 								aria-label="Add timer"
 							>
