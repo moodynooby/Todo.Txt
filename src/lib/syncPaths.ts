@@ -15,3 +15,10 @@ export const GROQ_SETTINGS_DOC: UserDocPath = {
 	collection: "settings",
 	id: "groq",
 } as const;
+
+export const NOTES_DOC: UserDocPath = { collection: "notes", id: "main" };
+export const TIMERS_DOC: UserDocPath = { collection: "timers", id: "main" };
+export const PREFERENCES_DOC: UserDocPath = {
+	collection: "settings",
+	id: "preferences",
+};

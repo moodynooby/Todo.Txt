@@ -1,18 +1,10 @@
 import { createContext, type ReactNode, useContext, useReducer } from "react";
 import type { Note, NoteColor } from "@/types/notes";
 
-const NOTES_BACKUP_KEY = "notes_backup";
-
-export function readNotesBackup(): Note[] {
-	try {
-		const raw = localStorage.getItem(NOTES_BACKUP_KEY);
-		if (!raw) return [];
-		const parsed = JSON.parse(raw);
-		return Array.isArray(parsed) ? parsed : [];
-	} catch {
-		return [];
-	}
-}
+export {
+	readNotesBackup,
+	writeNotesBackup,
+} from "@/lib/notesBackup";
 
 function generateId(): string {
 	return `note_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;

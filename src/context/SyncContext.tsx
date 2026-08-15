@@ -10,6 +10,9 @@ import {
 	useState,
 } from "react";
 import { useAuthContext } from "@/context/AuthContext";
+import { useNotesContext } from "@/context/NotesContext";
+import type { TimerState } from "@/context/TimerContext";
+import { useTimerContext } from "@/context/TimerContext";
 import { useTodoContext } from "@/context/TodoContext";
 import { getFirestoreDb, signOutUser } from "@/lib/firebase";
 import {
@@ -18,7 +21,15 @@ import {
 	subscribeDoc,
 	writeDocs,
 } from "@/lib/firestoreClient";
-import { EXCALIDRAW_DOC, GROQ_SETTINGS_DOC, TODO_DOC } from "@/lib/syncPaths";
+import { writeNotesBackup } from "@/lib/notesBackup";
+import {
+	EXCALIDRAW_DOC,
+	GROQ_SETTINGS_DOC,
+	NOTES_DOC,
+	TIMERS_DOC,
+	TODO_DOC,
+} from "@/lib/syncPaths";
+import type { Note } from "@/types/notes";
 import type { BackupData, ExcalidrawData, SyncStatus } from "@/types/sync";
 
 const BACKUP_KEY = "todo_content_backup";
@@ -44,6 +55,8 @@ interface SaveQueueItem {
 	content: string;
 	excalidraw: ExcalidrawData | null;
 	groqApiKey: string | undefined;
+	notes: Note[] | null;
+	timers: TimerState[] | null;
 }
 
 interface SyncProviderProps {
@@ -121,6 +134,8 @@ export function SyncProvider({
 }: SyncProviderProps) {
 	const { state: todoState, dispatchTodo } = useTodoContext();
 	const { state: authState, dispatchAuth } = useAuthContext();
+	const { dispatchNotes } = useNotesContext();
+	const { state: timersState, dispatchTimer } = useTimerContext();
 
 	const storesRef = useRef({
 		onExcalidrawChange,
@@ -163,9 +178,8 @@ export function SyncProvider({
 		}
 	}, []);
 
-	/** All synced documents in one place. Adding a new feature (habits,
-	 *  notes, ...) means appending an entry here instead of editing the
-	 *  sync loop itself. */
+	/** All synced documents in one place. Adding a new feature (habits, ...)
+	 *  means appending an entry here instead of editing the sync loop itself. */
 	interface SyncStore {
 		path: import("@/lib/firestoreClient").UserDocPath;
 		setLocal: (data: unknown) => void;
@@ -217,8 +231,47 @@ export function SyncProvider({
 				fromFields: (data) =>
 					data.apiKey !== undefined ? (data.apiKey as string) : undefined,
 			},
+			{
+				path: NOTES_DOC,
+				setLocal: (data) =>
+					dispatchNotes({
+						type: "SET_NOTES",
+						payload: data as unknown as Note[],
+					}),
+				fromQueue: (item: SaveQueueItem) =>
+					item.notes !== null ? item.notes : undefined,
+				toFields: (data) => ({ notes: data }),
+				fromFields: (data) =>
+					Array.isArray(data.notes)
+						? (data.notes as unknown as Note[])
+						: undefined,
+			},
+			{
+				path: TIMERS_DOC,
+				setLocal: (data) =>
+					dispatchTimer({
+						type: "SET_TIMERS",
+						payload: data as unknown as TimerState[],
+					}),
+				// Only sync idle timers: active/running timer state is
+				// per-device runtime data and resuming it on another device
+				// would show wrong elapsed times.
+				fromQueue: (item: SaveQueueItem) => {
+					if (item.timers === null) return undefined;
+					return item.timers.filter((t) => !t.isActive && !t.startTime);
+				},
+				toFields: (data) => ({ timers: data }),
+				fromFields: (data) => {
+					if (!Array.isArray(data.timers)) return undefined;
+					return (data.timers as unknown as TimerState[]).map((t) => ({
+						...t,
+						isActive: false,
+						startTime: null,
+					}));
+				},
+			},
 		],
-		[dispatchTodo],
+		[dispatchTodo, dispatchNotes, dispatchTimer],
 	);
 
 	const processSaveQueueRef = useRef<() => Promise<void>>(async () => {});
@@ -277,6 +330,8 @@ export function SyncProvider({
 			content: todoState.content,
 			excalidraw: excalidrawData ?? null,
 			groqApiKey,
+			notes: null,
+			timers: null,
 		});
 
 		if (!isProcessingRef.current) {
@@ -432,6 +487,60 @@ export function SyncProvider({
 			}
 		};
 	}, [todoState.content, isConnected, authState.user, writeDoc]);
+
+	// Notes are local-first: back up on every change, then enqueue a remote
+	// save so both local and cloud stay consistent.
+	const { state: notesState } = useNotesContext();
+	useEffect(() => {
+		writeNotesBackup(notesState.notes);
+
+		if (!isConnected || !authState.user) return;
+
+		saveQueueRef.current.push({
+			content: todoState.content,
+			excalidraw: excalidrawData ?? null,
+			groqApiKey,
+			notes: notesState.notes,
+			timers: null,
+		});
+
+		if (!isProcessingRef.current) {
+			processSaveQueue();
+		}
+	}, [
+		notesState.notes,
+		isConnected,
+		authState.user,
+		excalidrawData,
+		processSaveQueue,
+		groqApiKey,
+		todoState.content,
+	]);
+
+	// Timers sync the idle snapshot whenever the list changes.
+	useEffect(() => {
+		if (!isConnected || !authState.user) return;
+
+		saveQueueRef.current.push({
+			content: todoState.content,
+			excalidraw: excalidrawData ?? null,
+			groqApiKey,
+			notes: null,
+			timers: timersState.timers,
+		});
+
+		if (!isProcessingRef.current) {
+			processSaveQueue();
+		}
+	}, [
+		timersState.timers,
+		isConnected,
+		authState.user,
+		todoState.content,
+		groqApiKey,
+		processSaveQueue,
+		excalidrawData,
+	]);
 
 	useEffect(() => {
 		dispatchAuth({ type: "SET_CONNECTED", payload: isConnected });
