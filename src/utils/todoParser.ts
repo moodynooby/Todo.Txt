@@ -1,14 +1,27 @@
 import type { ParsedTodoContent, Task } from "@/types/todo";
 import { getToday, getTomorrow, getYesterday } from "./dateUtils";
 
+/** Turn `14:3`, `9:05`, or `14:30:00` into a consistent `HH:MM` string. */
+export const normaliseTime = (raw: string): string => {
+	const parts = raw.split(":");
+	if (parts.length < 2) return raw;
+	const hh = String(parseInt(parts[0], 10)).padStart(2, "0");
+	const mm = String(parseInt(parts[1], 10)).padStart(2, "0");
+	return `${hh}:${mm}`;
+};
+
 const RE_IS_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const RE_IS_TIME = /^\d{1,2}:\d{2}(:\d{2})?$/;
 const RE_CHECKBOX_MARKER = /^-?\[.?\]\s/;
 const RE_CHECKED_MARKER = /^-?\[x\]\s/i;
 const RE_X_PREFIX = /^x\s/i;
 const RE_PRIORITY = /^\(([A-Z])\)\s/;
-const RE_PROJECTS = /\+[\w-]+/g;
-const RE_CONTEXTS = /@[\w-]+/g;
-const RE_DUE = /due:([\w-]+)/;
+const RE_PROJECTS = /\+[\w][\w.-]*/g;
+const RE_CONTEXTS = /@[\w][\w.-]*/g;
+/* `due:` followed by a date or relative word, optionally suffixed with
+ * `@HH:MM` or `THH:MM` clock time, e.g. due:2026-08-16T14:30,
+ * due:today@17:00, due:tomorrow@09:00 */
+const RE_DUE = /due:([\w-]+)(?:[@tT](\d{1,2}:\d{2}(?::\d{2})?))?/;
 
 const parseRelativeDate = (
 	value: string,
@@ -17,6 +30,7 @@ const parseRelativeDate = (
 	if (value === "today") return dates.today;
 	if (value === "tomorrow") return dates.tomorrow;
 	if (value === "yesterday") return dates.yesterday;
+	if (value === "now") return dates.today;
 	if (RE_IS_DATE.test(value)) return value;
 	return undefined;
 };
@@ -46,17 +60,23 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		}
 	}
 
-	if (cleanText.includes("+")) {
+	/* Project and context detection: tokens must start after a word
+	 * boundary so stray symbols like email addresses aren't double-counted. */
+	if (/\+/.test(cleanText)) {
 		const projectMatches = cleanText.match(RE_PROJECTS);
 		if (projectMatches) {
-			task.projects = projectMatches.map((p: string) => p.slice(1));
+			task.projects = [
+				...new Set(projectMatches.map((p: string) => p.slice(1))),
+			];
 		}
 	}
 
-	if (cleanText.includes("@")) {
+	if (/@/.test(cleanText)) {
 		const contextMatches = cleanText.match(RE_CONTEXTS);
 		if (contextMatches) {
-			task.contexts = contextMatches.map((c: string) => c.slice(1));
+			task.contexts = [
+				...new Set(contextMatches.map((c: string) => c.slice(1))),
+			];
 		}
 	}
 
@@ -64,11 +84,37 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		const dueMatch = cleanText.match(RE_DUE);
 		if (dueMatch) {
 			const value = dueMatch[1].toLowerCase();
+			const timeRaw = dueMatch[2];
 			const today = getToday();
 			const tomorrow = getTomorrow();
 			const yesterday = getYesterday();
 			const dateContext = { today, tomorrow, yesterday };
-			task.due = parseRelativeDate(value, dateContext);
+			const due = parseRelativeDate(value, dateContext);
+			if (due) {
+				task.due = due;
+				if (timeRaw && RE_IS_TIME.test(timeRaw)) {
+					// Store a normalised HH:MM:SS string
+					task.dueTime = normaliseTime(timeRaw);
+				} else if (value === "now" && timeRaw) {
+					task.dueTime = normaliseTime(timeRaw);
+				}
+			} else if (RE_IS_TIME.test(value)) {
+				// Bare time like `due:14:30` counts as today at that clock time
+				task.due = today;
+				task.dueTime = normaliseTime(value);
+			}
+		}
+	}
+	/* Detect a standalone `due:` with a value whose first character was
+	 * missed by the main regex (e.g. unicode punctuation edge cases). */
+	if (!task.due && cleanText.includes("due:")) {
+		const fallback = cleanText.match(/due:(\S+)/);
+		if (fallback) {
+			const value = fallback[1].toLowerCase().replace(/[,;]+$/, "");
+			if (RE_IS_TIME.test(value)) {
+				task.due = getToday();
+				task.dueTime = normaliseTime(value);
+			}
 		}
 	}
 

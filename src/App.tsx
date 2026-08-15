@@ -23,15 +23,14 @@ import { useViewContext, ViewProvider } from "@/context/ViewContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
 import HabitReminderManager from "@/features/habits/HabitReminderManager";
 import Timer from "@/features/timer/Timer";
-import { playBeep } from "@/lib/beep";
+import { useDueReminders } from "@/hooks/useDueReminders";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
 import { readHabitsBackup } from "@/lib/habitsBackup";
 import HabitsPage from "@/pages/HabitsPage";
 import NotesPage from "@/pages/NotesPage";
 import TodoPage from "@/pages/TodoPage";
 import type { ExcalidrawData } from "@/types/sync";
-import type { Filter, ParsedTodoContent, Task } from "@/types/todo";
-import { getToday } from "@/utils/dateUtils";
+import type { Filter, ParsedTodoContent } from "@/types/todo";
 import { parseTodoContent } from "@/utils/todoParser";
 
 const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
@@ -100,47 +99,19 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 		[deferredRteContent],
 	);
 
-	const lastCheckedDateRef = useRef("");
-	const notifiedIdsRef = useRef(new Set<number>());
+	/* Auto-reminders for tasks with a due date (plus optional time): a
+	 * notification + beep fires when the due moment arrives while the app
+	 * is open, e.g. `due:today@17:00` or `due:2026-08-16T14:30`. */
+	useDueReminders(taskData);
+
+	/* Ask for notification permission once the user has loaded a document, so
+	 * the due reminders above can fire as soon as permission is granted. */
 	useEffect(() => {
 		if (!("Notification" in window)) return;
-		const tasks: Task[] = taskData.tasks;
-		const today = getToday();
-		if (lastCheckedDateRef.current !== today) {
-			lastCheckedDateRef.current = today;
-			notifiedIdsRef.current.clear();
+		if (Notification.permission === "default") {
+			Notification.requestPermission().catch(() => undefined);
 		}
-		let cancelled = false;
-		const checkDueTasks = async () => {
-			if (Notification.permission === "default") {
-				await Notification.requestPermission();
-			}
-			if (cancelled) return;
-			if (Notification.permission !== "granted") return;
-			const dueTasks = tasks.filter(
-				(task) => task.due === today && !notifiedIdsRef.current.has(task.id),
-			);
-			if (dueTasks.length === 0) return;
-			dueTasks.forEach((task) => {
-				try {
-					new Notification("Todo Due Today", {
-						body: task.text,
-						icon: "/icon192.png",
-					});
-				} catch (e) {
-					console.warn("Failed to show notification:", e);
-				}
-				notifiedIdsRef.current.add(task.id);
-			});
-			playBeep();
-		};
-		checkDueTasks().catch((e) =>
-			console.error("Due notification check failed:", e),
-		);
-		return () => {
-			cancelled = true;
-		};
-	}, [taskData.tasks]);
+	}, []);
 
 	const handleSave = useCallback(
 		(format: SaveFormat): void => {

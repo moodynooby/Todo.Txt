@@ -3,7 +3,6 @@ import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { Filter as FilterIcon } from "lucide-react";
 import { useEffect } from "react";
 import { Editor } from "@/components/Editor";
-import { QuickAddBar } from "@/components/QuickAddBar";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { useTodoContext } from "@/context/TodoContext";
 import { useViewContext } from "@/context/ViewContext";
@@ -131,8 +130,8 @@ const TodoPage = ({
 				direction="column"
 				style={{ flex: 1, minWidth: 0, overflow: "hidden" }}
 			>
-				<QuickAddBar editor={editor} />
-
+				{/* Single writing surface — todos are created by typing a new
+					line directly in the editor, no separate quick-add input */}
 				<Editor
 					editor={editor}
 					toolbarVariant="full"

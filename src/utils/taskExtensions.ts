@@ -184,25 +184,37 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 									match = priorityRegex.exec(text);
 								}
 
-								const dueRegex = /due:([\w-]+)/g;
+								/* `due:` with an optional clock-time suffix
+								 * (@HH:MM / THH:MM) — decoration covers the whole
+								 * token so the time reads as part of the chip. */
+								const dueRegex =
+									/due:([\w-]+(?:[@tT]\d{1,2}:\d{2}(?::\d{2})?))?/g;
 								match = dueRegex.exec(text);
 								while (match !== null) {
 									const start = blockPos + match.index;
 									const end = start + match[0].length;
 									const value = match[1].toLowerCase();
 
+									// Strip the time suffix for filter value so
+									// clicking the chip filters by the date bucket
+									const base = value.replace(
+										/[@tT]\d{1,2}:\d{2}(?::\d{2})?$/,
+										"",
+									);
+									const hasTime = base !== value;
+
 									let isOverdue = false;
-									if (value !== "today" && value !== "tomorrow") {
-										if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-											isOverdue = value < today;
+									if (base !== "today" && base !== "tomorrow") {
+										if (/^\d{4}-\d{2}-\d{2}$/.test(base)) {
+											isOverdue = base < today;
 										}
 									}
 
 									decos.push(
 										Decoration.inline(start, end, {
-											class: `tag-interactive tag-due${isOverdue ? " tag-due-overdue" : ""}`,
+											class: `tag-interactive tag-due${isOverdue ? " tag-due-overdue" : ""}${hasTime ? " tag-due-timed" : ""}`,
 											"data-filter-type": "due",
-											"data-filter-value": value,
+											"data-filter-value": base || "today",
 										}),
 									);
 									match = dueRegex.exec(text);

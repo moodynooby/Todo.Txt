@@ -27,11 +27,15 @@ import {
 } from "./SidebarParts";
 import TipsPanel from "./TipsPanel";
 
-const taskDataIsEmpty = (data: ParsedTodoContent) =>
-	Object.values(data.priorities).every((arr) => !arr?.length) &&
-	Object.keys(data.projects).length === 0 &&
-	Object.keys(data.contexts).length === 0 &&
-	Object.keys(data.dueDates).length === 0;
+/** Due-date filter label that surfaces exact times when tasks carry them. */
+const dueLabel = (due: string, items: { dueTime?: string }[]): string => {
+	if (!items?.length) return due;
+	const withTime = items.filter((t) => t?.dueTime).length;
+	if (withTime === items.length && withTime > 0) {
+		return `${due} (timed)`;
+	}
+	return due;
+};
 
 interface SidebarProps {
 	isCollapsed: boolean;
@@ -274,7 +278,7 @@ const Sidebar = ({
 							key={due}
 							type="due"
 							value={due}
-							label={due}
+							label={dueLabel(due, items)}
 							count={items.length}
 							isActive={isFilterActive(activeFilter, "due", due)}
 							onClick={() => handleFilterClick("due", due)}
@@ -282,13 +286,16 @@ const Sidebar = ({
 					))}
 				</SidebarSection>
 
+				{/* Persistent, scrollable help — always reachable so users can
+					return to the guide at any time. */}
 				<SidebarSection
-					title="Tips"
+					title="Guide"
 					id="tips"
 					expandedSections={expandedSections}
 					onToggle={toggleSection}
+					isEmpty={false}
 				>
-					<TipsPanel isEmpty={taskDataIsEmpty(taskData)} />
+					<TipsPanel />
 				</SidebarSection>
 			</ScrollArea>
 		</Paper>

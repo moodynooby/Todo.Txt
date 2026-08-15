@@ -1,126 +1,119 @@
-import { ActionIcon, Badge, Group, Stack, Text } from "@mantine/core";
-import { useLocalStorage } from "@mantine/hooks";
-import { Sparkles, X } from "lucide-react";
+import { Badge, Box, Divider, Group, Stack, Text } from "@mantine/core";
+import {
+	Bell,
+	CalendarCheck,
+	CalendarClock,
+	CheckCircle2,
+	ClipboardList,
+	Flag,
+	Hash,
+	Tag,
+} from "lucide-react";
 
 /**
- * Smart contextual guidance for the Todo workspace.
+ * Persistent help guide for the Todo workspace (Material 3 "always reachable").
  *
- * Principles (Material 3 Expressive "smart guidance"):
- * 1. Say only what matters right now. A fresh workspace gets a short
- *    onboarding hint that invites the user to try real todo.txt syntax.
- *    A workspace that already has tasks stays silent — the empty-state
- *    sections and the quick-add placeholder already teach syntax.
- * 2. One example at a time, softly rotating: a single pill-style example
- *    demonstrates what the app can do without a wall of permanent chips.
- * 3. The hint is dismissible and remembered, never re-imposed.
+ * Unlike the previous dismissible hints, this section never disappears — the
+ * sidebar scrolls through it so users can always return to the reference.
+ * Content is compact (icon + one-liner rows) so it does not crowd the
+ * filter lists, and due-date rows explain the new exact-time reminder
+ * syntax (`due:today@17:00`) that the auto-reminder engine consumes.
  */
 
-const EXAMPLES: {
-	syntax: string;
+const ENTRIES: {
+	icon: React.ComponentType<{ size?: number; color?: string }>;
+	title: string;
+	syntax?: string;
 	description: string;
 }[] = [
 	{
-		syntax: "(A) Reply to mom +personal due:today",
-		description: "Priority, project, and due date in one line.",
+		icon: ClipboardList,
+		title: "Write tasks directly",
+		description:
+			"Just type lines in the editor — every new line becomes a task. No separate input bar needed.",
 	},
 	{
-		syntax: "Call dentist @phone due:2026-09-01",
-		description: "@context keeps tasks grouped by where they happen.",
+		icon: Flag,
+		title: "Priority",
+		syntax: "(A) Urgent task",
+		description: "Add (A), (B), or (C) at the start of a line.",
 	},
 	{
-		syntax: "x 2026-08-15 Bought groceries",
-		description: "Prefix a line with `x` plus today's date to close it.",
+		icon: Hash,
+		title: "Project",
+		syntax: "Write report +work",
+		description: "Tag with +projectname.",
+	},
+	{
+		icon: Tag,
+		title: "Context",
+		syntax: "Call doctor @phone",
+		description: "Tag with @context.",
+	},
+	{
+		icon: CalendarCheck,
+		title: "Due date",
+		syntax: "Submit taxes due:2026-04-15",
+		description:
+			"Use due:YYYY-MM-DD, due:today, due:tomorrow, or a relative word.",
+	},
+	{
+		icon: CalendarClock,
+		title: "Due date + time",
+		syntax: "Meeting due:tomorrow@15:30",
+		description:
+			"Add @HH:MM (or T15:30) to any due date — the app fires a reminder at the exact time.",
+	},
+	{
+		icon: Bell,
+		title: "Reminders",
+		syntax: "due:today@09:00",
+		description:
+			"Tasks with a due moment get a notification and a chime when they arrive while the app is open.",
+	},
+	{
+		icon: CheckCircle2,
+		title: "Completion",
+		syntax: "x 2026-08-03 Done task",
+		description: "Prefix with x (plus the completion date) to mark done.",
 	},
 ];
 
-interface TipsPanelProps {
-	/** true when the todo document has no tasks at all */
-	isEmpty: boolean;
-	/** optional filter currently applied, to acknowledge the user's action */
-	activeFilterLabel?: string;
-}
-
-/** Pick an example deterministically from the day so the UI stays stable. */
-const exampleForToday = () => {
-	const day = Math.floor(Date.now() / 86400000);
-	return EXAMPLES[day % EXAMPLES.length];
-};
-
-export default function TipsPanel({ isEmpty }: TipsPanelProps) {
-	const [dismissed, setDismissed] = useLocalStorage<boolean>({
-		key: "tips-dismissed-v1",
-		defaultValue: false,
-	});
-
-	if (dismissed) return null;
-
-	// A fresh workspace gets a warm, actionable invitation.
-	if (isEmpty) {
-		return (
-			<Stack gap="sm" px="xs" py="xs">
-				<Group justify="space-between" wrap="nowrap" style={{ flex: 1 }}>
-					<Group gap="xs" wrap="nowrap">
-						<Sparkles size={14} color="var(--mantine-color-evergreen-4)" />
-						<Text size="xs" fw={700}>
-							Try it
-						</Text>
-					</Group>
-					<ActionIcon
-						variant="subtle"
-						size="xs"
-						onClick={() => setDismissed(true)}
-						aria-label="Hide hint"
-					>
-						<X size={13} />
-					</ActionIcon>
-				</Group>
-				<Text size="xs" c="dimmed" lh={1.5}>
-					Just type a line — like{" "}
-					<Text component="span" fw={600} c="inherit">
-						`(A) Buy milk +groceries`
-					</Text>{" "}
-					— in the bar above and press{" "}
-					<Text component="span" fw={600} c="inherit">
-						Enter
-					</Text>
-					. Each line becomes a task, and your list appears right here.
-				</Text>
-			</Stack>
-		);
-	}
-
-	// A working workspace gets one quiet, rotating nudge — nothing more.
-	const example = exampleForToday();
+export default function TipsPanel() {
 	return (
-		<Stack gap="xs" px="xs" py="xs">
-			<Group justify="space-between" wrap="nowrap" style={{ flex: 1 }}>
-				<Group gap="xs" wrap="nowrap">
-					<Sparkles size={14} color="var(--mantine-color-evergreen-4)" />
-					<Text size="xs" fw={700}>
-						One more thing
-					</Text>
-				</Group>
-				<ActionIcon
-					variant="subtle"
-					size="xs"
-					onClick={() => setDismissed(true)}
-					aria-label="Hide hint"
-				>
-					<X size={13} />
-				</ActionIcon>
-			</Group>
-			<Badge
-				variant="light"
-				color="gray"
-				radius="xl"
-				size="sm"
-				style={{ fontWeight: 500, fontFamily: "monospace", fontSize: 11 }}
-			>
-				{example.syntax}
-			</Badge>
-			<Text size="xs" c="dimmed" lh={1.5}>
-				{example.description}
-			</Text>
-		</Stack>
+		<Box py="xs">
+			{ENTRIES.map((entry, index) => (
+				<Box key={entry.title}>
+					{index > 0 && <Divider mb="xs" mt="xs" style={{ opacity: 0.4 }} />}
+					<Stack gap={2}>
+						<Group gap="xs" wrap="nowrap">
+							<entry.icon size={13} color="var(--mantine-color-evergreen-4)" />
+							<Text size="xs" fw={700}>
+								{entry.title}
+							</Text>
+						</Group>
+						{entry.syntax && (
+							<Badge
+								variant="light"
+								color="gray"
+								radius="xl"
+								size="sm"
+								style={{
+									fontWeight: 500,
+									fontFamily: "monospace",
+									fontSize: 11,
+									justifyContent: "flex-start",
+								}}
+							>
+								{entry.syntax}
+							</Badge>
+						)}
+						<Text size="xs" c="dimmed" lh={1.5}>
+							{entry.description}
+						</Text>
+					</Stack>
+				</Box>
+			))}
+		</Box>
 	);
 }

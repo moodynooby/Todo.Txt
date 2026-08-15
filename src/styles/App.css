@@ -278,6 +278,10 @@ body {
 .todo-editor-frame .mantine-RichTextEditor-root {
 	border: 0;
 	background: transparent;
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
 	--rte-control-radius: var(--m3-radius-control);
 	--rte-control-color: var(--app-ink);
 	--rte-control-hover-bg: color-mix(
@@ -290,11 +294,12 @@ body {
 }
 
 .todo-editor-frame .mantine-RichTextEditor-toolbar {
-	background: color-mix(in srgb, var(--app-surface-muted) 88%, transparent);
-	border: 1px solid var(--app-border);
+	background: var(--app-surface-muted);
+	border: none;
 	border-bottom: 1px solid var(--app-border);
-	border-radius: var(--m3-radius-surface) var(--m3-radius-surface) 0 0;
-	padding: 6px 8px;
+	border-radius: 0;
+	padding: 6px 10px;
+	box-shadow: none;
 }
 
 .todo-editor-frame .mantine-RichTextEditor-controlsGroup {
@@ -305,7 +310,7 @@ body {
 	color: var(--app-ink-muted);
 	background: transparent;
 	border: 1px solid transparent;
-	border-radius: var(--rte-control-radius);
+	border-radius: var(--m3-radius-control);
 	min-width: 32px;
 	height: 32px;
 	transition:
@@ -316,8 +321,8 @@ body {
 }
 
 .todo-editor-frame .mantine-RichTextEditor-control:hover {
-	background: var(--rte-control-hover-bg);
-	border-color: var(--app-border);
+	background: color-mix(in srgb, var(--app-ink) 8%, transparent);
+	border-color: transparent;
 	color: var(--app-ink);
 }
 
@@ -338,9 +343,13 @@ body {
 
 .todo-editor-frame .mantine-RichTextEditor-content {
 	background: var(--app-surface-raised);
-	border: 1px solid var(--app-border);
-	border-top: 0;
-	border-radius: 0 0 var(--m3-radius-surface) var(--m3-radius-surface);
+	border: none;
+	border-radius: 0;
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 0;
 }
 
 .todo-editor-frame .ProseMirror {
@@ -474,6 +483,14 @@ body {
 	background-color: var(--mantine-color-terracotta-light);
 	color: var(--mantine-color-terracotta-filled);
 	border-color: var(--mantine-color-terracotta-filled);
+	font-weight: 700;
+}
+
+/* Tasks whose due date carries an exact clock time (`due:today@17:00`) */
+.tag-due-timed {
+	background-color: var(--mantine-color-evergreen-1);
+	color: var(--mantine-color-evergreen-9);
+	border-color: var(--mantine-color-evergreen-4);
 	font-weight: 700;
 }
 

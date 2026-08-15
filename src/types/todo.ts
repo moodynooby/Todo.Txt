@@ -19,6 +19,9 @@ export interface Task {
 	projects?: string[];
 	contexts?: string[];
 	due?: string;
+	/* Optional clock time paired with `due:`, e.g. `due:2026-08-16T14:30`
+	 * or `due:today@17:00`. Enables exact reminder timers. */
+	dueTime?: string;
 }
 
 export interface ParsedTodoContent {
