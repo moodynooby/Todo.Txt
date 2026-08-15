@@ -35,13 +35,14 @@ export const QuickAddBar = ({ editor }: QuickAddBarProps) => {
 			shadow="md"
 			radius="xl"
 			p="xs"
-			className="app-surface"
+			className="app-surface quick-add-bar"
 			style={{
 				position: "sticky",
 				top: 8,
 				zIndex: 5,
-				margin: "8px 12px 0",
+				margin: "12px 12px 0",
 				background: "var(--app-surface-raised)",
+				border: "1px solid var(--app-border-strong)",
 				transition: "box-shadow 180ms var(--m3-ease-effects)",
 			}}
 		>

@@ -11,6 +11,7 @@ import {
 	useState,
 } from "react";
 import AppHeader from "@/components/AppHeader/AppHeader";
+import BottomNav from "@/components/AppHeader/BottomNav";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { HabitsProvider } from "@/context/HabitsContext";
@@ -188,6 +189,7 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 						...(viewMode === "todo"
 							? { display: "flex", flexDirection: "column" }
 							: {}),
+						paddingBottom: "env(safe-area-inset-bottom)",
 					}}
 				>
 					<ErrorBoundary>
@@ -240,6 +242,14 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 							/>
 						)}
 					</ErrorBoundary>
+
+					{/* M3 bottom navigation — mobile only, clears with safe-area inset */}
+					<BottomNav />
+					<Box
+						hiddenFrom="md"
+						className="bottom-nav-spacer"
+						style={{ height: "calc(64px + env(safe-area-inset-bottom))" }}
+					/>
 					<HabitReminderManager />
 				</AppShell.Main>
 			</AppShell>

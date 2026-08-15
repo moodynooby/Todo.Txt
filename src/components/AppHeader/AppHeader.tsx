@@ -1,4 +1,5 @@
 import { ActionIcon, Group, Image, Paper, Title, Tooltip } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { Plus, Timer as TimerIcon } from "lucide-react";
 import { useTimerContext } from "@/context/TimerContext";
 import { useViewContext } from "@/context/ViewContext";
@@ -16,6 +17,10 @@ const AppHeader = () => {
 	const { state: viewState } = useViewContext();
 	const viewMode = viewState.viewMode;
 	const { dispatchTimer } = useTimerContext();
+
+	/* On mobile the M3 bottom navigation bar replaces the segmented
+	 * switcher, so the header can stay compact and never overflow. */
+	const isMobile = useMediaQuery("(max-width: 767px)");
 
 	return (
 		<Paper
@@ -38,7 +43,7 @@ const AppHeader = () => {
 					<Title order={4} className="app-wordmark">
 						T0do.Txt
 					</Title>
-					<ViewSwitcher />
+					{!isMobile && <ViewSwitcher />}
 				</Group>
 
 				<Group gap="xs">

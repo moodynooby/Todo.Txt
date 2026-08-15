@@ -45,22 +45,49 @@ export const FilterButton = ({
 }: FilterButtonProps) => {
 	const priorityColor =
 		type === "priority" ? PRIORITY_CONFIG[value]?.color : null;
-	const variant = isActive ? "light" : "subtle";
 	const displayLabel = label ?? value;
+
+	/* M3 Expressive "bubble" filter chip: a fully rounded pill whose
+	 * tonal level rises when active — active chips sit on an elevated
+	 * filled surface, quiet chips are flat with a soft outline. */
+	const bubbleStyle: React.CSSProperties = {
+		borderRadius: "var(--m3-radius-pill)",
+		border: isActive
+			? "1px solid var(--m3-chip-border-active, transparent)"
+			: "1px solid var(--app-border)",
+		transition:
+			"background-color 140ms var(--m3-ease-effects), border-color 140ms var(--m3-ease-effects), transform 120ms var(--m3-ease-spatial-fast)",
+		minHeight: 36,
+	};
 
 	return (
 		<NavLink
 			label={displayLabel}
 			description={prefix ? `${prefix}${value}` : undefined}
+			className="sidebar-filter-bubble"
 			rightSection={
-				<Badge size="sm" variant="light">
+				<Badge
+					size="sm"
+					variant="light"
+					radius="xl"
+					style={{
+						borderRadius: "var(--m3-radius-pill)",
+						minWidth: 22,
+						border: isActive ? "none" : "1px solid var(--app-border)",
+					}}
+				>
 					{count}
 				</Badge>
 			}
 			active={isActive}
 			onClick={onClick}
 			color={priorityColor || "primary"}
-			variant={variant}
+			variant={isActive ? "light" : "subtle"}
+			styles={{
+				root: bubbleStyle,
+				label: { fontSize: 13 },
+				description: { fontSize: 11, fontFamily: "monospace" },
+			}}
 		/>
 	);
 };
@@ -73,6 +100,9 @@ interface SidebarSectionProps {
 	children: ReactNode;
 	isEmpty?: boolean;
 	emptyMessage?: string;
+	/** When true the section hides itself entirely (used while the document
+	 *  is empty, so guidance concentrates in the smart TipsPanel). */
+	hideWhenEmpty?: boolean;
 }
 
 export const SidebarSection = ({
@@ -83,8 +113,12 @@ export const SidebarSection = ({
 	children,
 	isEmpty,
 	emptyMessage,
+	hideWhenEmpty,
 }: SidebarSectionProps) => {
 	const isExpanded = expandedSections.has(id);
+
+	if (isEmpty && hideWhenEmpty) return null;
+
 	return (
 		<Stack gap="xs">
 			<Button
@@ -92,24 +126,26 @@ export const SidebarSection = ({
 				color="gray"
 				fullWidth
 				justify="space-between"
+				className="sidebar-section-button"
 				rightSection={
 					<ChevronRight
 						size={14}
-						style={{ transform: isExpanded ? "rotate(90deg)" : "none" }}
+						style={{
+							transform: isExpanded ? "rotate(90deg)" : "none",
+							transition: "transform 140ms var(--m3-ease-effects)",
+						}}
 					/>
 				}
 				onClick={() => onToggle(id)}
-				tt="uppercase"
 				size="xs"
 				fw={700}
-				style={{ letterSpacing: "0.05em" }}
 			>
 				{title}
 			</Button>
 			<Collapse expanded={isExpanded}>
 				<Stack gap={4}>
 					{isEmpty ? (
-						<Text size="xs" c="dimmed" fs="italic" px="sm" py="xs">
+						<Text size="xs" c="dimmed" px="sm" py="xs">
 							{emptyMessage}
 						</Text>
 					) : (
@@ -169,6 +205,7 @@ export const SearchInput = ({ value, onChange }: SearchInputProps) => (
 		value={value}
 		onChange={(e) => onChange(e.currentTarget.value)}
 		size="xs"
+		radius="xl"
 		mb="xs"
 	/>
 );

@@ -17,6 +17,7 @@ const ViewSwitcher = () => {
 		<SegmentedControl
 			value={viewMode}
 			onChange={setViewMode}
+			style={{ minWidth: 220, flexShrink: 0 }}
 			data={[
 				{
 					value: "todo",

@@ -1,100 +1,126 @@
-import { Code, Group, Stack, Text, ThemeIcon } from "@mantine/core";
-import {
-	AtSign,
-	Calendar,
-	CheckCheck,
-	Flag,
-	Folders,
-	Text as TextIcon,
-} from "lucide-react";
+import { ActionIcon, Badge, Group, Stack, Text } from "@mantine/core";
+import { useLocalStorage } from "@mantine/hooks";
+import { Sparkles, X } from "lucide-react";
 
-interface Tip {
-	icon: React.ReactNode;
-	color: string;
-	label: string;
-	example: string;
+/**
+ * Smart contextual guidance for the Todo workspace.
+ *
+ * Principles (Material 3 Expressive "smart guidance"):
+ * 1. Say only what matters right now. A fresh workspace gets a short
+ *    onboarding hint that invites the user to try real todo.txt syntax.
+ *    A workspace that already has tasks stays silent — the empty-state
+ *    sections and the quick-add placeholder already teach syntax.
+ * 2. One example at a time, softly rotating: a single pill-style example
+ *    demonstrates what the app can do without a wall of permanent chips.
+ * 3. The hint is dismissible and remembered, never re-imposed.
+ */
+
+const EXAMPLES: {
+	syntax: string;
 	description: string;
-}
-
-const TIPS: Tip[] = [
+}[] = [
 	{
-		icon: <TextIcon size={14} />,
-		color: "gray",
-		label: "Task Format",
-		example: "Buy groceries",
-		description: "Each line becomes a separate task.",
+		syntax: "(A) Reply to mom +personal due:today",
+		description: "Priority, project, and due date in one line.",
 	},
 	{
-		icon: <Flag size={14} />,
-		color: "red",
-		label: "Priority",
-		example: "(A) Urgent task",
-		description: "Add (A), (B), or (C) at the start.",
+		syntax: "Call dentist @phone due:2026-09-01",
+		description: "@context keeps tasks grouped by where they happen.",
 	},
 	{
-		icon: <Folders size={14} />,
-		color: "blue",
-		label: "Project",
-		example: "Write report +work",
-		description: "Tag with +projectname.",
-	},
-	{
-		icon: <AtSign size={14} />,
-		color: "teal",
-		label: "Context",
-		example: "Call doctor @phone",
-		description: "Tag with @context.",
-	},
-	{
-		icon: <Calendar size={14} />,
-		color: "violet",
-		label: "Due Date",
-		example: "Submit taxes due:2026-04-15",
-		description: "Use due:YYYY-MM-DD or due:today.",
-	},
-	{
-		icon: <CheckCheck size={14} />,
-		color: "green",
-		label: "Completion",
-		example: "x 2026-06-03 Done task",
-		description: "Prefix with x to mark done.",
+		syntax: "x 2026-08-15 Bought groceries",
+		description: "Prefix a line with `x` plus today's date to close it.",
 	},
 ];
 
-const TipsPanel = () => (
-	<Stack gap="sm" px="xs" py="xs">
-		{TIPS.map((tip) => (
-			<Group key={tip.label} gap="xs" align="flex-start" wrap="nowrap">
-				<ThemeIcon
-					variant="light"
-					color={tip.color}
-					size="sm"
-					style={{ marginTop: 2, flexShrink: 0 }}
-				>
-					{tip.icon}
-				</ThemeIcon>
-				<Stack gap={2}>
-					<Text size="xs" fw={600}>
-						{tip.label}
-					</Text>
-					<Code
-						style={{
-							display: "inline-flex",
-							alignItems: "center",
-							gap: 4,
-							fontSize: 11,
-							whiteSpace: "nowrap",
-						}}
-					>
-						{tip.example}
-					</Code>
-					<Text size="xs" c="dimmed">
-						{tip.description}
-					</Text>
-				</Stack>
-			</Group>
-		))}
-	</Stack>
-);
+interface TipsPanelProps {
+	/** true when the todo document has no tasks at all */
+	isEmpty: boolean;
+	/** optional filter currently applied, to acknowledge the user's action */
+	activeFilterLabel?: string;
+}
 
-export default TipsPanel;
+/** Pick an example deterministically from the day so the UI stays stable. */
+const exampleForToday = () => {
+	const day = Math.floor(Date.now() / 86400000);
+	return EXAMPLES[day % EXAMPLES.length];
+};
+
+export default function TipsPanel({ isEmpty }: TipsPanelProps) {
+	const [dismissed, setDismissed] = useLocalStorage<boolean>({
+		key: "tips-dismissed-v1",
+		defaultValue: false,
+	});
+
+	if (dismissed) return null;
+
+	// A fresh workspace gets a warm, actionable invitation.
+	if (isEmpty) {
+		return (
+			<Stack gap="sm" px="xs" py="xs">
+				<Group justify="space-between" wrap="nowrap" style={{ flex: 1 }}>
+					<Group gap="xs" wrap="nowrap">
+						<Sparkles size={14} color="var(--mantine-color-evergreen-4)" />
+						<Text size="xs" fw={700}>
+							Try it
+						</Text>
+					</Group>
+					<ActionIcon
+						variant="subtle"
+						size="xs"
+						onClick={() => setDismissed(true)}
+						aria-label="Hide hint"
+					>
+						<X size={13} />
+					</ActionIcon>
+				</Group>
+				<Text size="xs" c="dimmed" lh={1.5}>
+					Just type a line — like{" "}
+					<Text component="span" fw={600} c="inherit">
+						`(A) Buy milk +groceries`
+					</Text>{" "}
+					— in the bar above and press{" "}
+					<Text component="span" fw={600} c="inherit">
+						Enter
+					</Text>
+					. Each line becomes a task, and your list appears right here.
+				</Text>
+			</Stack>
+		);
+	}
+
+	// A working workspace gets one quiet, rotating nudge — nothing more.
+	const example = exampleForToday();
+	return (
+		<Stack gap="xs" px="xs" py="xs">
+			<Group justify="space-between" wrap="nowrap" style={{ flex: 1 }}>
+				<Group gap="xs" wrap="nowrap">
+					<Sparkles size={14} color="var(--mantine-color-evergreen-4)" />
+					<Text size="xs" fw={700}>
+						One more thing
+					</Text>
+				</Group>
+				<ActionIcon
+					variant="subtle"
+					size="xs"
+					onClick={() => setDismissed(true)}
+					aria-label="Hide hint"
+				>
+					<X size={13} />
+				</ActionIcon>
+			</Group>
+			<Badge
+				variant="light"
+				color="gray"
+				radius="xl"
+				size="sm"
+				style={{ fontWeight: 500, fontFamily: "monospace", fontSize: 11 }}
+			>
+				{example.syntax}
+			</Badge>
+			<Text size="xs" c="dimmed" lh={1.5}>
+				{example.description}
+			</Text>
+		</Stack>
+	);
+}

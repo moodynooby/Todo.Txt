@@ -49,11 +49,11 @@
 }
 
 :root[data-mantine-color-scheme="dark"] {
-	--app-canvas: #14181c;
-	--app-canvas-strong: #1a1f24;
-	--app-surface: rgb(26 31 36 / 92%);
-	--app-surface-raised: #20262c;
-	--app-surface-muted: #2a3138;
+	--app-canvas: #12161a;
+	--app-canvas-strong: #171c21;
+	--app-surface: rgb(25 31 37 / 92%);
+	--app-surface-raised: #28313a;
+	--app-surface-muted: #333d47;
 	--app-ink: #e8ecef;
 	--app-ink-muted: #b8c0c7;
 	--app-ink-faint: #8a939b;
@@ -215,13 +215,60 @@ body {
 	border-right-color: var(--app-border) !important;
 }
 
-.todo-active-filter {
+/* ------------------------------------------------------------------ */
+/* M3 sidebar levels, borders and bubbles                              */
+/* The sidebar is one level above the canvas (strong border), and      */
+/* every filter row is a fully rounded "bubble" whose tonal level      */
+/* rises when active. Section headers sit on their own flat tier.      */
+/* ------------------------------------------------------------------ */
+
+.todo-sidebar {
+	box-shadow: 4px 0 18px rgb(23 61 53 / 4%);
+}
+
+/* Section header as a soft tier, separated by a hairline border */
+.todo-sidebar .sidebar-section-button {
+	border-radius: var(--m3-radius-pill);
+	height: 34px;
+	color: var(--app-ink-muted);
+}
+
+.todo-sidebar .sidebar-section-button:hover {
+	background: var(--app-surface-muted);
+	color: var(--app-ink);
+}
+
+/* Bubble filter chips — tonal level rises on activation */
+.sidebar-filter-bubble {
+	border-radius: var(--m3-radius-pill) !important;
+}
+
+.sidebar-filter-bubble.mantine-NavLink-root[data-active="true"] {
 	background: color-mix(
 		in srgb,
-		var(--mantine-color-evergreen-1),
-		var(--app-surface-raised) 48%
+		var(--mantine-color-evergreen-5) 16%,
+		var(--app-surface-raised)
 	) !important;
-	border-radius: var(--m3-radius-control);
+	border-color: var(--mantine-color-evergreen-6) !important;
+	color: var(--app-ink);
+	font-weight: 600;
+}
+
+.sidebar-filter-bubble:hover {
+	background: var(--app-surface-muted);
+	transform: scale(1.015);
+}
+
+.sidebar-filter-bubble:active {
+	transform: scale(0.98);
+}
+
+.todo-active-filter {
+	background: var(--mantine-color-evergreen-8) !important;
+	color: var(--mantine-color-evergreen-0) !important;
+	border-radius: var(--m3-radius-pill);
+	margin: 8px 12px;
+	box-shadow: 0 6px 16px rgb(23 61 53 / 18%);
 }
 
 .todo-editor-frame {
@@ -303,6 +350,13 @@ body {
 .app-search-field .mantine-TextInput-input {
 	background: var(--app-surface-raised);
 	border-color: var(--app-border-strong);
+	box-shadow: var(--app-shadow-card);
+}
+
+/* Quick-add bar floats above the editor with its own raised band. */
+.quick-add-bar {
+	background: var(--app-surface-raised) !important;
+	border: 1px solid var(--app-border-strong);
 	box-shadow: var(--app-shadow-card);
 }
 
@@ -909,6 +963,87 @@ body {
 
 :root[data-mantine-color-scheme="dark"] .app-header {
 	box-shadow: 0 4px 14px rgb(0 0 0 / 25%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Dark mode — editor, toolbar and quick-add surface hierarchy         */
+/* The writing surface must read clearly against the canvas, and the   */
+/* quick-add bar and toolbar must each carry their own tonal band.     */
+/* ------------------------------------------------------------------ */
+
+:root[data-mantine-color-scheme="dark"] .todo-editor-frame {
+	background: var(--app-canvas-strong);
+	border-top: 1px solid var(--app-border-strong);
+}
+
+:root[data-mantine-color-scheme="dark"]
+	.todo-editor-frame
+	.mantine-RichTextEditor-content {
+	background: var(--app-surface-raised);
+	border-color: var(--app-border-strong);
+	box-shadow:
+		0 10px 26px rgb(0 0 0 / 30%),
+		inset 0 1px 0 rgb(255 255 255 / 3%);
+}
+
+:root[data-mantine-color-scheme="dark"]
+	.todo-editor-frame
+	.mantine-RichTextEditor-toolbar {
+	background: var(--app-surface-muted);
+	border-color: var(--app-border-strong);
+	box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+:root[data-mantine-color-scheme="dark"] .app-surface,
+:root[data-mantine-color-scheme="dark"] .todo-sidebar,
+:root[data-mantine-color-scheme="dark"] .app-floating-action-primary,
+:root[data-mantine-color-scheme="dark"] .app-floating-action {
+	box-shadow: 0 10px 24px rgb(0 0 0 / 32%);
+}
+
+:root[data-mantine-color-scheme="dark"]
+	.app-search-field
+	.mantine-TextInput-input {
+	background: var(--app-surface-raised);
+}
+
+:root[data-mantine-color-scheme="dark"] .tag-interactive {
+	filter: brightness(1.15);
+}
+
+/* Dark mode — sidebar levels, bubbles and borders */
+:root[data-mantine-color-scheme="dark"] .todo-sidebar {
+	border-right: 1px solid var(--app-border-strong);
+	box-shadow: 4px 0 22px rgb(0 0 0 / 34%);
+}
+
+:root[data-mantine-color-scheme="dark"]
+	.sidebar-filter-bubble.mantine-NavLink-root[data-active="true"] {
+	background: color-mix(
+		in srgb,
+		var(--mantine-color-evergreen-3) 20%,
+		var(--app-surface-raised)
+	) !important;
+	border-color: var(--mantine-color-evergreen-3) !important;
+}
+
+:root[data-mantine-color-scheme="dark"] .sidebar-filter-bubble {
+	border-color: var(--app-border-strong);
+}
+
+:root[data-mantine-color-scheme="dark"]
+	.app-search-field
+	.mantine-TextInput-input,
+:root[data-mantine-color-scheme="dark"] .sidebar-filter-bubble input {
+	border-color: var(--app-border-strong);
+}
+
+:root[data-mantine-color-scheme="dark"] .todo-active-filter {
+	box-shadow: 0 6px 16px rgb(0 0 0 / 40%);
+}
+
+:root[data-mantine-color-scheme="dark"] .todo-sidebar-heading {
+	border-bottom: 1px solid var(--app-border-strong);
 }
 
 :root[data-mantine-color-scheme="dark"]

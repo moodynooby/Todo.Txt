@@ -27,6 +27,12 @@ import {
 } from "./SidebarParts";
 import TipsPanel from "./TipsPanel";
 
+const taskDataIsEmpty = (data: ParsedTodoContent) =>
+	Object.values(data.priorities).every((arr) => !arr?.length) &&
+	Object.keys(data.projects).length === 0 &&
+	Object.keys(data.contexts).length === 0 &&
+	Object.keys(data.dueDates).length === 0;
+
 interface SidebarProps {
 	isCollapsed: boolean;
 	onToggle: () => void;
@@ -114,7 +120,19 @@ const Sidebar = ({
 						tt="uppercase"
 						style={{ letterSpacing: "0.05em" }}
 					>
-						Filters
+						{activeFilter
+							? activeFilter.type === "priority"
+								? `Priority ${activeFilter.value}`
+								: activeFilter.type === "project"
+									? `+${activeFilter.value}`
+									: activeFilter.type === "context"
+										? `@${activeFilter.value}`
+										: activeFilter.type === "due"
+											? `Due ${activeFilter.value}`
+											: activeFilter.value === "done"
+												? "Completed"
+												: "All filters"
+							: "Filters"}
 					</Text>
 				</Group>
 				<Tooltip
@@ -180,6 +198,7 @@ const Sidebar = ({
 					onToggle={toggleSection}
 					isEmpty={Object.values(priorities).every((arr) => !arr?.length)}
 					emptyMessage="No prioritized tasks"
+					hideWhenEmpty
 				>
 					{Object.entries(priorities).map(([priority, items]) => {
 						if (!items?.length) return null;
@@ -204,6 +223,7 @@ const Sidebar = ({
 					onToggle={toggleSection}
 					isEmpty={Object.keys(projects).length === 0}
 					emptyMessage="No projects found"
+					hideWhenEmpty
 				>
 					{Object.entries(projects).map(([project, items]) => (
 						<FilterButton
@@ -225,6 +245,7 @@ const Sidebar = ({
 					onToggle={toggleSection}
 					isEmpty={Object.keys(contexts).length === 0}
 					emptyMessage="No contexts found"
+					hideWhenEmpty
 				>
 					{Object.entries(contexts).map(([context, items]) => (
 						<FilterButton
@@ -246,6 +267,7 @@ const Sidebar = ({
 					onToggle={toggleSection}
 					isEmpty={Object.keys(dueDates).length === 0}
 					emptyMessage="No due dates found"
+					hideWhenEmpty
 				>
 					{Object.entries(dueDates).map(([due, items]) => (
 						<FilterButton
@@ -266,7 +288,7 @@ const Sidebar = ({
 					expandedSections={expandedSections}
 					onToggle={toggleSection}
 				>
-					<TipsPanel />
+					<TipsPanel isEmpty={taskDataIsEmpty(taskData)} />
 				</SidebarSection>
 			</ScrollArea>
 		</Paper>
