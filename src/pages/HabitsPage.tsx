@@ -186,7 +186,12 @@ export default function HabitsPage() {
 							<RingProgress
 								size={82}
 								thickness={8}
-								sections={[{ value: dailyProgress, color: "#d9784f" }]}
+								sections={[
+									{
+										value: dailyProgress,
+										color: "var(--mantine-color-honey-5)",
+									},
+								]}
 								label={
 									<Text ta="center" fw={700} size="xs">
 										{dailyProgress}%
@@ -336,7 +341,11 @@ export default function HabitsPage() {
 						{strongestHabit ? (
 							<>
 								<Box className="streak-callout">
-									<Flame size={22} fill="#d9784f" color="#d9784f" />
+									<Flame
+										size={22}
+										fill="var(--mantine-color-terracotta-5)"
+										color="var(--mantine-color-terracotta-5)"
+									/>
 									<Box>
 										<Text className="streak-number">
 											{strongestHabit.streak} days

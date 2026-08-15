@@ -1,6 +1,20 @@
+/*
+ * Notes workspace styles — M3 Expressive layer.
+ * Cards use the shared radius scale (rounded corners on note cards are
+ * intentional, echoing the M3 "variety of shapes" shape scale); hover
+ * motion stays inside the shared ease window.
+ */
+
 .NotesPage-masonry {
 	columns: 280px;
 	column-gap: 16px;
+}
+
+/* On large desktops the masonry stretches a bit wider for balance */
+@media (min-width: 90em) {
+	.NotesPage-masonry {
+		columns: 320px;
+	}
 }
 
 .notes-workspace {
@@ -23,11 +37,12 @@
 	margin-bottom: 16px;
 	overflow: hidden;
 	border-color: var(--app-border) !important;
+	border-radius: var(--m3-radius-surface) !important;
 	box-shadow: var(--app-shadow-card);
 	transition:
-		transform 180ms var(--app-ease-out),
-		box-shadow 180ms ease,
-		border-color 180ms ease;
+		transform 180ms var(--m3-ease-effects),
+		box-shadow 180ms var(--m3-ease-effects),
+		border-color 180ms var(--m3-ease-effects);
 }
 
 .NotesPage-noteCard:hover {
@@ -45,7 +60,7 @@
 	border: none;
 	padding: 2px 4px;
 	opacity: 0;
-	transition: opacity 0.15s ease;
+	transition: opacity 150ms var(--m3-ease-effects);
 }
 
 .NotesPage-noteCard:hover
@@ -93,7 +108,7 @@
 	max-width: 380px;
 	margin: 52px auto;
 	border: 1px dashed var(--app-border-strong);
-	border-radius: var(--app-radius-surface);
+	border-radius: var(--m3-radius-surface);
 }
 
 @media (prefers-reduced-motion: reduce) {

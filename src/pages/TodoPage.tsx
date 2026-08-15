@@ -3,6 +3,7 @@ import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { Filter as FilterIcon } from "lucide-react";
 import { useEffect } from "react";
 import { Editor } from "@/components/Editor";
+import { QuickAddBar } from "@/components/QuickAddBar";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { useTodoContext } from "@/context/TodoContext";
 import { useViewContext } from "@/context/ViewContext";
@@ -10,6 +11,14 @@ import { useSidebarState } from "@/hooks/useSidebarState";
 import type { SaveFormat } from "@/lib/documentExport";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 
+/**
+ * Todo workspace — Material 3 Expressive layout.
+ *
+ * Desktop: sidebar + raised editor surface side by side, with the
+ * quick-add bar as the hero moment at the top of the editor.
+ * Mobile: full-width editor, filters reachable through a spring-animated
+ * bottom sheet, and a prominent fully-rounded primary FAB.
+ */
 interface TodoPageProps {
 	taskData: ParsedTodoContent;
 	activeFilter: Filter | null;
@@ -86,7 +95,7 @@ const TodoPage = ({
 							? "var(--sidebar-collapsed-width)"
 							: "var(--sidebar-width)",
 						overflow: "hidden",
-						transition: "width 250ms cubic-bezier(0.4, 0, 0.2, 1)",
+						transition: `width 250ms var(--m3-ease-effects)`,
 					}}
 				>
 					<Sidebar
@@ -99,12 +108,13 @@ const TodoPage = ({
 				</Flex>
 			)}
 
+			{/* M3 Expressive bottom-sheet filters on mobile (position: bottom, xxl radius) */}
 			<Drawer
 				opened={drawerOpened}
 				onClose={closeDrawer}
 				title="Filters"
 				padding={0}
-				size={280}
+				size="100%"
 				zIndex={200}
 			>
 				<Sidebar
@@ -119,8 +129,10 @@ const TodoPage = ({
 			<Flex
 				className="todo-editor-frame"
 				direction="column"
-				style={{ flex: 1, minWidth: 0 }}
+				style={{ flex: 1, minWidth: 0, overflow: "hidden" }}
 			>
+				<QuickAddBar editor={editor} />
+
 				<Editor
 					editor={editor}
 					toolbarVariant="full"
@@ -135,12 +147,46 @@ const TodoPage = ({
 						minHeight: 0,
 					}}
 				/>
+
+				{/* Desktop: collapsed-sidebar toggle rides on a smooth spring */}
+				{!isMobile && (
+					<Transition
+						mounted={sidebarCollapsed}
+						transition="slide-up"
+						duration={300}
+						timingFunction="var(--m3-ease-spatial-fast)"
+					>
+						{(transitionStyles) => (
+							<ActionIcon
+								className="app-floating-action todo-filter-action"
+								variant="filled"
+								color="evergreen"
+								size="xl"
+								onClick={onToggleSidebar}
+								aria-label="Toggle Filters"
+								style={{
+									position: "fixed",
+									bottom: "20px",
+									right: "20px",
+									zIndex: 100,
+									transition:
+										"transform 150ms ease, background-color 150ms ease",
+									...transitionStyles,
+								}}
+							>
+								<FilterIcon size={24} />
+							</ActionIcon>
+						)}
+					</Transition>
+				)}
 			</Flex>
 
-			{isMobile ? (
+			{/* Mobile: bottom-sheet filter FAB (secondary control) */}
+			{isMobile && (
 				<ActionIcon
 					className="app-floating-action todo-filter-action"
 					variant="filled"
+					color="evergreen"
 					size="xl"
 					onClick={openDrawer}
 					aria-label="Open Filters"
@@ -149,39 +195,10 @@ const TodoPage = ({
 						bottom: "20px",
 						right: "20px",
 						zIndex: 100,
-						boxShadow: "var(--mantine-shadow-md)",
 					}}
 				>
 					<FilterIcon size={24} />
 				</ActionIcon>
-			) : (
-				<Transition
-					mounted={sidebarCollapsed}
-					transition="slide-up"
-					duration={300}
-					timingFunction="cubic-bezier(0.4, 0, 0.2, 1)"
-				>
-					{(transitionStyles) => (
-						<ActionIcon
-							className="app-floating-action todo-filter-action"
-							variant="filled"
-							size="xl"
-							onClick={onToggleSidebar}
-							aria-label="Toggle Filters"
-							style={{
-								position: "fixed",
-								bottom: "20px",
-								right: "20px",
-								zIndex: 100,
-								boxShadow: "var(--mantine-shadow-md)",
-								transition: "transform 150ms ease, background-color 150ms ease",
-								...transitionStyles,
-							}}
-						>
-							<FilterIcon size={24} />
-						</ActionIcon>
-					)}
-				</Transition>
 			)}
 		</Flex>
 	);

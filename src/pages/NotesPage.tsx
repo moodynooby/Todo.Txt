@@ -17,6 +17,13 @@ import SectionHeading from "@/features/notes/SectionHeading";
 import type { NoteColor } from "@/types/notes";
 import "./NotesPage.css";
 
+/**
+ * Notes workspace — Material 3 Expressive layout.
+ *
+ * A constrained shell with a rounded search surface, stacked section
+ * headings, and a prominent fully-rounded primary FAB anchored to the
+ * bottom-right. On mobile the search widens to fill the frame.
+ */
 const NotesPage = () => {
 	const { state, dispatchNotes } = useNotesContext();
 	const { notes } = state;
@@ -113,6 +120,7 @@ const NotesPage = () => {
 								variant="subtle"
 								size="xs"
 								onClick={() => setSearch("")}
+								aria-label="Clear search"
 							>
 								<X size={14} />
 							</ActionIcon>
@@ -120,18 +128,18 @@ const NotesPage = () => {
 					}
 					value={search}
 					onChange={(e) => setSearch(e.currentTarget.value)}
+					radius="xl"
 				/>
 
 				<Affix position={{ bottom: 24, right: 24 }}>
 					<ActionIcon
-						className="app-floating-action"
-						size="xl"
+						className="app-floating-action-primary"
 						variant="filled"
 						color="evergreen"
 						onClick={handleAddNote}
 						aria-label="Add note"
 					>
-						<Plus size={22} />
+						<Plus size={24} />
 					</ActionIcon>
 				</Affix>
 			</Stack>
@@ -214,7 +222,7 @@ const NotesPage = () => {
 								alignItems: "center",
 								gap: 6,
 								padding: "8px 4px",
-								borderRadius: "var(--mantine-radius-xs)",
+								borderRadius: "var(--m3-radius-control)",
 								color: "var(--mantine-color-dimmed)",
 								cursor: "pointer",
 							}}

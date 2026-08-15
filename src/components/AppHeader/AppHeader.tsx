@@ -5,6 +5,13 @@ import { useViewContext } from "@/context/ViewContext";
 import HeaderActions from "./HeaderActions";
 import ViewSwitcher from "./ViewSwitcher";
 
+/**
+ * M3 Expressive app header.
+ *
+ * A translucent "top app bar" with an emphasized wordmark, a pill-shaped
+ * view switcher that morphs with the motion tokens, and compact icon
+ * actions at 44px touch targets on mobile.
+ */
 const AppHeader = () => {
 	const { state: viewState } = useViewContext();
 	const viewMode = viewState.viewMode;
@@ -34,14 +41,17 @@ const AppHeader = () => {
 					<ViewSwitcher />
 				</Group>
 
-				<Group gap="sm">
+				<Group gap="xs">
 					{viewMode === "todo" && (
 						<Tooltip label="Add timer">
 							<ActionIcon
-								variant="subtle"
+								variant="light"
+								color="evergreen"
+								radius="md"
 								size="lg"
 								hiddenFrom="xs"
 								onClick={() => dispatchTimer({ type: "ADD_TIMER" })}
+								aria-label="Add timer"
 							>
 								<Group gap={2}>
 									<TimerIcon size={18} />

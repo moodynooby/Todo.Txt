@@ -1,4 +1,13 @@
-/* Field Notes Ritual: botanical editorial warmth, evergreen structure, and gentle data evidence. */
+/*
+ * Field Notes Ritual — Material 3 Expressive layer.
+ *
+ * This stylesheet carries only (a) web-font faces, (b) the global token
+ * surface (evergreen / terracotta derived from the M3 theme seeds), and
+ * (c) the shared layout primitives defined in docs/design-system.md.
+ * Component styling belongs to the Mantine theme in
+ * `src/theme/m3Theme.ts`; avoid adding new page-local rules here.
+ */
+
 @font-face {
 	font-family: WinkySans;
 	src: url(/WinkySans-Regular.ttf);
@@ -10,33 +19,24 @@
 }
 
 :root {
-	--sidebar-width: 280px;
-	--sidebar-collapsed-width: 60px;
-	--app-radius-control: var(--mantine-radius-md);
-	--app-radius-surface: var(--mantine-radius-lg);
-	--app-space-1: 4px;
-	--app-space-2: 8px;
-	--app-space-3: 12px;
-	--app-space-4: 16px;
-	--app-space-5: 24px;
-	--app-space-6: 32px;
-	--app-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-	--app-evergreen-100: #e3ede3;
-	--app-evergreen-300: #a9c2a7;
-	--app-evergreen-400: #83a57f;
-	--app-evergreen-500: #638a60;
-	--app-evergreen-600: #49734b;
-	--app-evergreen-700: #365d3d;
-	--app-evergreen-800: #294b33;
-	--app-evergreen-900: #1d3c28;
-	--app-terracotta-400: #e98558;
-	--app-terracotta-500: #d9784f;
+	--sidebar-width: 300px;
+	--sidebar-collapsed-width: 64px;
+
+	/* M3 Expressive motion tokens (see src/theme/m3Theme.ts) */
+	--m3-ease-spatial: cubic-bezier(0.155, 0.9, 0.3, 1.18);
+	--m3-ease-spatial-fast: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	--m3-ease-effects: cubic-bezier(0.15, 0, 0, 1);
+
+	/* M3 Expressive shape scale */
+	--m3-radius-control: 12px;
+	--m3-radius-surface: 16px;
+	--m3-radius-pill: 9999px;
 }
 
 :root[data-mantine-color-scheme="light"] {
 	--app-canvas: #f7f5ef;
 	--app-canvas-strong: #fffdf7;
-	--app-surface: rgb(255 253 247 / 88%);
+	--app-surface: rgb(255 253 247 / 90%);
 	--app-surface-raised: #fffdf7;
 	--app-surface-muted: #e8eee3;
 	--app-ink: #173d35;
@@ -74,23 +74,13 @@ body {
 	color: var(--app-ink);
 }
 
+/* ------------------------------------------------------------------ */
+/* Shared layout primitives (see docs/design-system.md)                */
+/* ------------------------------------------------------------------ */
+
 .app-workspace {
 	position: relative;
 	background-color: var(--app-canvas);
-	background-image:
-		radial-gradient(
-			circle at 12% 18%,
-			rgb(99 138 96 / 8%) 0 1px,
-			transparent 1.5px
-		),
-		radial-gradient(
-			circle at 87% 76%,
-			rgb(217 120 79 / 6%) 0 1px,
-			transparent 1.5px
-		);
-	background-size:
-		22px 22px,
-		28px 28px;
 	color: var(--app-ink);
 }
 
@@ -99,41 +89,75 @@ body {
 	margin-left: auto;
 	margin-right: auto;
 }
+
 .app-surface {
 	border-color: var(--app-border) !important;
 	box-shadow: var(--app-shadow-card);
 }
+
 .app-surface-muted {
 	background: var(--app-surface-muted);
 	color: var(--app-ink);
 }
+
 .app-eyebrow {
-	color: var(--app-evergreen-600);
-	font-size: 10px;
+	color: var(--mantine-color-evergreen-6);
+	font-size: 11px;
 	font-weight: 800;
 	letter-spacing: 0.14em;
+	text-transform: uppercase;
 }
+
 .app-display-title {
 	font-family: ZillaSlab, Georgia, serif;
 	color: var(--app-ink);
-	font-weight: 400;
+	font-weight: 500;
 	letter-spacing: -0.025em;
 }
+
 .app-floating-action {
-	background: var(--app-evergreen-700);
+	border-radius: var(--m3-radius-pill);
+	background: var(--mantine-color-evergreen-7);
 	box-shadow: 0 10px 24px rgb(23 61 53 / 22%);
 	transition:
-		transform 160ms var(--app-ease-out),
-		box-shadow 160ms ease,
-		background-color 160ms ease;
+		transform 160ms var(--m3-ease-spatial-fast),
+		box-shadow 160ms var(--m3-ease-effects),
+		background-color 160ms var(--m3-ease-effects);
 }
+
 .app-floating-action:hover {
-	background: var(--app-evergreen-600);
+	background: var(--mantine-color-evergreen-6);
 	box-shadow: 0 14px 28px rgb(23 61 53 / 30%);
 	transform: translateY(-2px);
 }
+
 .app-floating-action:active {
 	transform: scale(0.97);
+}
+
+/* M3 Expressive primary FAB: fully rounded, elevated, springy feedback */
+.app-floating-action-primary {
+	composes: none;
+	border-radius: var(--m3-radius-pill);
+	height: 56px;
+	width: 56px;
+	background: var(--mantine-color-evergreen-8);
+	color: var(--mantine-color-evergreen-0);
+	box-shadow: 0 12px 28px rgb(23 61 53 / 30%);
+	transition:
+		transform 200ms var(--m3-ease-spatial-fast),
+		box-shadow 200ms var(--m3-ease-effects),
+		background-color 160ms var(--m3-ease-effects);
+}
+
+.app-floating-action-primary:hover {
+	background: var(--mantine-color-evergreen-7);
+	box-shadow: 0 16px 34px rgb(23 61 53 / 36%);
+	transform: translateY(-3px);
+}
+
+.app-floating-action-primary:active {
+	transform: scale(0.95);
 }
 
 .app-header {
@@ -146,113 +170,132 @@ body {
 	box-shadow: 0 4px 14px rgb(23 61 53 / 5%);
 	backdrop-filter: blur(12px);
 }
+
 .app-header-inner {
 	min-width: min-content;
 }
+
 .app-header .mantine-SegmentedControl-root {
 	border: 1px solid var(--app-border);
 	background: var(--app-surface-muted);
-	border-radius: var(--app-radius-control);
+	border-radius: var(--m3-radius-control);
 }
+
 .app-header .mantine-SegmentedControl-indicator {
 	background: var(--app-surface-raised);
 	box-shadow: 0 2px 6px rgb(23 61 53 / 10%);
-	border-radius: var(--app-radius-control);
+	border-radius: var(--m3-radius-control);
 }
+
 .app-header .mantine-SegmentedControl-label {
 	color: var(--app-ink-muted);
 }
+
 .app-wordmark {
-	color: var(--app-evergreen-700);
+	color: var(--mantine-color-evergreen-8);
 	font-family: ZillaSlab, Georgia, serif;
 	font-size: 20px;
 	letter-spacing: -0.035em;
 }
 
+/* ------------------------------------------------------------------ */
+/* Todo workspace                                                      */
+/* ------------------------------------------------------------------ */
+
 .todo-workspace {
 	background-image: none;
 }
+
 .todo-sidebar-frame {
 	border-right: 1px solid var(--app-border);
 }
+
 .todo-sidebar {
 	background: var(--app-surface) !important;
 	border-right-color: var(--app-border) !important;
 }
-.todo-sidebar-heading {
-	color: var(--app-evergreen-700);
-}
+
 .todo-active-filter {
 	background: color-mix(
 		in srgb,
-		var(--app-evergreen-100),
+		var(--mantine-color-evergreen-1),
 		var(--app-surface-raised) 48%
 	) !important;
+	border-radius: var(--m3-radius-control);
 }
+
 .todo-editor-frame {
 	background: var(--app-surface-raised);
 }
+
 .todo-editor-frame .mantine-RichTextEditor-root {
 	border: 0;
 	background: transparent;
-	--rte-control-radius: var(--app-radius-control);
+	--rte-control-radius: var(--m3-radius-control);
 	--rte-control-color: var(--app-ink);
 	--rte-control-hover-bg: color-mix(
 		in srgb,
 		var(--app-surface-raised) 88%,
 		var(--app-surface-muted) 12%
 	);
-	--rte-control-active-bg: var(--app-surface-raised);
-	--rte-control-active-color: var(--app-ink);
+	--rte-control-active-bg: var(--mantine-color-evergreen-1);
+	--rte-control-active-color: var(--mantine-color-evergreen-9);
 }
+
 .todo-editor-frame .mantine-RichTextEditor-toolbar {
 	background: color-mix(in srgb, var(--app-surface-muted) 88%, transparent);
 	border: 1px solid var(--app-border);
 	border-bottom: 1px solid var(--app-border);
-	border-radius: var(--app-radius-surface) var(--app-radius-surface) 0 0;
+	border-radius: var(--m3-radius-surface) var(--m3-radius-surface) 0 0;
 	padding: 6px 8px;
 }
+
 .todo-editor-frame .mantine-RichTextEditor-controlsGroup {
 	gap: 4px;
 }
+
 .todo-editor-frame .mantine-RichTextEditor-control {
 	color: var(--app-ink-muted);
 	background: transparent;
 	border: 1px solid transparent;
 	border-radius: var(--rte-control-radius);
-	min-width: 28px;
-	height: 28px;
+	min-width: 32px;
+	height: 32px;
 	transition:
-		background-color 140ms ease,
-		border-color 140ms ease,
-		color 140ms ease,
-		box-shadow 140ms ease;
+		background-color 140ms var(--m3-ease-effects),
+		border-color 140ms var(--m3-ease-effects),
+		color 140ms var(--m3-ease-effects),
+		transform 120ms var(--m3-ease-spatial-fast);
 }
+
 .todo-editor-frame .mantine-RichTextEditor-control:hover {
 	background: var(--rte-control-hover-bg);
 	border-color: var(--app-border);
 	color: var(--app-ink);
 }
+
 .todo-editor-frame .mantine-RichTextEditor-control[data-active="true"],
 .todo-editor-frame .mantine-RichTextEditor-control[aria-pressed="true"],
 .todo-editor-frame .mantine-RichTextEditor-control[data-state="checked"] {
 	background: var(--rte-control-active-bg);
 	border-color: var(--app-border-strong);
 	color: var(--rte-control-active-color);
-	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 2%);
 }
+
 .todo-editor-frame .mantine-RichTextEditor-control:disabled {
 	background: transparent;
 	border-color: transparent;
 	color: var(--app-ink-faint);
 	opacity: 0.6;
 }
+
 .todo-editor-frame .mantine-RichTextEditor-content {
 	background: var(--app-surface-raised);
 	border: 1px solid var(--app-border);
 	border-top: 0;
-	border-radius: 0 0 var(--app-radius-surface) var(--app-radius-surface);
+	border-radius: 0 0 var(--m3-radius-surface) var(--m3-radius-surface);
 }
+
 .todo-editor-frame .ProseMirror {
 	color: var(--app-ink);
 }
@@ -262,8 +305,9 @@ body {
 	border-color: var(--app-border-strong);
 	box-shadow: var(--app-shadow-card);
 }
+
 .app-search-field .mantine-TextInput-input:focus {
-	border-color: var(--app-evergreen-500);
+	border-color: var(--mantine-color-evergreen-5);
 }
 
 .file-input {
@@ -274,6 +318,7 @@ body {
 	min-height: 100%;
 }
 
+/* M3-style task checkboxes: rounded, tappable, evergreen when checked */
 .tiptap-container ul:has(li > input[type="checkbox"]) {
 	list-style: none;
 	padding-left: 0;
@@ -282,16 +327,17 @@ body {
 .tiptap-container li:has(input[type="checkbox"]) {
 	display: flex;
 	align-items: flex-start;
-	gap: 6px;
+	gap: 8px;
 }
 
 .tiptap-container li:has(input[type="checkbox"]) input[type="checkbox"] {
-	margin-top: 4px;
+	margin-top: 3px;
 	cursor: pointer;
-	width: 16px;
-	height: 16px;
+	width: 20px;
+	height: 20px;
 	accent-color: var(--mantine-primary-color-filled);
 	flex-shrink: 0;
+	border-radius: 6px;
 }
 
 .tiptap-container
@@ -306,16 +352,20 @@ body {
 	display: none !important;
 }
 
+/* ------------------------------------------------------------------ */
+/* Interactive tags rendered inside the todo editor (data decorations) */
+/* ------------------------------------------------------------------ */
+
 .tag-interactive {
 	cursor: pointer;
-	border-radius: var(--mantine-radius-xs);
-	padding: 1px 6px;
+	border-radius: var(--m3-radius-pill);
+	padding: 1px 8px;
 	font-weight: 600;
 	font-size: 0.9em;
 	transition:
-		transform 0.1s ease,
-		filter 0.15s ease,
-		background-color 0.15s ease;
+		transform 100ms var(--m3-ease-spatial-fast),
+		filter 150ms var(--m3-ease-effects),
+		background-color 150ms var(--m3-ease-effects);
 	display: inline-block;
 	margin: 0 2px;
 	user-select: none;
@@ -367,11 +417,15 @@ body {
 }
 
 .tag-due-overdue {
-	background-color: var(--mantine-color-orange-light);
-	color: var(--mantine-color-orange-filled);
-	border-color: var(--mantine-color-orange-filled);
+	background-color: var(--mantine-color-terracotta-light);
+	color: var(--mantine-color-terracotta-filled);
+	border-color: var(--mantine-color-terracotta-filled);
 	font-weight: 700;
 }
+
+/* ------------------------------------------------------------------ */
+/* Habits page — consumable tokens, no duplicated values               */
+/* ------------------------------------------------------------------ */
 
 .habits-page {
 	position: relative;
@@ -408,23 +462,29 @@ body {
 	margin: 0 auto;
 	padding: clamp(28px, 5vw, 68px) clamp(18px, 4vw, 52px) 72px;
 }
+
 .habits-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: end;
 	gap: 20px;
 }
+
 .habits-mark {
-	background: var(--app-evergreen-800);
+	background: var(--mantine-color-evergreen-8);
 	color: var(--app-canvas-strong);
+	border-radius: var(--m3-radius-pill);
 }
+
 .habits-eyebrow,
 .habits-kicker {
-	font-size: 10px;
+	font-size: 11px;
 	font-weight: 800;
 	letter-spacing: 0.14em;
-	color: var(--app-evergreen-600);
+	color: var(--mantine-color-evergreen-6);
+	text-transform: uppercase;
 }
+
 .habits-title,
 .today-panel-title,
 .insight-panel-title,
@@ -432,13 +492,15 @@ body {
 .consistency-title,
 .modal-title {
 	font-family: ZillaSlab, Georgia, serif;
-	font-weight: 400;
+	font-weight: 500;
 	letter-spacing: -0.025em;
 }
+
 .habits-title {
 	font-size: clamp(30px, 4vw, 48px);
 	line-height: 1.06;
 }
+
 .habits-subtitle {
 	margin-top: 7px;
 	font-size: 14px;
@@ -446,18 +508,20 @@ body {
 }
 
 .habits-add-button {
-	background: var(--app-evergreen-800);
-	border-radius: var(--app-radius-control);
+	background: var(--mantine-color-evergreen-8);
+	border-radius: var(--m3-radius-pill);
 	box-shadow: 0 8px 18px rgb(23 61 53 / 16%);
 	transition:
-		transform 160ms var(--app-ease-out),
-		box-shadow 160ms ease;
+		transform 160ms var(--m3-ease-spatial-fast),
+		box-shadow 160ms var(--m3-ease-effects);
 }
+
 .habits-add-button:hover {
-	background: var(--app-evergreen-700);
+	background: var(--mantine-color-evergreen-7);
 	transform: translateY(-1px);
 	box-shadow: 0 10px 22px rgb(23 61 53 / 22%);
 }
+
 .habits-add-button:active {
 	transform: scale(0.97);
 }
@@ -473,6 +537,7 @@ body {
 		var(--app-surface-muted) 100%
 	);
 }
+
 .today-panel-art {
 	position: absolute;
 	width: 280px;
@@ -486,14 +551,17 @@ body {
 		inset 0 0 0 30px rgb(47 111 97 / 4%),
 		inset 0 0 0 66px rgb(47 111 97 / 5%);
 }
+
 .today-panel-heading {
 	position: relative;
 }
+
 .today-panel-title {
 	font-size: 31px;
 	line-height: 1.08;
 	margin-top: 3px;
 }
+
 .habits-empty {
 	min-height: 245px;
 	justify-content: center;
@@ -507,35 +575,41 @@ body {
 	background: color-mix(in srgb, var(--app-surface-raised) 78%, transparent);
 	border-color: var(--app-border);
 	transition:
-		transform 180ms var(--app-ease-out),
-		border-color 180ms ease,
-		box-shadow 180ms ease;
-	animation: habit-enter 300ms both var(--app-ease-out);
+		transform 180ms var(--m3-ease-spatial),
+		border-color 180ms var(--m3-ease-effects),
+		box-shadow 180ms var(--m3-ease-effects);
+	animation: habit-enter 300ms both var(--m3-ease-effects);
 }
+
 .habit-row:hover {
 	transform: translateX(3px);
 	border-color: color-mix(in srgb, var(--habit-color), #ffffff 50%);
 	box-shadow: 0 8px 20px rgb(28 54 44 / 6%);
 }
+
 .habit-row-complete {
 	background: color-mix(
 		in srgb,
-		var(--app-evergreen-100),
+		var(--mantine-color-evergreen-1),
 		var(--app-surface-raised) 42%
 	);
 }
+
 .habit-row-copy {
 	flex: 1;
 	min-width: 0;
 }
+
 .habit-name {
-	transition: color 160ms ease;
+	transition: color 160ms var(--m3-ease-effects);
 }
+
 .habit-row-complete .habit-name {
 	color: var(--app-ink-muted);
 	text-decoration: line-through;
 	text-decoration-thickness: 1px;
 }
+
 .habit-check {
 	display: grid;
 	place-items: center;
@@ -547,13 +621,15 @@ body {
 	background: transparent;
 	color: white;
 	transition:
-		transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
-		background 160ms ease;
+		transform 160ms var(--m3-ease-spatial-fast),
+		background 160ms var(--m3-ease-effects);
 }
+
 .habit-check:hover {
 	transform: scale(1.08);
 	background: color-mix(in srgb, var(--habit-color), white 72%);
 }
+
 .habit-row-complete .habit-check {
 	background: var(--habit-color);
 }
@@ -563,21 +639,25 @@ body {
 	border-color: var(--app-border);
 	background: var(--app-surface-raised);
 }
+
 .insight-panel-title {
 	font-size: 26px;
 	line-height: 1.08;
 	margin-top: 4px;
 }
+
 .streak-callout {
 	display: flex;
 	align-items: center;
 	gap: 11px;
 }
+
 .streak-number {
 	font-family: ZillaSlab, Georgia, serif;
 	font-size: 29px;
 	line-height: 1;
 }
+
 .habit-garden-mini {
 	display: flex;
 	align-items: end;
@@ -586,6 +666,7 @@ body {
 	min-height: 55px;
 	opacity: 0.82;
 }
+
 .habit-garden-mini > :nth-child(2) {
 	color: #326b5a;
 }
@@ -595,23 +676,28 @@ body {
 	border-color: var(--app-border);
 	background: var(--app-surface-raised);
 }
+
 .consistency-panel {
 	grid-column: span 4;
 	border-color: var(--app-border);
 	background: var(--app-surface-muted);
 }
+
 .analytics-title,
 .consistency-title {
 	font-size: 26px;
 	line-height: 1.1;
 	margin-top: 4px;
 }
+
 .week-badge {
-	color: var(--app-evergreen-700);
-	background: var(--app-evergreen-100);
+	color: var(--mantine-color-evergreen-7);
+	background: var(--mantine-color-evergreen-1);
 	text-transform: none;
 	font-weight: 700;
+	border-radius: var(--m3-radius-pill);
 }
+
 .weekly-chart {
 	display: flex;
 	align-items: end;
@@ -619,6 +705,7 @@ body {
 	height: 182px;
 	padding: 8px 4px 0;
 }
+
 .weekly-column {
 	flex: 1;
 	display: flex;
@@ -627,34 +714,38 @@ body {
 	gap: 9px;
 	height: 100%;
 }
+
 .weekly-bar-track {
 	display: flex;
 	align-items: end;
 	flex: 1;
 	width: min(38px, 100%);
-	border-radius: var(--mantine-radius-lg) var(--mantine-radius-lg)
-		var(--mantine-radius-sm) var(--mantine-radius-sm);
+	border-radius: var(--m3-radius-surface) var(--m3-radius-surface)
+		var(--m3-radius-control) var(--m3-radius-control);
 	background: var(--app-surface-muted);
 	overflow: hidden;
 }
+
 .weekly-bar {
 	width: 100%;
-	border-radius: var(--mantine-radius-lg) var(--mantine-radius-lg)
-		var(--mantine-radius-sm) var(--mantine-radius-sm);
+	border-radius: var(--m3-radius-surface) var(--m3-radius-surface)
+		var(--m3-radius-control) var(--m3-radius-control);
 	background: linear-gradient(
 		180deg,
-		var(--app-evergreen-400),
-		var(--app-evergreen-700)
+		var(--mantine-color-evergreen-4),
+		var(--mantine-color-evergreen-7)
 	);
-	transition: height 360ms var(--app-ease-out);
+	transition: height 360ms var(--m3-ease-effects);
 }
+
 .weekly-label {
 	font-size: 11px;
 	font-weight: 700;
 	color: var(--app-ink-faint);
 }
+
 .weekly-label-today {
-	color: var(--app-terracotta-500);
+	color: var(--mantine-color-terracotta-5);
 }
 
 .habit-color-choice {
@@ -666,17 +757,20 @@ body {
 	border-radius: 50%;
 	cursor: pointer;
 	transition:
-		transform 160ms ease,
-		box-shadow 160ms ease;
+		transform 160ms var(--m3-ease-spatial-fast),
+		box-shadow 160ms var(--m3-ease-effects);
 }
+
 .habit-color-choice:hover {
 	transform: scale(1.08);
 }
+
 .habit-color-selected {
 	box-shadow:
 		0 0 0 3px #fff,
 		0 0 0 4px #173d35;
 }
+
 .modal-title {
 	font-size: 25px;
 }
@@ -691,6 +785,11 @@ body {
 		transform: translateY(0);
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                          */
+/* ------------------------------------------------------------------ */
+
 @media (max-width: 62em) {
 	.today-panel,
 	.insight-panel,
@@ -699,39 +798,49 @@ body {
 		grid-column: auto;
 	}
 }
+
 @media (max-width: 38em) {
 	.habits-header {
 		align-items: flex-start;
 		flex-direction: column;
 	}
+
 	.habits-add-button {
 		align-self: stretch;
 	}
+
 	.habits-title {
 		font-size: 34px;
 	}
+
 	.today-panel,
 	.insight-panel,
 	.analytics-panel,
 	.consistency-panel {
 		padding: 20px;
 	}
+
 	.weekly-chart {
 		gap: 10px;
 		height: 152px;
 	}
 }
+
 @media (prefers-reduced-motion: reduce) {
 	.habit-row,
 	.weekly-bar,
 	.habits-add-button,
-	.habit-check {
+	.habit-check,
+	.app-floating-action {
 		transition: none;
 		animation: none;
 	}
 }
 
-/* Dark mode: green is a primary accent, never a background wash. */
+/* ------------------------------------------------------------------ */
+/* Dark mode                                                           */
+/* ------------------------------------------------------------------ */
+
 :root[data-mantine-color-scheme="dark"] .app-workspace {
 	background-image:
 		radial-gradient(
@@ -745,6 +854,7 @@ body {
 			transparent 1.5px
 		);
 }
+
 :root[data-mantine-color-scheme="dark"] .habits-texture {
 	background-image:
 		radial-gradient(
@@ -758,37 +868,49 @@ body {
 			transparent 1.5px
 		);
 }
+
 :root[data-mantine-color-scheme="dark"] .app-eyebrow,
 :root[data-mantine-color-scheme="dark"] .habits-eyebrow,
 :root[data-mantine-color-scheme="dark"] .habits-kicker {
-	color: var(--app-evergreen-300);
+	color: var(--mantine-color-evergreen-3);
 }
+
 :root[data-mantine-color-scheme="dark"] .app-wordmark,
 :root[data-mantine-color-scheme="dark"] .todo-sidebar-heading {
-	color: var(--app-evergreen-300);
+	color: var(--mantine-color-evergreen-3);
 }
+
 :root[data-mantine-color-scheme="dark"] .todo-active-filter {
 	background: var(--app-surface-muted) !important;
-	color: var(--app-evergreen-300);
+	color: var(--mantine-color-evergreen-3);
 }
+
 :root[data-mantine-color-scheme="dark"] .habit-row-complete {
 	background: color-mix(
 		in srgb,
-		var(--app-evergreen-400) 14%,
+		var(--mantine-color-evergreen-4) 14%,
 		var(--app-surface-raised)
 	) !important;
 }
+
 :root[data-mantine-color-scheme="dark"] .week-badge {
-	color: var(--app-evergreen-300);
-	background: color-mix(in srgb, var(--app-evergreen-400) 18%, transparent);
+	color: var(--mantine-color-evergreen-3);
+	background: color-mix(
+		in srgb,
+		var(--mantine-color-evergreen-4) 18%,
+		transparent
+	);
 }
+
 :root[data-mantine-color-scheme="dark"] .habits-mark {
 	background: var(--app-surface-muted);
-	color: var(--app-evergreen-300);
+	color: var(--mantine-color-evergreen-3);
 }
+
 :root[data-mantine-color-scheme="dark"] .app-header {
 	box-shadow: 0 4px 14px rgb(0 0 0 / 25%);
 }
+
 :root[data-mantine-color-scheme="dark"]
 	.app-header
 	.mantine-SegmentedControl-indicator {
