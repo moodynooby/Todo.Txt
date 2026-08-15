@@ -13,7 +13,6 @@ const ColorDots = ({ selected, onChange }: ColorDotsProps) => (
 			<ActionIcon
 				key={c}
 				variant="filled"
-				radius="xl"
 				size="xs"
 				style={{
 					backgroundColor: c,

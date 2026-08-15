@@ -26,7 +26,8 @@ export function getHabitStreak(habit: Habit): number {
 	const completed = new Set(habit.completedDates);
 	const cursor = new Date();
 	cursor.setHours(0, 0, 0, 0);
-	if (!completed.has(formatLocalDate(cursor))) cursor.setDate(cursor.getDate() - 1);
+	if (!completed.has(formatLocalDate(cursor)))
+		cursor.setDate(cursor.getDate() - 1);
 
 	let streak = 0;
 	while (completed.has(formatLocalDate(cursor))) {
@@ -39,7 +40,8 @@ export function getHabitStreak(habit: Habit): number {
 export function getCompletionRate(habit: Habit, days = 28): number {
 	const dates = getLastDays(days).map(formatLocalDate);
 	return Math.round(
-		(dates.filter((date) => habit.completedDates.includes(date)).length / days) *
+		(dates.filter((date) => habit.completedDates.includes(date)).length /
+			days) *
 			100,
 	);
 }

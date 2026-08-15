@@ -63,7 +63,13 @@ const Sidebar = ({
 
 	if (isCollapsed) {
 		return (
-				<Paper component="aside" className="todo-sidebar app-surface" shadow="sm" radius={0} h="100%">
+			<Paper
+				component="aside"
+				className="todo-sidebar app-surface"
+				shadow="sm"
+				radius={0}
+				h="100%"
+			>
 				<Group justify="center" py="sm">
 					<ActionIcon variant="subtle" size="sm" onClick={onToggle}>
 						<ChevronRight size={16} />
@@ -86,15 +92,20 @@ const Sidebar = ({
 	}
 
 	return (
-			<Paper
-				component="aside"
-				className="todo-sidebar app-surface"
+		<Paper
+			component="aside"
+			className="todo-sidebar app-surface"
 			shadow="sm"
 			radius={0}
 			h="100%"
 			style={{ display: "flex", flexDirection: "column" }}
 		>
-			<Group className="todo-sidebar-heading" justify="space-between" px="md" py="sm">
+			<Group
+				className="todo-sidebar-heading"
+				justify="space-between"
+				px="md"
+				py="sm"
+			>
 				<Group gap="xs">
 					<FilterIcon size={14} />
 					<Text
@@ -124,7 +135,7 @@ const Sidebar = ({
 			<Divider />
 
 			{activeFilter && (
-					<Paper className="todo-active-filter" px="md" py="xs">
+				<Paper className="todo-active-filter" px="md" py="xs">
 					<Group justify="space-between">
 						<Text size="sm">
 							{activeFilter.type === "priority" &&

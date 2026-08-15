@@ -24,7 +24,10 @@
 	overflow: hidden;
 	border-color: var(--app-border) !important;
 	box-shadow: var(--app-shadow-card);
-	transition: transform 180ms var(--app-ease-out), box-shadow 180ms ease, border-color 180ms ease;
+	transition:
+		transform 180ms var(--app-ease-out),
+		box-shadow 180ms ease,
+		border-color 180ms ease;
 }
 
 .NotesPage-noteCard:hover {

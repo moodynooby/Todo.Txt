@@ -17,7 +17,10 @@ function readReminderLog(): Set<string> {
 
 function writeReminderLog(log: Set<string>): void {
 	try {
-		localStorage.setItem(REMINDER_LOG_KEY, JSON.stringify([...log].slice(-200)));
+		localStorage.setItem(
+			REMINDER_LOG_KEY,
+			JSON.stringify([...log].slice(-200)),
+		);
 	} catch {
 		// Storage can be unavailable in private browsing; reminders can still run.
 	}
@@ -28,7 +31,10 @@ export default function HabitReminderManager() {
 
 	useEffect(() => {
 		const checkReminders = () => {
-			if (!("Notification" in window) || Notification.permission !== "granted") {
+			if (
+				!("Notification" in window) ||
+				Notification.permission !== "granted"
+			) {
 				return;
 			}
 

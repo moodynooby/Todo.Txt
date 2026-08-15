@@ -41,11 +41,21 @@ export const theme = createTheme({
 			"ZillaSlab, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
 		fontWeight: "500",
 	},
-	defaultRadius: "lg",
+	radius: {
+		xs: "4px",
+		sm: "8px",
+		md: "12px",
+		lg: "16px",
+		xl: "24px",
+	},
+	defaultRadius: "md",
 	components: {
 		Button: { defaultProps: { radius: "md" } },
 		ActionIcon: { defaultProps: { radius: "md" } },
 		Paper: { defaultProps: { radius: "lg" } },
+		Card: { defaultProps: { radius: "lg" } },
+		Modal: { defaultProps: { radius: "lg" } },
+		ThemeIcon: { defaultProps: { radius: "md" } },
 	},
 });
 

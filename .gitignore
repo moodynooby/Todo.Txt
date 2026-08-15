@@ -14,3 +14,6 @@ tsconfig.tsbuildinfo
 .idea
 /.opencode
 .antigravitycli
+
+# Local Netlify folder
+.netlify

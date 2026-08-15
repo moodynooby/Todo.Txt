@@ -95,10 +95,15 @@ const NotesPage = () => {
 			gap={0}
 			style={{ overflow: "hidden" }}
 		>
-			<Stack className="notes-toolbar app-workspace-shell" p="md" gap="sm" align="center">
-					<TextInput
-						className="app-search-field"
-						maw={600}
+			<Stack
+				className="notes-toolbar app-workspace-shell"
+				p="md"
+				gap="sm"
+				align="center"
+			>
+				<TextInput
+					className="app-search-field"
+					maw={600}
 					w="100%"
 					placeholder="Search notes..."
 					leftSection={<Search size={16} />}
@@ -117,13 +122,12 @@ const NotesPage = () => {
 					onChange={(e) => setSearch(e.currentTarget.value)}
 				/>
 
-					<Affix position={{ bottom: 24, right: 24 }}>
-						<ActionIcon
-							className="app-floating-action"
-							size="xl"
-							radius="xl"
-							variant="filled"
-							color="evergreen"
+				<Affix position={{ bottom: 24, right: 24 }}>
+					<ActionIcon
+						className="app-floating-action"
+						size="xl"
+						variant="filled"
+						color="evergreen"
 						onClick={handleAddNote}
 						aria-label="Add note"
 					>
@@ -177,9 +181,9 @@ const NotesPage = () => {
 				)}
 
 				{!hasContent && !hasArchived && (
-						<Stack
-							className="notes-empty-state app-surface-muted"
-							align="center"
+					<Stack
+						className="notes-empty-state app-surface-muted"
+						align="center"
 						justify="center"
 						py={60}
 						px={20}
@@ -210,7 +214,7 @@ const NotesPage = () => {
 								alignItems: "center",
 								gap: 6,
 								padding: "8px 4px",
-								borderRadius: 4,
+								borderRadius: "var(--mantine-radius-xs)",
 								color: "var(--mantine-color-dimmed)",
 								cursor: "pointer",
 							}}

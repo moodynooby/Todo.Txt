@@ -20,17 +20,17 @@ import { TimerProvider, useTimerContext } from "@/context/TimerContext";
 import { TodoProvider, useTodoContext } from "@/context/TodoContext";
 import { useViewContext, ViewProvider } from "@/context/ViewContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
-import Timer from "@/features/timer/Timer";
 import HabitReminderManager from "@/features/habits/HabitReminderManager";
+import Timer from "@/features/timer/Timer";
 import { playBeep } from "@/lib/beep";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
-import NotesPage from "@/pages/NotesPage";
+import { readHabitsBackup } from "@/lib/habitsBackup";
 import HabitsPage from "@/pages/HabitsPage";
+import NotesPage from "@/pages/NotesPage";
 import TodoPage from "@/pages/TodoPage";
 import type { ExcalidrawData } from "@/types/sync";
 import type { Filter, ParsedTodoContent, Task } from "@/types/todo";
 import { getToday } from "@/utils/dateUtils";
-import { readHabitsBackup } from "@/lib/habitsBackup";
 import { parseTodoContent } from "@/utils/todoParser";
 
 const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
@@ -227,8 +227,8 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 								/>
 							</Suspense>
 						)}
-							{viewMode === "notes" && <NotesPage />}
-							{viewMode === "habits" && <HabitsPage />}
+						{viewMode === "notes" && <NotesPage />}
+						{viewMode === "habits" && <HabitsPage />}
 						{viewMode === "todo" && (
 							<TodoPage
 								taskData={taskData}
@@ -239,9 +239,9 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 								onAiTools={handleAiTools}
 							/>
 						)}
-						</ErrorBoundary>
-						<HabitReminderManager />
-					</AppShell.Main>
+					</ErrorBoundary>
+					<HabitReminderManager />
+				</AppShell.Main>
 			</AppShell>
 
 			{timersState.timers.map((timer) => (
@@ -276,14 +276,14 @@ const App = () => {
 			>
 				<NotesProvider initialNotes={initialNotes}>
 					<HabitsProvider initialHabits={initialHabits}>
-					<TimerProvider>
-						<ViewProvider>
-							<AppContent
-								activeFilter={activeFilter}
-								onFilterChange={setActiveFilter}
-							/>
-						</ViewProvider>
-					</TimerProvider>
+						<TimerProvider>
+							<ViewProvider>
+								<AppContent
+									activeFilter={activeFilter}
+									onFilterChange={setActiveFilter}
+								/>
+							</ViewProvider>
+						</TimerProvider>
 					</HabitsProvider>
 				</NotesProvider>
 			</TodoProvider>

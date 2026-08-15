@@ -141,7 +141,6 @@ export const CollapsedPriorityButton = ({
 			variant={isActive ? "filled" : "light"}
 			color={config.color}
 			size="lg"
-			radius="md"
 			onClick={onClick}
 		>
 			<Text fw={700} size="sm">

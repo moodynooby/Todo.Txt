@@ -69,7 +69,6 @@ const TipsPanel = () => (
 					variant="light"
 					color={tip.color}
 					size="sm"
-					radius="md"
 					style={{ marginTop: 2, flexShrink: 0 }}
 				>
 					{tip.icon}

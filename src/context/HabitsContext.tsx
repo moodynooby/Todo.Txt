@@ -29,7 +29,10 @@ export interface HabitsState {
 export type HabitsAction =
 	| { type: "SET_HABITS"; payload: Habit[] }
 	| { type: "ADD_HABIT"; payload: HabitDraft }
-	| { type: "UPDATE_HABIT"; payload: { id: string; updates: Partial<HabitDraft> } }
+	| {
+			type: "UPDATE_HABIT";
+			payload: { id: string; updates: Partial<HabitDraft> };
+	  }
 	| { type: "TOGGLE_COMPLETION"; payload: { id: string; date: string } }
 	| { type: "ARCHIVE_HABIT"; payload: string }
 	| { type: "DELETE_HABIT"; payload: string };
@@ -42,7 +45,10 @@ export function habitsReducer(
 		case "SET_HABITS":
 			return { ...state, habits: action.payload };
 		case "ADD_HABIT":
-			return { ...state, habits: [...state.habits, createHabit(action.payload)] };
+			return {
+				...state,
+				habits: [...state.habits, createHabit(action.payload)],
+			};
 		case "UPDATE_HABIT":
 			return {
 				...state,
@@ -61,7 +67,9 @@ export function habitsReducer(
 					return {
 						...habit,
 						completedDates: isComplete
-							? habit.completedDates.filter((date) => date !== action.payload.date)
+							? habit.completedDates.filter(
+									(date) => date !== action.payload.date,
+								)
 							: [...habit.completedDates, action.payload.date],
 						updatedAt: Date.now(),
 					};
@@ -86,10 +94,10 @@ export function habitsReducer(
 	}
 }
 
-const HabitsContext = createContext<
-	| { state: HabitsState; dispatchHabits: (action: HabitsAction) => void }
-	| null
->(null);
+const HabitsContext = createContext<{
+	state: HabitsState;
+	dispatchHabits: (action: HabitsAction) => void;
+} | null>(null);
 
 export function useHabitsContext() {
 	const context = useContext(HabitsContext);

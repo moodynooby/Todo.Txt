@@ -137,12 +137,11 @@ const TodoPage = ({
 				/>
 			</Flex>
 
-				{isMobile ? (
-					<ActionIcon
-						className="app-floating-action todo-filter-action"
-						variant="filled"
+			{isMobile ? (
+				<ActionIcon
+					className="app-floating-action todo-filter-action"
+					variant="filled"
 					size="xl"
-					radius="xl"
 					onClick={openDrawer}
 					aria-label="Open Filters"
 					style={{
@@ -162,12 +161,11 @@ const TodoPage = ({
 					duration={300}
 					timingFunction="cubic-bezier(0.4, 0, 0.2, 1)"
 				>
-						{(transitionStyles) => (
-							<ActionIcon
-								className="app-floating-action todo-filter-action"
-								variant="filled"
+					{(transitionStyles) => (
+						<ActionIcon
+							className="app-floating-action todo-filter-action"
+							variant="filled"
 							size="xl"
-							radius="xl"
 							onClick={onToggleSidebar}
 							aria-label="Toggle Filters"
 							style={{
