@@ -52,7 +52,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Tauri system dependencies
-        uses: tauri-apps/gh-action@04b21727991867268f19b4303939e97039368521
+        uses: tauri-apps/tauri-action@v1
         with:
           args: linux
 
@@ -101,7 +101,7 @@ jobs:
 
       - name: Install Tauri dependencies (Linux)
         if: matrix.platform == 'ubuntu-22.04'
-        uses: tauri-apps/gh-action@04b21727991867268f19b4303939e97039368521
+        uses: tauri-apps/tauri-action@v1
         with:
           args: linux
 
@@ -169,7 +169,7 @@ jobs:
           add-to-path: false
 
       - name: Install Tauri system dependencies (Linux needs webkit2gtk)
-        uses: tauri-apps/gh-action@04b21727991867268f19b4303939e97039368521
+        uses: tauri-apps/tauri-action@v1
         with:
           args: linux
 
