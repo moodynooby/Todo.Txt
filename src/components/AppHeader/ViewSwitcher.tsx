@@ -7,6 +7,18 @@ import DrawingIcon from "@/assets/3dicons-painting-kit-dynamic-color.webp";
 import TicIcon from "@/assets/3dicons-tick-dynamic-color.webp";
 import { useViewContext } from "@/context/ViewContext";
 
+const TABS = [
+	{ value: "todo", label: "Todo", src: TicIcon, tooltip: "Todo List" },
+	{ value: "habits", label: "Habits", src: BroomIcon, tooltip: "Habits" },
+	{ value: "notes", label: "Notes", src: NotebookIcon, tooltip: "Notes" },
+	{
+		value: "excalidraw",
+		label: "Draw",
+		src: DrawingIcon,
+		tooltip: "Drawing Canvas",
+	},
+];
+
 const ViewSwitcher = () => {
 	const { state: viewState, dispatchView } = useViewContext();
 	const viewMode = viewState.viewMode;
@@ -17,42 +29,27 @@ const ViewSwitcher = () => {
 		<SegmentedControl
 			value={viewMode}
 			onChange={setViewMode}
-			style={{ minWidth: 220, flexShrink: 0 }}
-			data={[
-				{
-					value: "todo",
-					label: (
-						<Tooltip label="Todo List" position="bottom">
-							<Image src={TicIcon} w={24} h={24} alt="Todo list" />
-						</Tooltip>
-					),
-				},
-				{
-					value: "habits",
-					label: (
-						<Tooltip label="Habits" position="bottom">
-							<Image src={BroomIcon} w={24} h={24} alt="Habits" />
-						</Tooltip>
-					),
-				},
-				{
-					value: "notes",
-					label: (
-						<Tooltip label="Notes" position="bottom">
-							<Image src={NotebookIcon} w={24} h={24} alt="Notes" />
-						</Tooltip>
-					),
-				},
-				{
-					value: "excalidraw",
-					label: (
-						<Tooltip label="Drawing Canvas" position="bottom">
-							<Image src={DrawingIcon} w={24} h={24} alt="Drawing canvas" />
-						</Tooltip>
-					),
-				},
-			]}
-			size="xs"
+			style={{ minWidth: 320, flexShrink: 0 }}
+			size="sm"
+			data={TABS.map((tab) => ({
+				value: tab.value,
+				label: (
+					<Tooltip key={tab.value} label={tab.tooltip} position="bottom">
+						<div
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: 6,
+								whiteSpace: "nowrap",
+							}}
+						>
+							<Image src={tab.src} w={18} h={18} alt={tab.label} />
+							<span style={{ lineHeight: 1 }}>{tab.label}</span>
+						</div>
+					</Tooltip>
+				),
+			}))}
 		/>
 	);
 };
