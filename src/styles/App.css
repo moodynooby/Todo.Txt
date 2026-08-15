@@ -874,9 +874,15 @@ body {
 	/* Mobile header: compact, no leftover reserved space on the right.
 	 * The body clears the bottom nav instead of the header, so the header
 	 * keeps its natural height with tight side padding. */
+	/* Mobile header: keep symmetric padding so the icon row sits centered
+	 * within its bar, and vertically center the left group. */
 	.app-header-inner {
 		padding-left: 12px !important;
-		padding-right: 8px !important;
+		padding-right: 12px !important;
+	}
+
+	.app-header-inner > .mantine-Group-root:first-child {
+		align-items: center;
 	}
 
 	.habits-header {

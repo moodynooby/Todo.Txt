@@ -5,6 +5,7 @@ import { useTimerContext } from "@/context/TimerContext";
 import { useViewContext } from "@/context/ViewContext";
 import HeaderActions from "./HeaderActions";
 import ViewSwitcher from "./ViewSwitcher";
+import ViewSwitcher3D from "./ViewSwitcher3D";
 
 /**
  * M3 Expressive app header.
@@ -18,9 +19,14 @@ const AppHeader = () => {
 	const viewMode = viewState.viewMode;
 	const { dispatchTimer } = useTimerContext();
 
-	/* On mobile the M3 bottom navigation bar replaces the segmented
-	 * switcher, so the header can stay compact and never overflow. */
-	const isMobile = useMediaQuery("(max-width: 767px)");
+	/* Below 38em the M3 bottom navigation bar takes over and the header
+	 * only keeps the brand + essential actions. Between 38em and md the
+	 * 3D-icon pill switcher lives in the header (centered in its bar).
+	 * Above md the full segmented switcher is used. */
+	const isNarrow = useMediaQuery("(max-width: 38em)");
+	const isCompact = useMediaQuery(
+		"(min-width: 38.0625em) and (max-width: 61.9375em)",
+	);
 
 	return (
 		<Paper
@@ -35,7 +41,7 @@ const AppHeader = () => {
 				className="app-header-inner"
 				h="100%"
 				justify="space-between"
-				px={isMobile ? "md" : "lg"}
+				px={isNarrow ? "md" : "lg"}
 				wrap="nowrap"
 			>
 				<Group gap="sm">
@@ -43,7 +49,8 @@ const AppHeader = () => {
 					<Title order={4} className="app-wordmark">
 						T0do.Txt
 					</Title>
-					{!isMobile && <ViewSwitcher />}
+					{isCompact && <ViewSwitcher3D />}
+					{!isNarrow && !isCompact && <ViewSwitcher />}
 				</Group>
 
 				<Group gap="xs">
