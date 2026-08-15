@@ -11,17 +11,18 @@ import { getEditorExtensions } from "@/utils/editorExtensions";
 
 export interface TodoState {
 	content: string;
+	updated: number;
 }
 
 export type TodoAction = {
 	type: "SET_CONTENT";
-	payload: { content: string; timestamp: number };
+	payload: { content: string; timestamp?: number };
 };
 
 export function todoReducer(state: TodoState, action: TodoAction): TodoState {
 	switch (action.type) {
 		case "SET_CONTENT":
-			return { ...state, content: action.payload.content };
+			return { ...state, content: action.payload.content, updated: Date.now() };
 		default:
 			return state;
 	}
@@ -29,6 +30,7 @@ export function todoReducer(state: TodoState, action: TodoAction): TodoState {
 
 export const initialTodoState: TodoState = {
 	content: "",
+	updated: 0,
 };
 
 interface TodoContextValue {
@@ -65,7 +67,6 @@ export function TodoProvider({
 	});
 
 	const lastMarkdownRef = useRef(state.content);
-
 	const editor = useEditor({
 		extensions: getEditorExtensions({
 			placeholder: "Start writing your todos...",
@@ -75,12 +76,22 @@ export function TodoProvider({
 		contentType: "markdown",
 		onUpdate: ({ editor: currentEditor }) => {
 			const md = currentEditor.getMarkdown();
-			lastMarkdownRef.current = md;
+			// BUG FIX (previously silent): editor changes were only stored in a
+			// local ref and never dispatched, so remote sync / backups saw stale
+			// content while the editor looked up to date. Dispatching here keeps
+			// the persisted state and the editor in sync.
+			if (md !== lastMarkdownRef.current) {
+				lastMarkdownRef.current = md;
+				dispatchTodo({ type: "SET_CONTENT", payload: { content: md } });
+			}
 		},
 		immediatelyRender: false,
 	});
 
 	useEffect(() => {
+		// Only push remote/local state into the editor when the incoming
+		// content actually differs from what the editor already holds; the
+		// editor remains the single source of truth while the user types.
 		if (editor && state.content !== lastMarkdownRef.current) {
 			lastMarkdownRef.current = state.content;
 			editor.commands.setContent(state.content || "", {

@@ -14,7 +14,7 @@ import AppHeader from "@/components/AppHeader/AppHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotesProvider, readNotesBackup } from "@/context/NotesContext";
-import { SyncProvider } from "@/context/SyncContext";
+import { readContentBackupJson, SyncProvider } from "@/context/SyncContext";
 import { TimerProvider, useTimerContext } from "@/context/TimerContext";
 import { TodoProvider, useTodoContext } from "@/context/TodoContext";
 import { useViewContext, ViewProvider } from "@/context/ViewContext";
@@ -250,16 +250,8 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 	);
 }
 
-const readContentBackup = (): string | null => {
-	try {
-		return localStorage.getItem("todo_content_backup");
-	} catch {
-		return null;
-	}
-};
-
 const App = () => {
-	const initialContent = readContentBackup() ?? "";
+	const initialContent = readContentBackupJson() ?? "";
 	const initialNotes = readNotesBackup();
 	const [activeFilter, setActiveFilter] = useState<Filter | null>(null);
 	const handleTagFilterClick = useCallback((type: string, value: string) => {
