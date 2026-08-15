@@ -67,6 +67,7 @@ const TodoPage = ({
 
 	return (
 		<Flex
+			className="app-workspace todo-workspace"
 			direction="row"
 			style={{
 				flex: 1,
@@ -77,6 +78,7 @@ const TodoPage = ({
 		>
 			{!isMobile && (
 				<Flex
+					className="todo-sidebar-frame"
 					direction="column"
 					style={{
 						flexShrink: 0,
@@ -114,7 +116,11 @@ const TodoPage = ({
 				/>
 			</Drawer>
 
-			<Flex direction="column" style={{ flex: 1, minWidth: 0 }}>
+			<Flex
+				className="todo-editor-frame"
+				direction="column"
+				style={{ flex: 1, minWidth: 0 }}
+			>
 				<Editor
 					editor={editor}
 					toolbarVariant="full"
@@ -131,9 +137,10 @@ const TodoPage = ({
 				/>
 			</Flex>
 
-			{isMobile ? (
-				<ActionIcon
-					variant="filled"
+				{isMobile ? (
+					<ActionIcon
+						className="app-floating-action todo-filter-action"
+						variant="filled"
 					size="xl"
 					radius="xl"
 					onClick={openDrawer}
@@ -155,9 +162,10 @@ const TodoPage = ({
 					duration={300}
 					timingFunction="cubic-bezier(0.4, 0, 0.2, 1)"
 				>
-					{(transitionStyles) => (
-						<ActionIcon
-							variant="filled"
+						{(transitionStyles) => (
+							<ActionIcon
+								className="app-floating-action todo-filter-action"
+								variant="filled"
 							size="xl"
 							radius="xl"
 							onClick={onToggleSidebar}

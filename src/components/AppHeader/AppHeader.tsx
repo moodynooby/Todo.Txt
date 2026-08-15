@@ -13,15 +13,16 @@ const AppHeader = () => {
 	return (
 		<Paper
 			component="header"
+			className="app-header"
 			shadow="sm"
 			radius={0}
 			h="100%"
 			style={{ overflowX: "auto" }}
 		>
-			<Group h="100%" justify="space-between" px="lg" wrap="nowrap">
+			<Group className="app-header-inner" h="100%" justify="space-between" px="lg" wrap="nowrap">
 				<Group gap="sm">
 					<Image src="/todotxt2.svg" alt="Logo" w={28} h={28} />
-					<Title order={4} c="var(--mantine-primary-color-6)">
+					<Title order={4} className="app-wordmark">
 						T0do.Txt
 					</Title>
 					<ViewSwitcher />

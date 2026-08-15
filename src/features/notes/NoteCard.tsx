@@ -25,11 +25,11 @@ const NoteCard = ({
 	onColorChange,
 }: NoteCardProps) => (
 	<Card
-		radius="md"
+			radius="lg"
 		withBorder
 		shadow="sm"
 		padding="xs"
-		className="NotesPage-noteCard"
+			className="NotesPage-noteCard app-surface"
 		style={{
 			backgroundColor: note.color,
 			color: "#000",

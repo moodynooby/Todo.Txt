@@ -89,10 +89,16 @@ const NotesPage = () => {
 	const hasArchived = archivedNotes.length > 0;
 
 	return (
-		<Stack h="100%" gap={0} style={{ overflow: "hidden" }}>
-			<Stack p="md" gap="sm" align="center">
-				<TextInput
-					maw={600}
+		<Stack
+			className="app-workspace notes-workspace"
+			h="100%"
+			gap={0}
+			style={{ overflow: "hidden" }}
+		>
+			<Stack className="notes-toolbar app-workspace-shell" p="md" gap="sm" align="center">
+					<TextInput
+						className="app-search-field"
+						maw={600}
 					w="100%"
 					placeholder="Search notes..."
 					leftSection={<Search size={16} />}
@@ -111,12 +117,13 @@ const NotesPage = () => {
 					onChange={(e) => setSearch(e.currentTarget.value)}
 				/>
 
-				<Affix position={{ bottom: 24, right: 24 }}>
-					<ActionIcon
-						size="xl"
-						radius="xl"
-						variant="filled"
-						color="blue"
+					<Affix position={{ bottom: 24, right: 24 }}>
+						<ActionIcon
+							className="app-floating-action"
+							size="xl"
+							radius="xl"
+							variant="filled"
+							color="evergreen"
 						onClick={handleAddNote}
 						aria-label="Add note"
 					>
@@ -125,7 +132,11 @@ const NotesPage = () => {
 				</Affix>
 			</Stack>
 
-			<Box style={{ flex: 1, overflowY: "auto" }} p="md">
+			<Box
+				className="notes-content app-workspace-shell"
+				style={{ flex: 1, overflowY: "auto" }}
+				p="md"
+			>
 				{pinned.length > 0 && (
 					<div>
 						<SectionHeading>Pinned</SectionHeading>
@@ -166,8 +177,9 @@ const NotesPage = () => {
 				)}
 
 				{!hasContent && !hasArchived && (
-					<Stack
-						align="center"
+						<Stack
+							className="notes-empty-state app-surface-muted"
+							align="center"
 						justify="center"
 						py={60}
 						px={20}

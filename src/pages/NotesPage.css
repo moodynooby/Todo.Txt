@@ -3,17 +3,33 @@
 	column-gap: 16px;
 }
 
+.notes-workspace {
+	background: var(--app-canvas);
+}
+
+.notes-toolbar {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	background: linear-gradient(180deg, var(--app-canvas-strong), transparent);
+}
+
+.notes-content {
+	width: 100%;
+}
+
 .NotesPage-noteCard {
 	break-inside: avoid;
 	margin-bottom: 16px;
 	overflow: hidden;
-	transition: box-shadow 0.15s ease;
+	border-color: var(--app-border) !important;
+	box-shadow: var(--app-shadow-card);
+	transition: transform 180ms var(--app-ease-out), box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .NotesPage-noteCard:hover {
-	box-shadow:
-		0 3px 8px rgba(0, 0, 0, 0.15),
-		0 2px 4px rgba(0, 0, 0, 0.1);
+	transform: translateY(-2px);
+	box-shadow: var(--app-shadow-card-hover);
 }
 
 .NotesPage-noteCard-editor {
@@ -68,4 +84,17 @@
 	font-weight: 600;
 	font-size: 14px;
 	color: var(--note-textarea-color);
+}
+
+.notes-empty-state {
+	max-width: 380px;
+	margin: 52px auto;
+	border: 1px dashed var(--app-border-strong);
+	border-radius: var(--app-radius-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.NotesPage-noteCard {
+		transition: none;
+	}
 }
