@@ -4,8 +4,11 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
+import net.todotxt.app.R
+import java.time.DayOfWeek
 
 /**
  * Week Grid widget (4x2/4x3).
@@ -61,5 +64,11 @@ class HabitsWeekGridWidgetProvider : AppWidgetProvider() {
             WidgetHelpers.launchAppIntent(context),
         )
         return views
+    }
+
+    companion object {
+        fun weekDays(): List<String> {
+            return listOf("M", "T", "W", "T", "F", "S", "S")
+        }
     }
 }

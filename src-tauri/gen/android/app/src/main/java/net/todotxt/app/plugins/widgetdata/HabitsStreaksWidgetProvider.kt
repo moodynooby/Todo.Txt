@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
+import net.todotxt.app.R
 
 /**
  * Habit Streaks widget (collection).

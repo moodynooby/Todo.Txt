@@ -8,7 +8,8 @@ import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
-import java.time.DayOfWeek
+import net.todotxt.app.R
+import java.util.Calendar
 import java.time.LocalDate
 
 /**
@@ -22,7 +23,7 @@ import java.time.LocalDate
 class HabitsHeatmapRemoteViewsService : RemoteViewsService() {
 
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory =
-        HeatmapViewsFactory(applicationContext, intent.getStringExtra(EXTRA_HABIT_ID) ?: "")
+        HeatmapViewsFactory(applicationContext, intent.getStringExtra(HabitsHeatmapWidgetProvider.EXTRA_HABIT_ID) ?: "")
 }
 
 internal class HeatmapViewsFactory(
@@ -39,7 +40,9 @@ internal class HeatmapViewsFactory(
 
     private fun reload() {
         habit = WidgetDataStore(context).read().habits.find { it.id == habitId }
-        todayRow = LocalDate.now().dayOfWeek.value - 1
+        val cal = Calendar.getInstance()
+        val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+        todayRow = (dayOfWeek + 5) % 7 // Mon=0 ... Sun=6
     }
 
     /** 7 weekday rows (Mon = 0). */
@@ -60,10 +63,6 @@ internal class HeatmapViewsFactory(
             val alpha = if (completed) levels.last() else levels.first()
 
             runCatching {
-                views.setBackground(cellId, GradientDrawable(
-                    GradientDrawable.RECTANGLE, intArrayOf(withAlpha(color, alpha)),
-                ).apply { cornerRadius = 6f })
-            }.onFailure {
                 views.setInt(cellId, "setBackgroundColor", withAlpha(color, alpha))
             }
 
@@ -96,6 +95,8 @@ internal class HeatmapViewsFactory(
     override fun getViewTypeCount(): Int = 1
     override fun getItemId(position: Int): Long = position.toLong()
     override fun hasStableIds(): Boolean = true
+
+    override fun onDestroy() {}
 
     companion object {
         val CELL_IDS = intArrayOf(

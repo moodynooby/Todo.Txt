@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
  * rendering accurate even after the app is force-killed.
  */
 @TauriPlugin
-class WidgetDataPlugin(activity: android.app.Activity) : Plugin(activity) {
+class WidgetDataPlugin(private val activity: android.app.Activity) : Plugin(activity) {
 
     private val context: Context get() = activity.applicationContext
     private val store by lazy { WidgetDataStore(context) }
@@ -40,7 +40,7 @@ class WidgetDataPlugin(activity: android.app.Activity) : Plugin(activity) {
                 refreshWidgets(context)
                 invoke.resolve()
             } catch (error: Throwable) {
-                invoke.reject(error.message ?: "Failed to write widget data", error)
+                invoke.reject(error.message ?: "Failed to write widget data", error as? Exception ?: Exception(error))
             }
         }
     }
@@ -79,8 +79,8 @@ class WidgetDataPlugin(activity: android.app.Activity) : Plugin(activity) {
 
 @InvokeArg
 internal class PushTaskArgs {
-    lateinit var id: Long
-    lateinit var text: String
+    var id: Long = 0L
+    var text: String = ""
     var done: Boolean = false
     var due: String? = null
 }

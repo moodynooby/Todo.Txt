@@ -24,13 +24,13 @@ class WidgetActionsReceiver : BroadcastReceiver() {
             val prefs = context.getSharedPreferences(
                 "native_pending_actions", Context.MODE_PRIVATE,
             )
-            val taskId = intent.getStringExtra(EXTRA_TASK_ID)
+            val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1L)
             val habitId = intent.getStringExtra(EXTRA_HABIT_ID)
 
             val payload = when (intent.action) {
-                ACTION_MARK_DONE_TODO -> """{"kind":"mark-done-todo","line":$taskId}"""
-                ACTION_MARK_DONE_HABIT -> """{"kind":"mark-done-habit","id":"$habitId"}"""
-                ACTION_MARK_UNDONE_TODO -> """{"kind":"undo-todo","line":$taskId}"""
+                ACTION_MARK_DONE_TODO -> if (taskId != -1L) """{"kind":"mark-done-todo","line":$taskId}""" else return@Thread
+                ACTION_MARK_DONE_HABIT -> if (habitId != null) """{"kind":"mark-done-habit","id":"$habitId"}""" else return@Thread
+                ACTION_MARK_UNDONE_TODO -> if (taskId != -1L) """{"kind":"undo-todo","line":$taskId}""" else return@Thread
                 else -> return@Thread
             }
 

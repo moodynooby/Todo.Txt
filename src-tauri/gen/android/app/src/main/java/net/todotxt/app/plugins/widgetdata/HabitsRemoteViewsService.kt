@@ -7,6 +7,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import net.todotxt.app.R
 
 /**
  * Collection adapter for the Habit Streaks widget.
@@ -57,19 +58,11 @@ internal class HabitsViewsFactory(
         )
 
         // Tint the color dot from the habit's palette color.
-        runCatching {
-            val dot = GradientDrawable(
-                GradientDrawable.OVAL,
-                intArrayOf(WidgetHelpers.parseColor(habit.color)),
-            )
-            views.setBackground(R.id.habit_dot, dot)
-        }.onFailure {
-            views.setInt(
-                R.id.habit_dot,
-                "setColor",
-                WidgetHelpers.parseColor(habit.color),
-            )
-        }
+        views.setInt(
+            R.id.habit_dot,
+            "setBackgroundColor",
+            WidgetHelpers.parseColor(habit.color),
+        )
 
         if (habit.completedToday) {
             views.setViewVisibility(R.id.habit_done, android.view.View.GONE)
@@ -81,7 +74,7 @@ internal class HabitsViewsFactory(
                     RemoteViews.RemoteResponse.fromPendingIntent(doneIntent),
                 )
             } else {
-                views.setOnClickFillInIntent(R.id.habit_done, doneIntent)
+                views.setOnClickFillInIntent(R.id.habit_done, WidgetHelpers.markHabitDoneFillInIntent(habit.id))
             }
         }
         return views
@@ -92,7 +85,9 @@ internal class HabitsViewsFactory(
     override fun getViewTypeCount(): Int = 1
 
     override fun getItemId(position: Int): Long =
-        habits.getOrElse(position) { position.toLong() }.id.hashCode().toLong()
+        habits.getOrNull(position)?.id?.hashCode()?.toLong() ?: position.toLong()
 
     override fun hasStableIds(): Boolean = true
+
+    override fun onDestroy() {}
 }

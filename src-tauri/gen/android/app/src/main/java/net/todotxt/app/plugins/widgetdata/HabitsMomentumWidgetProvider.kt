@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.view.View
 import android.widget.RemoteViews
+import net.todotxt.app.R
 
 /**
  * Momentum widget (2x1 hero).

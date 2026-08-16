@@ -21,24 +21,30 @@ internal object WidgetHelpers {
 
     /** Fill-in intent for a todo row's checkbox (collection widget). */
     fun markDoneIntent(context: Context, taskId: Long): PendingIntent {
-        val intent = Intent(context, WidgetActionsReceiver::class.java).apply {
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        return PendingIntent.getBroadcast(context, taskId.toInt(), markDoneFillInIntent(taskId), flags)
+    }
+
+    fun markDoneFillInIntent(taskId: Long): Intent {
+        return Intent().apply {
             action = WidgetActionsReceiver.ACTION_MARK_DONE_TODO
             putExtra(WidgetActionsReceiver.EXTRA_TASK_ID, taskId)
             data = Uri.parse("todotxt://widget/mark-done/$taskId")
         }
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getBroadcast(context, taskId.toInt(), intent, flags)
     }
 
     /** Fill-in intent for a habit row's today-done checkbox. */
     fun markHabitDoneIntent(context: Context, habitId: String): PendingIntent {
-        val intent = Intent(context, WidgetActionsReceiver::class.java).apply {
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        return PendingIntent.getBroadcast(context, habitId.hashCode(), markHabitDoneFillInIntent(habitId), flags)
+    }
+
+    fun markHabitDoneFillInIntent(habitId: String): Intent {
+        return Intent().apply {
             action = WidgetActionsReceiver.ACTION_MARK_DONE_HABIT
             putExtra(WidgetActionsReceiver.EXTRA_HABIT_ID, habitId)
             data = Uri.parse("todotxt://widget/mark-habit-done/$habitId")
         }
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getBroadcast(context, habitId.hashCode(), intent, flags)
     }
 
     /** Launcher intent reused as the widget's general tap target. */

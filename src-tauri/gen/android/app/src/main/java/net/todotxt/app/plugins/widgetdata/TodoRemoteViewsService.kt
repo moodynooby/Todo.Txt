@@ -7,6 +7,10 @@ import android.graphics.Paint
 import android.os.Build
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import net.todotxt.app.R
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Collection adapter for the Today widget.
@@ -34,25 +38,26 @@ internal class TodoViewsFactory(
     override fun onDataSetChanged() = reload()
 
     private fun reload() {
-        val today = java.time.LocalDate.now().format(
-            java.time.format.DateTimeFormatter.ISO_LOCAL_DATE,
-        )
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val today = sdf.format(Date())
         tasks = WidgetDataStore(context).read().tasks.filter { task ->
             !task.done && task.due != null && isDue(task.due, today)
         }
     }
 
-    private fun isDue(due: String?, today: String): Boolean = try {
-        if (due == "today") true
-        else (due?.substring(0, 10) ?: return false) <= today
-    } catch (error: Throwable) {
-        false
+    private fun isDue(due: String?, today: String): Boolean {
+        return try {
+            if (due == "today") true
+            else (due?.substring(0, 10) ?: return false) <= today
+        } catch (error: Throwable) {
+            false
+        }
     }
 
     override fun getCount(): Int = tasks.size
 
     override fun getViewAt(position: Int): RemoteViews {
-        val task = tasks.getOrElse(position) { return RemoteViews(context.packageName, R.layout.widget_todo_row) }
+        val task = tasks.getOrNull(position) ?: return RemoteViews(context.packageName, R.layout.widget_todo_row)
         val views = RemoteViews(context.packageName, R.layout.widget_todo_row)
 
         views.setTextViewText(R.id.task_text, task.text.trim().take(120))
@@ -79,9 +84,9 @@ internal class TodoViewsFactory(
                 RemoteViews.RemoteResponse.fromPendingIntent(doneIntent),
             )
         } else {
-            views.setOnClickFillInIntent(R.id.task_done, doneIntent)
+            views.setOnClickFillInIntent(R.id.task_done, WidgetHelpers.markDoneFillInIntent(task.id))
             // Fallback: tapping anywhere on the row marks it done.
-            views.setOnClickFillInIntent(R.id.task_text, doneIntent)
+            views.setOnClickFillInIntent(R.id.task_text, WidgetHelpers.markDoneFillInIntent(task.id))
         }
         return views
     }
@@ -91,7 +96,9 @@ internal class TodoViewsFactory(
     override fun getViewTypeCount(): Int = 1
 
     override fun getItemId(position: Int): Long =
-        tasks.getOrElse(position) { position.toLong() }.id
+        tasks.getOrNull(position)?.id ?: position.toLong()
 
     override fun hasStableIds(): Boolean = true
+
+    override fun onDestroy() {}
 }

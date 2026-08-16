@@ -1,5 +1,6 @@
 package net.todotxt.app.plugins.exactalarms
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -122,7 +123,7 @@ class AlarmAlarmReceiver : BroadcastReceiver() {
         store.upsert(next)
         try {
             val alarmManager =
-                context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, AlarmAlarmReceiver::class.java).apply {
                 action = ACTION_FIRE
                 putExtra(EXTRA_ALARM_ID, alarm.id)
@@ -135,16 +136,16 @@ class AlarmAlarmReceiver : BroadcastReceiver() {
                 !alarmManager.canScheduleExactAlarms()
             ) {
                 alarmManager.setAndAllowWhileIdle(
-                    android.app.AlarmManager.RTC_WAKEUP, tomorrow, pending,
+                    AlarmManager.RTC_WAKEUP, tomorrow, pending,
                 )
             } else if (android.os.Build.VERSION.SDK_INT >= 28) {
                 alarmManager.setAlarmClock(
-                    android.app.AlarmManager.AlarmClockInfo(tomorrow, pending),
+                    AlarmManager.AlarmClockInfo(tomorrow, pending),
                     pending,
                 )
             } else {
                 alarmManager.setExactAndAllowWhileIdle(
-                    android.app.AlarmManager.RTC_WAKEUP, tomorrow, pending,
+                    AlarmManager.RTC_WAKEUP, tomorrow, pending,
                 )
             }
         } catch (error: Throwable) {

@@ -3,12 +3,12 @@ package net.todotxt.app.plugins.widgetdata
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
-import java.time.LocalDate
+import net.todotxt.app.R
+import java.util.Calendar
 
 /**
  * Collection adapter for the Week Grid widget.
@@ -49,9 +49,6 @@ internal class WeekGridViewsFactory(
 
     override fun getViewTypeCount(): Int = 2
 
-    override fun getItemViewType(position: Int): Int =
-        if (position == 0) 0 else 1
-
     override fun getViewAt(position: Int): RemoteViews =
         if (position == 0) headerRow() else habitRow(position - 1)
 
@@ -74,7 +71,11 @@ internal class WeekGridViewsFactory(
             return RemoteViews(context.packageName, R.layout.widget_week_grid_row)
         }
         val views = RemoteViews(context.packageName, R.layout.widget_week_grid_row)
-        val todayIndex = LocalDate.now().dayOfWeek.value - 1
+        
+        val cal = Calendar.getInstance()
+        val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+        val todayIndex = (dayOfWeek + 5) % 7 // Mon=0 ... Sun=6
+        
         val weekDone = habit.last7.count { it }
 
         views.setTextViewText(R.id.habit_name, habit.name.take(22))
@@ -84,38 +85,20 @@ internal class WeekGridViewsFactory(
         for (day in 0 until 7) {
             val squareId = DAY_SQUARE_IDS[day]
             val completed = habit.last7.getOrElse(day) { false }
-            if (completed) {
-                runCatching {
-                    val drawable = GradientDrawable(
-                        GradientDrawable.OVAL,
-                        intArrayOf(withAlpha(baseColor, 210)),
+            
+            views.setInt(squareId, "setBackgroundColor", withAlpha(baseColor, if (completed) 210 else 40))
+
+            // Only today's empty cell is tappable (future-safe: the
+            // action still marks done for today).
+            if (!completed && day == todayIndex) {
+                val doneIntent = WidgetHelpers.markHabitDoneIntent(context, habit.id)
+                if (Build.VERSION.SDK_INT >= 31) {
+                    views.setOnClickResponse(
+                        squareId,
+                        RemoteViews.RemoteResponse.fromPendingIntent(doneIntent),
                     )
-                    views.setBackground(squareId, drawable)
-                }.onFailure {
-                    views.setInt(squareId, "setBackgroundColor", withAlpha(baseColor, 210))
-                }
-            } else {
-                runCatching {
-                    val drawable = GradientDrawable(
-                        GradientDrawable.OVAL,
-                        intArrayOf(withAlpha(baseColor, 40)),
-                    )
-                    views.setBackground(squareId, drawable)
-                }.onFailure {
-                    views.setInt(squareId, "setBackgroundColor", withAlpha(baseColor, 40))
-                }
-                // Only today's empty cell is tappable (future-safe: the
-                // action still marks done for today).
-                if (day == todayIndex) {
-                    val doneIntent = WidgetHelpers.markHabitDoneIntent(context, habit.id)
-                    if (Build.VERSION.SDK_INT >= 31) {
-                        views.setOnClickResponse(
-                            squareId,
-                            RemoteViews.RemoteResponse.fromPendingIntent(doneIntent),
-                        )
-                    } else {
-                        views.setOnClickPendingIntent(squareId, doneIntent)
-                    }
+                } else {
+                    views.setOnClickPendingIntent(squareId, doneIntent)
                 }
             }
         }
@@ -130,7 +113,7 @@ internal class WeekGridViewsFactory(
                     RemoteViews.RemoteResponse.fromPendingIntent(doneIntent),
                 )
             } else {
-                views.setOnClickFillInIntent(R.id.habit_done, doneIntent)
+                views.setOnClickFillInIntent(R.id.habit_done, WidgetHelpers.markHabitDoneFillInIntent(habit.id))
             }
         }
         return views
@@ -144,6 +127,8 @@ internal class WeekGridViewsFactory(
     override fun getItemId(position: Int): Long = position.toLong()
 
     override fun hasStableIds(): Boolean = false
+
+    override fun onDestroy() {}
 
     companion object {
         val DAY_SQUARE_IDS = intArrayOf(

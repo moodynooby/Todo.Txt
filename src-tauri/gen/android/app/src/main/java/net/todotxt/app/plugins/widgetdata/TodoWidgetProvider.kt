@@ -7,7 +7,10 @@ import android.content.Intent
 import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
-import java.time.LocalDate
+import net.todotxt.app.R
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.time.format.DateTimeFormatter
 
 /**
@@ -53,12 +56,13 @@ class TodoWidgetProvider : AppWidgetProvider() {
         val views = RemoteViews(context.packageName, R.layout.widget_todo)
         val store = WidgetDataStore(context)
         val payload = store.read()
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val today = try {
             payload.date.ifEmpty {
-                LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                sdf.format(Date())
             }
         } catch (error: Throwable) {
-            LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+            sdf.format(Date())
         }
 
         val dueTasks = payload.tasks.filter { task ->

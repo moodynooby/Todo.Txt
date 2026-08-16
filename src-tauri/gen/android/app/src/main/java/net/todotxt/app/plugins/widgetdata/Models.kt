@@ -27,14 +27,24 @@ data class WidgetHabit(
     val rate28: Int,
     val last30: List<Boolean>,
     val last7: List<Boolean>,
+    val last12Weeks: List<List<Boolean>> = emptyList(),
     val completedToday: Boolean,
     val reminderTime: String? = null,
+)
+
+data class WidgetMomentum(
+    val bestStreak: Int = 0,
+    val bestHabitName: String = "",
+    val avgRate28: Int = 0,
+    val habitsDoneToday: Int = 0,
+    val habitsTotal: Int = 0,
 )
 
 data class WidgetPayload(
     val date: String,
     val tasks: List<WidgetTask>,
     val habits: List<WidgetHabit>,
+    val momentum: WidgetMomentum = WidgetMomentum(),
 )
 
 /**
@@ -123,7 +133,7 @@ internal class WidgetDataStore(context: Context) {
                         rate28 = it.optInt("rate28"),
                         last30 = it.optJSONArray("last30")?.toBoolList() ?: emptyList(),
                         last7 = it.optJSONArray("last7")?.toBoolList() ?: emptyList(),
-                        last12Weeks = it.optJSONArray("last12Weeks")?.toList {
+                        last12Weeks = it.optJSONArray("last12Weeks")?.toListOfArrays {
                             it.toBoolList()
                         } ?: emptyList(),
                         completedToday = it.optBoolean("completedToday"),
@@ -143,16 +153,19 @@ internal class WidgetDataStore(context: Context) {
         }
     }
 
-    private fun JSONObject.toBoolList(): List<Boolean> =
+    private fun JSONArray.toBoolList(): List<Boolean> =
         (0 until length()).map { optBoolean(it) }
 
     private inline fun <T> JSONArray.toList(transform: (JSONObject) -> T): List<T> =
-        (0 until length()).map { transform(optJSONObject(it)) }
+        (0 until length()).mapNotNull { optJSONObject(it)?.let(transform) }
+
+    private inline fun <T> JSONArray.toListOfArrays(transform: (JSONArray) -> T): List<T> =
+        (0 until length()).mapNotNull { optJSONArray(it)?.let(transform) }
 
     companion object {
         private const val FILE_NAME = "widget_data.json"
 
         fun emptyPayload(): WidgetPayload =
-            WidgetPayload(date = "", tasks = emptyList(), habits = emptyList())
+            WidgetPayload(date = "", tasks = emptyList(), habits = emptyList(), momentum = WidgetMomentum())
     }
 }

@@ -1,5 +1,7 @@
 package net.todotxt.app.plugins.exactalarms
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -21,11 +23,11 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 val store = PendingAlarmStore(context.applicationContext)
                 val alarmManager =
-                    context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                    context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 val now = System.currentTimeMillis()
                 store.all().forEach { alarm ->
                     val trigger = if (alarm.epochMs <= now && alarm.repeatDaily) {
-                        alarm.epochMs + android.app.AlarmManager.INTERVAL_DAY
+                        alarm.epochMs + AlarmManager.INTERVAL_DAY
                     } else if (alarm.epochMs <= now) {
                         return@forEach
                     } else {
@@ -38,9 +40,9 @@ class BootReceiver : BroadcastReceiver() {
                         putExtra(AlarmAlarmReceiver.EXTRA_ALARM_ID, updated.id)
                     }
                     val flags =
-                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or
-                            android.app.PendingIntent.FLAG_IMMUTABLE
-                    val pending = android.app.PendingIntent.getBroadcast(
+                        PendingIntent.FLAG_UPDATE_CURRENT or
+                            PendingIntent.FLAG_IMMUTABLE
+                    val pending = PendingIntent.getBroadcast(
                         context.applicationContext, updated.id.hashCode(), broadcast, flags,
                     )
                     alarmManager.cancel(pending)
@@ -49,11 +51,11 @@ class BootReceiver : BroadcastReceiver() {
                             alarmManager.canScheduleExactAlarms()
                     if (exactAvailable) {
                         alarmManager.setExactAndAllowWhileIdle(
-                            android.app.AlarmManager.RTC_WAKEUP, trigger, pending,
+                            AlarmManager.RTC_WAKEUP, trigger, pending,
                         )
                     } else {
                         alarmManager.setAndAllowWhileIdle(
-                            android.app.AlarmManager.RTC_WAKEUP, trigger, pending,
+                            AlarmManager.RTC_WAKEUP, trigger, pending,
                         )
                     }
                 }

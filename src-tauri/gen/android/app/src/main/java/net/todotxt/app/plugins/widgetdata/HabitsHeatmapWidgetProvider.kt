@@ -3,10 +3,12 @@ package net.todotxt.app.plugins.widgetdata
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.widget.RemoteViews
+import net.todotxt.app.R
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -84,12 +86,7 @@ class HabitsHeatmapWidgetProvider : AppWidgetProvider() {
         const val EXTRA_HABIT_ID = "habit_id"
 
         /** Heatmap column labels (Mon / Wed / Fri / Sun). */
-        fun dayLabels(): List<String> {
-            val labels = DayOfWeek.entries.map { day ->
-                day.getDisplayName(java.time.format.TextStyle.NARROW, java.util.Locale.getDefault())
-            }
-            return listOf(labels[0], labels[2], labels[4], labels[6])
-        }
+        fun dayLabels(): List<String> = listOf("M", "W", "F", "S")
 
         /** Legend swatch opacities for the graduated cells (0 = outline). */
         fun levels(): List<Int> = listOf(40, 110, 170, 210, 255)

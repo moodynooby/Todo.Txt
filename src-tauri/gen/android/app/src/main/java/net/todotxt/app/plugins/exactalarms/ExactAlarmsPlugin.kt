@@ -9,6 +9,7 @@ import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
+import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,7 @@ import kotlinx.coroutines.launch
  * Alarms survive reboots through PendingAlarmStore + BootReceiver.
  */
 @TauriPlugin
-class ExactAlarmsPlugin(activity: android.app.Activity) : Plugin(activity) {
+class ExactAlarmsPlugin(private val activity: android.app.Activity) : Plugin(activity) {
 
     private val context: Context get() = activity.applicationContext
 
@@ -69,7 +70,7 @@ class ExactAlarmsPlugin(activity: android.app.Activity) : Plugin(activity) {
                 }
                 invoke.resolve()
             } catch (error: Throwable) {
-                invoke.reject(error.message ?: "Failed to schedule alarm", error)
+                invoke.reject(error.message ?: "Failed to schedule alarm", error as? Exception ?: Exception(error))
             }
         }
     }
@@ -83,7 +84,7 @@ class ExactAlarmsPlugin(activity: android.app.Activity) : Plugin(activity) {
             cancelPendingIntent(args.id)
             invoke.resolve()
         } catch (error: Throwable) {
-            invoke.reject(error.message ?: "Failed to cancel alarm", error)
+            invoke.reject(error.message ?: "Failed to cancel alarm", error as? Exception ?: Exception(error))
         }
     }
 
@@ -93,14 +94,12 @@ class ExactAlarmsPlugin(activity: android.app.Activity) : Plugin(activity) {
         val allowed = canScheduleExact()
         val requested = Build.VERSION.SDK_INT >= 31 &&
             alarmManager.canScheduleExactAlarms()
-        invoke.resolve(
-            mapOf(
-                "allowed" to allowed,
-                "requested" to requested,
-                "requiresRuntimeGrant" to (Build.VERSION.SDK_INT >= 31),
-                "openSettingsIntent" to (Build.VERSION.SDK_INT >= 31 && !requested),
-            ),
-        )
+        val res = JSObject()
+        res.put("allowed", allowed)
+        res.put("requested", requested)
+        res.put("requiresRuntimeGrant", Build.VERSION.SDK_INT >= 31)
+        res.put("openSettingsIntent", Build.VERSION.SDK_INT >= 31 && !requested)
+        invoke.resolve(res)
     }
 
     /** Open the OS screen where the user can grant exact-alarm permission. */
@@ -112,7 +111,7 @@ class ExactAlarmsPlugin(activity: android.app.Activity) : Plugin(activity) {
             context.startActivity(intent)
             invoke.resolve()
         } catch (error: Throwable) {
-            invoke.reject("Could not open settings: ${error.message}", error)
+            invoke.reject("Could not open settings: ${error.message}", error as? Exception ?: Exception(error))
         }
     }
 
@@ -138,7 +137,7 @@ class ExactAlarmsPlugin(activity: android.app.Activity) : Plugin(activity) {
                 }
                 invoke.resolve()
             } catch (error: Throwable) {
-                invoke.reject(error.message ?: "Failed to sync alarms", error)
+                invoke.reject(error.message ?: "Failed to sync alarms", error as? Exception ?: Exception(error))
             }
         }
     }

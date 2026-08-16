@@ -1,5 +1,7 @@
 package net.todotxt.app.plugins.exactalarms
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -70,15 +72,15 @@ class ActionReceiver : BroadcastReceiver() {
                 val alarm = store.find(id) ?: return@Thread
                 store.delete(id)
                 val alarmManager =
-                    context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                    context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 val intent = Intent(context, AlarmAlarmReceiver::class.java).apply {
                     action = AlarmAlarmReceiver.ACTION_FIRE
                     putExtra(AlarmAlarmReceiver.EXTRA_ALARM_ID, id)
                 }
                 val flags =
-                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or
-                        android.app.PendingIntent.FLAG_IMMUTABLE
-                val pending = android.app.PendingIntent.getBroadcast(
+                    PendingIntent.FLAG_UPDATE_CURRENT or
+                        PendingIntent.FLAG_IMMUTABLE
+                val pending = PendingIntent.getBroadcast(
                     context.applicationContext, id.hashCode(), intent, flags,
                 )
                 alarmManager.cancel(pending)
@@ -89,11 +91,11 @@ class ActionReceiver : BroadcastReceiver() {
                         alarmManager.canScheduleExactAlarms()
                 if (exactAvailable) {
                     alarmManager.setExactAndAllowWhileIdle(
-                        android.app.AlarmManager.RTC_WAKEUP, snoozed.epochMs, pending,
+                        AlarmManager.RTC_WAKEUP, snoozed.epochMs, pending,
                     )
                 } else {
                     alarmManager.setAndAllowWhileIdle(
-                        android.app.AlarmManager.RTC_WAKEUP, snoozed.epochMs, pending,
+                        AlarmManager.RTC_WAKEUP, snoozed.epochMs, pending,
                     )
                 }
             } catch (error: Throwable) {
