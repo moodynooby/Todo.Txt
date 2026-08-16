@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Habit Streaks widget: compact 2x1 and 4x2 sizes. The 2x1 shows a
+     single hero metric (best streak); the 4x2 shows all active habits.
+     Android 12+ responsive flags are enabled. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/widget_streaks"
+    android:minWidth="110dp"
+    android:minHeight="55dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="55dp"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="240dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional"
+    android:description="@string/widget_streaks_description"
+    android:previewLayout="@layout/widget_streaks" />

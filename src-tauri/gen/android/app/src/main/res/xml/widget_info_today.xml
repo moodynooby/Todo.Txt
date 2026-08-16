@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Today widget: 4x2 (phone) / 4x3 (tablet classed as 4x4 on AndroidTV).
+     Uses a collection adapter (ListView) so rows carry interactive
+     checkboxes. Android 12+ responsive flags are enabled. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/widget_todo"
+    android:minWidth="220dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="55dp"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="240dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional"
+    android:description="@string/widget_todo_description"
+    android:previewLayout="@layout/widget_todo" />

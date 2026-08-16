@@ -27,6 +27,7 @@ import Timer from "@/features/timer/Timer";
 import { useDueReminders } from "@/hooks/useDueReminders";
 import { useDueRemindersNative } from "@/hooks/useDueRemindersNative";
 import { useTodoNativeActions } from "@/hooks/useTodoNativeActions";
+import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
 import { readHabitsBackup } from "@/lib/habitsBackup";
 import { initReminderActions } from "@/lib/nativeReminders";
@@ -112,6 +113,9 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 	useDueRemindersNative(taskData);
 	/* Native "Mark done" actions for todo tasks (Tauri only). */
 	useTodoNativeActions();
+	/* Home-screen widget mirror (Tauri only): push tasks + habit streaks
+	 * to the native store so widgets render after force-kill. */
+	useWidgetSync();
 
 	/* Ask for notification permission once the user has loaded a document, so
 	 * the due reminders above can fire as soon as permission is granted. */
