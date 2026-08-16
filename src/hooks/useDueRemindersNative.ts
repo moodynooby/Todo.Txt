@@ -17,8 +17,8 @@ export function useDueRemindersNative(taskData: ParsedTodoContent) {
 	useEffect(() => {
 		if (!isTauri()) return;
 
-		const todayTasks = (taskData.dueDates["today"] ?? []).concat(
-			taskData.dueDates["overdue"] ?? [],
+		const todayTasks = (taskData.dueDates.today ?? []).concat(
+			taskData.dueDates.overdue ?? [],
 		);
 		// Fire only for incomplete tasks; dedupe per content snapshot so a
 		// reparse (e.g. live typing) doesn't restack the same notification.

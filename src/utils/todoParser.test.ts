@@ -78,10 +78,10 @@ describe("todo.txt parser — round-trip properties", () => {
 			"-[ ] future due:2030-12-31",
 		].join("\n");
 		const parsed = parseTodoContent(content);
-		expect(parsed.dueDates["overdue"]).toHaveLength(1);
+		expect(parsed.dueDates.overdue).toHaveLength(1);
 		// Only `today`/`tomorrow` collapse into named categories; the far
 		// future lands in its own date bucket.
-		expect(parsed.dueDates["today"]).toHaveLength(1);
+		expect(parsed.dueDates.today).toHaveLength(1);
 		expect(parsed.dueDates["2030-12-31"]).toHaveLength(1);
 	});
 });
