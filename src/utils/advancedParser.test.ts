@@ -1,125 +1,118 @@
+/** Behavioral tests for the advanced parser (relative dates, recurring
+ *  schedules, task metadata, dependency graph, recurrence rules).
+ *
+ *  This file used to be a plain script using `assert()` — vitest reports
+ *  "No test suite found" for scripts, which fails CI while the checks
+ *  silently printed their own results. Converted to a real `describe`
+ *  suite so the CI build is actually green when the assertions pass.
+ */
+import { describe, expect, it } from "vitest";
 import {
-	parseRelativeDateExpression,
-	parseRecurringScheduleExpression,
-	parseTaskMetadata,
-	DependencyGraph,
 	calculateNextDueDate,
+	DependencyGraph,
+	parseRecurringScheduleExpression,
+	parseRelativeDateExpression,
+	parseTaskMetadata,
 } from "./advancedParser";
 
-console.log("=== Running Advanced Parser & Dependency Tests ===");
-
-// 1. Test Relative Date Parser
-const relResult = parseRelativeDateExpression(
-	"in 3 days",
-	new Date("2026-08-16"),
-);
-console.log(
-	"Relative Date ('in 3 days'):",
-	relResult?.date.toISOString().split("T")[0],
-);
-assert(
-	relResult?.date.toISOString().split("T")[0] === "2026-08-19",
-	"Relative date calculation failed",
-);
-
-// 2. Test Recurring Schedule Parser
-const recResult = parseRecurringScheduleExpression("every 2nd Tuesday at 3pm");
-console.log(
-	"Recurring Schedule ('every 2nd Tuesday at 3pm'):",
-	JSON.stringify(recResult?.rule),
-);
-assert(
-	recResult?.rule.freq === "monthly",
-	"Recurring frequency should be monthly",
-);
-assert(recResult?.rule.nthWeekday?.n === 2, "Nth weekday should be 2");
-assert(recResult?.rule.nthWeekday?.day === 2, "Weekday should be Tuesday (2)");
-assert(recResult?.rule.time === "15:00", "Time should be 15:00");
-
-// 3. Test Task Metadata Parsing with Dependencies and Recurrence
-const taskText =
-	"(A) Finish API design id:task1 blocks:task2 after:auth rec:workdays due:2026-08-20";
-const metadata = parseTaskMetadata(taskText);
-console.log("Parsed Metadata:", JSON.stringify(metadata, null, 2));
-assert(metadata.id === "task1", "Task ID parsing failed");
-assert(metadata.blocks.includes("task2"), "Blocks parsing failed");
-assert(metadata.after.includes("auth"), "After parsing failed");
-assert(
-	metadata.recurrence?.mode === "workdays",
-	"Recurrence mode parsing failed",
-);
-
-// 4. Test Dependency Graph Cycle Detection & Status Propagation
-const graph = new DependencyGraph();
-graph.addNode({
-	id: "task1",
-	taskText: "Design database",
-	completed: true,
-	after: [],
-	blocks: ["task2"],
-	status: "active",
-});
-graph.addNode({
-	id: "task2",
-	taskText: "Build API",
-	completed: false,
-	after: ["task1"],
-	blocks: ["task3"],
-	status: "active",
-});
-graph.addNode({
-	id: "task3",
-	taskText: "Frontend integration",
-	completed: false,
-	after: ["task2"],
-	blocks: [],
-	status: "active",
+describe("parseRelativeDateExpression", () => {
+	it("resolves 'in 3 days' from a fixed anchor", () => {
+		const result = parseRelativeDateExpression(
+			"in 3 days",
+			new Date("2026-08-16"),
+		);
+		expect(result?.date.toISOString().split("T")[0]).toBe("2026-08-19");
+	});
 });
 
-const cycleCheck = graph.detectCycles();
-console.log("Cycle Detection Result:", cycleCheck);
-assert(!cycleCheck.hasCycle, "Should not detect cycle in valid DAG");
-
-const statuses = graph.propagateStatus();
-console.log("Propagated Statuses:", Object.fromEntries(statuses));
-assert(statuses.get("task1") === "completed", "Task 1 should be completed");
-assert(
-	statuses.get("task2") === "active",
-	"Task 2 should be active because prerequisite task1 is completed",
-);
-assert(
-	statuses.get("task3") === "blocked",
-	"Task 3 should be blocked because prerequisite task2 is not completed",
-);
-
-// 5. Test Enhanced Recurrence Rules
-const nextDueStrict = calculateNextDueDate("2026-08-16", "2026-08-18", {
-	freq: "weekly",
-	interval: 1,
-	mode: "strict",
+describe("parseRecurringScheduleExpression", () => {
+	it("parses 'every 2nd Tuesday at 3pm'", () => {
+		const result = parseRecurringScheduleExpression("every 2nd Tuesday at 3pm");
+		expect(result?.rule.freq).toBe("monthly");
+		expect(result?.rule.nthWeekday?.n).toBe(2);
+		expect(result?.rule.nthWeekday?.day).toBe(2);
+		expect(result?.rule.time).toBe("15:00");
+	});
 });
-console.log("Next Due (Strict):", nextDueStrict);
-assert(nextDueStrict === "2026-08-23", "Strict recurrence failed");
 
-const nextDueWorkday = calculateNextDueDate("2026-08-14", "2026-08-14", {
-	// Aug 14 2026 is Friday + 1 day = Aug 15 (Sat) -> shifts to Aug 17 (Mon)
-	freq: "daily",
-	interval: 1,
-	mode: "workdays",
+describe("parseTaskMetadata", () => {
+	it("parses priority, id, blocks, after, recurrence, and due date", () => {
+		const metadata = parseTaskMetadata(
+			"(A) Finish API design id:task1 blocks:task2 after:auth rec:workdays due:2026-08-20",
+		);
+		expect(metadata.id).toBe("task1");
+		expect(metadata.blocks).toContain("task2");
+		expect(metadata.after).toContain("auth");
+		expect(metadata.recurrence?.mode).toBe("workdays");
+	});
 });
-console.log("Next Due (Workdays from Friday):", nextDueWorkday);
-assert(
-	nextDueWorkday === "2026-08-17",
-	"Workdays recurrence weekend shift failed",
-);
 
-console.log("=== All Tests Passed Successfully! ===");
+describe("DependencyGraph", () => {
+	const buildGraph = () => {
+		const graph = new DependencyGraph();
+		graph.addNode({
+			id: "task1",
+			taskText: "Design database",
+			completed: true,
+			after: [],
+			blocks: ["task2"],
+			status: "active",
+		});
+		graph.addNode({
+			id: "task2",
+			taskText: "Build API",
+			completed: false,
+			after: ["task1"],
+			blocks: ["task3"],
+			status: "active",
+		});
+		graph.addNode({
+			id: "task3",
+			taskText: "Frontend integration",
+			completed: false,
+			after: ["task2"],
+			blocks: [],
+			status: "active",
+		});
+		return graph;
+	};
 
-function condition(expr: boolean, msg: string) {
-	if (!expr) {
-		throw new Error(`ASSERTION FAILED: ${msg}`);
-	}
-}
-function assert(expr: boolean, msg: string) {
-	condition(expr, msg);
-}
+	it("does not detect cycles in a valid DAG", () => {
+		const graph = buildGraph();
+		expect(graph.detectCycles().hasCycle).toBe(false);
+	});
+
+	it("propagates statuses: completed → active → blocked", () => {
+		const graph = buildGraph();
+		const statuses = graph.propagateStatus();
+		expect(statuses.get("task1")).toBe("completed");
+		// Task 2's prerequisite (task1) is completed, so it can be worked on.
+		expect(statuses.get("task2")).toBe("active");
+		// Task 3's prerequisite (task2) is incomplete, so it stays blocked.
+		expect(statuses.get("task3")).toBe("blocked");
+	});
+});
+
+describe("calculateNextDueDate", () => {
+	it("computes strict weekly recurrence", () => {
+		expect(
+			calculateNextDueDate("2026-08-16", "2026-08-18", {
+				freq: "weekly",
+				interval: 1,
+				mode: "strict",
+			}),
+		).toBe("2026-08-23");
+	});
+
+	it("shifts weekend results to the next workday", () => {
+		// Aug 14 2026 is a Friday; +1 day lands on Saturday, which shifts
+		// to Monday Aug 17 in workday mode.
+		expect(
+			calculateNextDueDate("2026-08-14", "2026-08-14", {
+				freq: "daily",
+				interval: 1,
+				mode: "workdays",
+			}),
+		).toBe("2026-08-17");
+	});
+});
