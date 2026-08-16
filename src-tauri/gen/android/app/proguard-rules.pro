@@ -27,7 +27,7 @@
 # the manifest, so R8 would otherwise strip them.
 # ---------------------------------------------------------------------------
 -keep class net.todotxt.app.plugins.exactalarms.** { *; }
--keep class net.todotxt.app.plugins.widget.** { *; }
+-keep class net.todotxt.app.plugins.widgetdata.** { *; }
 -keepclassmembers class net.todotxt.app.MainActivity {
     public *;
 }

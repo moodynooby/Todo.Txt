@@ -73,6 +73,39 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info_streaks" />
         </receiver>
+        <receiver
+            android:name=".plugins.widgetdata.HabitsWeekGridWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_weekgrid_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_weekgrid" />
+        </receiver>
+        <receiver
+            android:name=".plugins.widgetdata.HabitsHeatmapWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_heatmap_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_heatmap" />
+        </receiver>
+        <receiver
+            android:name=".plugins.widgetdata.HabitsMomentumWidgetProvider"
+            android:exported="true"
+            android:label="Momentum">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_momentum" />
+        </receiver>
         <!-- Interactive widget actions (checkbox taps) — must be exported so
              the launcher can deliver fill-in intents from other processes. -->
         <receiver
@@ -85,6 +118,14 @@
             android:exported="false" />
         <service
             android:name=".plugins.widgetdata.HabitsRemoteViewsService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+        <service
+            android:name=".plugins.widgetdata.HabitsWeekGridRemoteViewsService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+        <service
+            android:name=".plugins.widgetdata.HabitsHeatmapRemoteViewsService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
 
