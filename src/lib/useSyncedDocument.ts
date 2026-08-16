@@ -15,6 +15,7 @@ import {
 	type UserDocPath,
 	writeDocs,
 } from "@/lib/firestoreClient";
+import { clearOutbox, readOutbox, writeOutbox } from "@/lib/syncOutbox";
 
 /**
  * Reusable sync primitive — the only sync API features should ever use.
@@ -47,8 +48,13 @@ export interface SyncedDocumentOptions<T> {
 	 *  receives the fresh value on every change instead of (in addition to)
 	 *  the default `localKey` JSON mirror. Fixes the class of bug where a
 	 *  feature defines a backup writer that nobody ever calls (e.g. notes,
-	 *  habits, todo). */
-	mirror?: (value: T) => void;
+	 *  habits, todo).
+	 *
+	 *  Fix S3: the mirror also receives the server timestamp of the snapshot
+	 *  that produced the value (undefined for locally-originated writes), so
+	 *  the offline seed compares server clocks against the cloud at connect
+	 *  time instead of an unsynced local clock. */
+	mirror?: (value: T, syncedAt?: number) => void;
 	/** Encode local value into Firestore fields. Default: `{ value }`. */
 	encode?: (value: T) => AnyRecord;
 	/** Decode Firestore fields into the local value, or undefined to skip.
@@ -170,9 +176,34 @@ export function useSyncedDocument<T>(opts: SyncedDocumentOptions<T>): void {
 		if (decoded === undefined) return;
 		applyRemote(afterRead ? afterRead(decoded) : decoded);
 	}, []);
+
+	// 3b. Keep the offline mirror's clock server-relative. The snapshot that
+	//     produced a local value carries the server `updatedAt`; locally
+	//     originated writes have none, and the mirror clock stays at the last
+	//     known server timestamp (never a fresh wall clock) so startup
+	//     reconciliation keeps comparing server time on both sides.
+	const mirrorSynced = useCallback((syncedAt?: number) => {
+		const { mirror } = optsRef.current;
+		if (!mirror) return;
+		try {
+			mirror(optsRef.current.value, syncedAt);
+		} catch {
+			// Mirror writes are best-effort; the cloud remains authoritative.
+		}
+	}, []);
+	const applyWithMirror = useCallback(
+		(data: AnyRecord, updatedAt?: number) => {
+			apply(data);
+			// Mirror the received snapshot with its server timestamp.
+			if (typeof updatedAt === "number" && updatedAt > 0) {
+				mirrorSynced(updatedAt);
+			}
+		},
+		[apply, mirrorSynced],
+	);
 	useEffect(
-		() => engine.subscribe(opts.path, apply),
-		[engine, opts.path, apply],
+		() => engine.subscribe(opts.path, applyWithMirror),
+		[engine, opts.path, applyWithMirror],
 	);
 }
 
@@ -219,6 +250,10 @@ class SyncEngineImpl implements SyncEngine {
 	private retryTimer: ReturnType<typeof setTimeout> | null = null;
 	private writeTimer: ReturnType<typeof setTimeout> | null = null;
 	private retryCount = 0;
+	/** True once the persisted outbox for the current uid has been restored; the
+	 *  first flush after (re)connect drains any writes that survived a previous
+	 *  teardown (sign-out, page unload, mobile app termination). */
+	private outboxRestored = false;
 
 	/** @see SyncEngine.uid */
 	uid: string | null;
@@ -244,6 +279,10 @@ class SyncEngineImpl implements SyncEngine {
 		} else {
 			this.queue.push(update);
 		}
+
+		// Persist immediately so a sign-out, page unload, or app kill can never
+		// drop in-flight edits — they flush as soon as the engine can write.
+		this.persistQueue();
 
 		if (this.writeTimer) clearTimeout(this.writeTimer);
 		this.writeTimer = setTimeout(() => {
@@ -287,6 +326,27 @@ class SyncEngineImpl implements SyncEngine {
 		return getDocWithRetry<AnyRecord>(getFirestoreDb(), uid, path);
 	};
 
+	/** Restore any writes that survived a previous teardown (sign-out, page
+	 *  unload, app kill) so the first flush after (re)connect drains them too. */
+	restoreOutbox(): void {
+		const uid = this.uid;
+		if (!uid || this.outboxRestored) return;
+		this.outboxRestored = true;
+		for (const update of readOutbox(uid)) {
+			// The in-memory queue (written after the last persistence) is the
+			// superset — never demote a live value to a persisted snapshot.
+			if (this.queue.some((u) => u.path.id === update.path.id)) continue;
+			this.queue.push(update);
+		}
+		if (this.queue.length > 0) {
+			if (this.writeTimer) clearTimeout(this.writeTimer);
+			this.writeTimer = setTimeout(() => {
+				this.writeTimer = null;
+				void this.processQueue();
+			}, WRITE_DEBOUNCE_MS);
+		}
+	}
+
 	/** Tear down everything (sign-out / unmount). */
 	destroy(): void {
 		for (const stop of this.unsubscribes.values()) stop();
@@ -296,7 +356,12 @@ class SyncEngineImpl implements SyncEngine {
 		if (this.retryTimer) clearTimeout(this.retryTimer);
 		this.connected = false;
 		this.status = "disconnected";
-		this.queue = [];
+		// Persist instead of dropping pending writes: the next (re)connect
+		// restores them via restoreOutbox(). On sign-out the uid flips before
+		// destroy() is called, and clearOutbox is called there so a different
+		// account can never replay this queue.
+		this.persistQueue();
+		this.outboxRestored = false;
 	}
 
 	/** Subscribe every registered path (called by the provider at connect
@@ -321,6 +386,9 @@ class SyncEngineImpl implements SyncEngine {
 		this.processing = true;
 		const batch = [...this.queue];
 		this.queue = [];
+		// Optimistically clear the persisted outbox; a successful write is the
+		// only path that removes it for good — failure re-persists below.
+		this.clearPersistedQueue();
 
 		this.markUnhealthy("syncing");
 
@@ -333,6 +401,7 @@ class SyncEngineImpl implements SyncEngine {
 			// Re-queue unsaved updates and retry with backoff (capped by
 			// RETRY_MAX_MS; cleared on the next successful write).
 			this.queue = batch.concat(this.queue);
+			this.persistQueue();
 			this.retry(() => void this.processQueue());
 		} finally {
 			this.processing = false;
@@ -344,6 +413,20 @@ class SyncEngineImpl implements SyncEngine {
 		const delay = Math.min(RETRY_BASE_MS * 2 ** this.retryCount, RETRY_MAX_MS);
 		this.retryCount++;
 		this.retryTimer = setTimeout(fn, delay);
+	}
+
+	/** Persist the pending queue for the current uid (best-effort localStorage). */
+	private persistQueue(): void {
+		const uid = this.uid;
+		if (!uid) return;
+		writeOutbox(uid, this.queue);
+	}
+
+	/** Clear the persisted queue for the current uid. */
+	private clearPersistedQueue(): void {
+		const uid = this.uid;
+		if (!uid) return;
+		clearOutbox(uid);
 	}
 
 	private markHealthy(status: SyncEngine["status"]): void {
