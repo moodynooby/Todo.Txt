@@ -12,16 +12,37 @@ export const normaliseTime = (raw: string): string => {
 
 const RE_IS_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RE_IS_TIME = /^\d{1,2}:\d{2}(:\d{2})?$/;
-const RE_CHECKBOX_MARKER = /^-?\[.?\]\s/;
+// Fix F8: an empty flag (`-[]`) is not a checkbox — the flag character must
+// be a space or `x`/`X`, matching the todo.txt convention and the toggle
+// logic in `todoLineCompletion.ts`.
+const RE_CHECKBOX_MARKER = /^-?\[[ xX]\]\s/;
 const RE_CHECKED_MARKER = /^-?\[x\]\s/i;
 const RE_X_PREFIX = /^x\s/i;
 const RE_PRIORITY = /^\(([A-Z])\)\s/;
-const RE_PROJECTS = /\+[\w][\w.-]*/g;
-const RE_CONTEXTS = /@[\w][\w.-]*/g;
-/* `due:` followed by a date or relative word, optionally suffixed with
- * `@HH:MM` or `THH:MM` clock time, e.g. due:2026-08-16T14:30,
- * due:today@17:00, due:tomorrow@09:00 */
-const RE_DUE = /due:([\w-]+)(?:[@tT](\d{1,2}:\d{2}(?::\d{2})?))?/;
+// Fix F8 (spec compliance): todo.txt requires projects and contexts to start
+// with a LETTER; leading digits (`+2kg`, `@5min`) are values, not tokens. A
+// lookbehind also stops email tails (`me@work.com`) and glued text
+// (`task@context`) from being double-counted as tokens.
+const RE_PROJECTS = /(?<!\w)\+([A-Za-z][\w.-]*)/g;
+const RE_CONTEXTS = /(?<![\w.])@([A-Za-z][\w.-]*)/g;
+// Fix F7: `due:2026-08-16T14:30` was silently dropped because the date group
+// ate the trailing digits and the `T14:30` tail no longer matched the
+// `@time` syntax. The value group now accepts an optional `T`-separated
+// clock time, and the optional `@` suffix still covers the `due:today@17:00`
+// relative form.
+//
+// Note on the date/value group: `T` and `@` are excluded from its charset,
+// so `due:2026-08-16T14:30` cannot be swallowed whole — the `T` delimiter
+// ends the date group and hands `14:30` to the T-time alternative. The
+// legacy `due:today@17:00` form keeps the relative word in group 3 and its
+// clock time in group 4; a bare time like `due:14:30` falls through to the
+// `RE_IS_TIME` branch after the value (no time separator matched).
+// Capture groups: 1 = value, 2 = T-time, 3 = @-relative word, 4 = @-time.
+// The legacy `due:today@17:00` form keeps the relative word in group 3 and
+// its clock time in group 4 (relative word and @-time are independent
+// optionals, so `due:@17:00`-style and `due:today` remain valid too).
+const RE_DUE =
+	/due:([^\sT@]+)(?:T(\d{1,2}:\d{2}(?::\d{2})?))?(?:@([A-Za-z][\w-]*))?(?:@(\d{1,2}:\d{2}(?::\d{2})?))?/;
 
 const parseRelativeDate = (
 	value: string,
@@ -60,22 +81,24 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		}
 	}
 
-	/* Project and context detection: tokens must start after a word
-	 * boundary so stray symbols like email addresses aren't double-counted. */
+	/* Project and context detection (F8): the regexes now carry their own
+	 * word-boundary lookbehinds and letter-first requirement, so `me@work.com`
+	 * is no longer parsed as the context `work.com` and `+2kg` is not a
+	 * project. Captures are taken directly from the named groups. */
 	if (/\+/.test(cleanText)) {
-		const projectMatches = cleanText.match(RE_PROJECTS);
-		if (projectMatches) {
+		const projectMatches = [...cleanText.matchAll(RE_PROJECTS)];
+		if (projectMatches.length) {
 			task.projects = [
-				...new Set(projectMatches.map((p: string) => p.slice(1))),
+				...new Set(projectMatches.map((m: RegExpMatchArray) => m[1])),
 			];
 		}
 	}
 
 	if (/@/.test(cleanText)) {
-		const contextMatches = cleanText.match(RE_CONTEXTS);
-		if (contextMatches) {
+		const contextMatches = [...cleanText.matchAll(RE_CONTEXTS)];
+		if (contextMatches.length) {
 			task.contexts = [
-				...new Set(contextMatches.map((c: string) => c.slice(1))),
+				...new Set(contextMatches.map((m: RegExpMatchArray) => m[1])),
 			];
 		}
 	}
@@ -84,7 +107,11 @@ export const parseTodoLine = (trimmed: string, id = 0): Task => {
 		const dueMatch = cleanText.match(RE_DUE);
 		if (dueMatch) {
 			const value = dueMatch[1].toLowerCase();
-			const timeRaw = dueMatch[2];
+			// F7: the datetime form `due:YYYY-MM-DDTHH:MM` surfaces the T-time
+			// in group 2; the `@`-relative form keeps its time in group 4.
+			// They are mutually exclusive in the regex, so a single source of
+			// truth picks the clock time.
+			const timeRaw = dueMatch[2] ?? dueMatch[4];
 			const today = getToday();
 			const tomorrow = getTomorrow();
 			const yesterday = getYesterday();

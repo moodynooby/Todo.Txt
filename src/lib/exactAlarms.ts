@@ -73,7 +73,10 @@ function makeFallbackSchedule(
 		sound: "default" as const,
 		actionTypeId: "habit-action",
 		schedule: Schedule.at(atTime, true, true),
-		extra: { kind: "habit", id: habit.id },
+		// Fix F2: the scheduled extra must use an action-routable `kind`
+		// (see `parseActionPayload`); a bare "habit" value made the
+		// "Mark done" / "Snooze" buttons unrouteable dead code.
+		extra: { kind: "mark-done-habit", id: habit.id, subject: "habit" },
 	};
 }
 
@@ -155,15 +158,22 @@ export async function scheduleHabitReminderExact(habit: {
 	// chaining tomorrow's alarm and boot re-apply.
 	try {
 		const invoke = await tauriInvoke();
+		// Fix F6: Tauri 2 matches invoke arguments to the Rust command's
+		// parameter *names* — the `schedule` command declares a single
+		// named `payload` parameter, so the flat object previously failed
+		// deserialization (silently, because callers swallow the error).
+		// Arguments must be wrapped in `{ payload: ... }`.
 		const atTime = computeNextTriggerTime(habit.reminderTime);
 		await invoke("plugin:exact-alarms|schedule", {
-			id: `habit_${habit.id}`,
-			epochMs: atTime.getTime(),
-			title: "A small moment for you",
-			body: `Time for ${habit.name}. One small mark is still momentum.`,
-			repeatDaily: true,
-			channelId: "habits",
-		} as unknown as Record<string, unknown>);
+			payload: {
+				id: `habit_${habit.id}`,
+				epochMs: atTime.getTime(),
+				title: "A small moment for you",
+				body: `Time for ${habit.name}. One small mark is still momentum.`,
+				repeatDaily: true,
+				channelId: "habits",
+			},
+		});
 		return true;
 	} catch (error) {
 		console.warn("Exact alarm could not be scheduled, falling back:", error);
@@ -180,9 +190,12 @@ export async function cancelHabitReminderExact(habitId: string): Promise<void> {
 	// exists for it (idempotent), so one call covers both scheduling paths.
 	try {
 		const invoke = await tauriInvoke();
+		// Fix F6: the `cancel` Rust command also takes a named `payload`.
 		await invoke("plugin:exact-alarms|cancel", {
-			id: `habit_${habitId}`,
-		} as unknown as Record<string, unknown>);
+			payload: {
+				id: `habit_${habitId}`,
+			},
+		});
 		// The notification plugin's fallback notification shares the same
 		// key, so cancel the OS-level notification registration too.
 		await cancel([Math.abs(hashStable(`habit_${habitId}`))]);
@@ -221,9 +234,12 @@ export async function syncExactAlarms(
 				} as ExactAlarmSchedule;
 			});
 		const invoke = await tauriInvoke();
+		// Fix F6: the `sync` Rust command also takes a named `payload`.
 		await invoke("plugin:exact-alarms|sync", {
-			reminders,
-		} as unknown as Record<string, unknown>);
+			payload: {
+				reminders,
+			},
+		});
 	} catch (error) {
 		console.warn("Exact-alarm sync could not run:", error);
 	}

@@ -33,20 +33,20 @@ const manifest = {
 			purpose: "maskable",
 		},
 	],
+	// Fix F10: the share target previously POSTed to `/`, which a static SPA
+	// cannot handle — shared text and files vanished silently in web builds.
+	// A GET share target delivers the payload as query parameters
+	// (`?title=...&text=...&url=...`), which the app reads from the URL at
+	// load and can act on (handled by the share-import flow). File sharing is
+	// a multipart-only capability and is therefore no longer advertised; text
+	// and URL shares remain fully supported.
 	share_target: {
 		action: "/",
-		method: "POST",
-		enctype: "multipart/form-data",
+		method: "GET",
 		params: {
 			title: "title",
 			text: "text",
 			url: "url",
-			files: [
-				{
-					name: "file",
-					accept: [".txt", "text/plain", ".md", ".html"],
-				},
-			],
 		},
 	},
 };

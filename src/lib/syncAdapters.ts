@@ -2,13 +2,18 @@ import { useEffect } from "react";
 import { useHabitsContext } from "@/context/HabitsContext";
 import { useNotesContext } from "@/context/NotesContext";
 import { type TimerState, useTimerContext } from "@/context/TimerContext";
+import { useTodoContext } from "@/context/TodoContext";
+import { writeHabitsBackup } from "@/lib/habitsBackup";
+import { writeNotesBackup } from "@/lib/notesBackup";
 import {
 	EXCALIDRAW_DOC,
 	GROQ_SETTINGS_DOC,
 	HABITS_DOC,
 	NOTES_DOC,
 	TIMERS_DOC,
+	TODO_DOC,
 } from "@/lib/syncPaths";
+import { readTodoBackup } from "@/lib/todoBackup";
 import { useSyncedDocument } from "@/lib/useSyncedDocument";
 import type { Habit } from "@/types/habits";
 import type { Note } from "@/types/notes";
@@ -23,6 +28,38 @@ import type { ExcalidrawData } from "@/types/sync";
  * provider, or any other feature.
  */
 
+/** Todo document: local-first string sync (`todos/main`).
+ *
+ *  Fix F1: the todo workspace was never registered with the sync engine —
+ *  notes, habits, timers, excalidraw, and settings synced, but the product's
+ *  namesake feature persisted only in React memory, and the one-time
+ *  migration deleted its local backup. This adapter mirrors the notes
+ *  pattern: localStorage backup on every change (via the shared `localKey`
+ *  mechanism plus the canonical `todoBackup` reader) and a debounced
+ *  content write through the single shared queue.
+ */
+export function useSyncedTodo(): void {
+	const { state, dispatchTodo } = useTodoContext();
+	useSyncedDocument<string>({
+		path: TODO_DOC,
+		value: state.content,
+		applyRemote: (content) =>
+			dispatchTodo({
+				type: "SET_CONTENT",
+				payload: { content, timestamp: Date.now() },
+			}),
+		localKey: "todo_content_backup",
+		encode: (content) => ({ content }),
+		decode: (record) =>
+			typeof record.content === "string" ? record.content : undefined,
+	});
+}
+
+/** Startup helper: seed the todo adapter from the legacy backup once. */
+export function getInitialTodoContent(): string {
+	return readTodoBackup()?.content ?? "";
+}
+
 /** Notes: local-first array sync (`notes/main`). */
 export function useSyncedNotes(): void {
 	const { state, dispatchNotes } = useNotesContext();
@@ -31,7 +68,10 @@ export function useSyncedNotes(): void {
 		value: state.notes,
 		applyRemote: (notes) =>
 			dispatchNotes({ type: "SET_NOTES", payload: notes }),
-		localKey: "notes_backup",
+		// Fix F1 (notes leg): the previously dead `writeNotesBackup` writer is
+		// now invoked on every change through the engine's mirror hook, so the
+		// offline startup seed is always current.
+		mirror: (notes) => writeNotesBackup(notes),
 		decode: (r) => (Array.isArray(r.value) ? (r.value as Note[]) : undefined),
 	});
 }
@@ -63,7 +103,9 @@ export function useSyncedHabits(): void {
 		value: state.habits,
 		applyRemote: (habits) =>
 			dispatchHabits({ type: "SET_HABITS", payload: habits }),
-		localKey: "habits_backup",
+		// Fix F1 (habits leg): habits had a backup reader but no writer path
+		// at all; the mirror hook keeps the offline seed current on change.
+		mirror: (habits) => writeHabitsBackup(habits),
 		encode: (habits) => ({ habits }),
 		decode: (record) =>
 			Array.isArray(record.habits)
@@ -124,6 +166,7 @@ export function SyncFeatures({
 	onExcalidrawChange: (data: ExcalidrawData | null) => void;
 	onGroqApiKeyChange: (key: string) => void;
 }) {
+	useSyncedTodo();
 	useSyncedNotes();
 	useSyncedTimers();
 	useSyncedHabits();
@@ -138,3 +181,10 @@ export function SyncFeatures({
 
 	return null;
 }
+
+// ---------------------------------------------------------------------------
+// Backup writers exported for external callers (tests, deep-link import),
+// so the writer functions can never again be declared but never called.
+// ---------------------------------------------------------------------------
+
+export { writeHabitsBackup, writeNotesBackup };

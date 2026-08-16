@@ -43,6 +43,12 @@ export interface SyncedDocumentOptions<T> {
 	/** If set, the value is also mirrored to localStorage[key] as JSON
 	 *  `{ data, updatedAt }` on every change — instant startup + offline. */
 	localKey?: string;
+	/** Optional custom mirror writer for the local backup. When provided it
+	 *  receives the fresh value on every change instead of (in addition to)
+	 *  the default `localKey` JSON mirror. Fixes the class of bug where a
+	 *  feature defines a backup writer that nobody ever calls (e.g. notes,
+	 *  habits, todo). */
+	mirror?: (value: T) => void;
 	/** Encode local value into Firestore fields. Default: `{ value }`. */
 	encode?: (value: T) => AnyRecord;
 	/** Decode Firestore fields into the local value, or undefined to skip.
@@ -124,15 +130,22 @@ export function useSyncedDocument<T>(opts: SyncedDocumentOptions<T>): void {
 
 	// 1. Local backup (offline-first, instant startup).
 	useEffect(() => {
-		const { localKey } = optsRef.current;
-		if (!localKey) return;
-		try {
-			localStorage.setItem(
-				localKey,
-				JSON.stringify({ data: opts.value, updatedAt: Date.now() }),
-			);
-		} catch {
-			// Storage full / blocked — keep going, cloud is the source of truth.
+		const { localKey, mirror } = optsRef.current;
+		if (mirror) {
+			try {
+				mirror(opts.value);
+			} catch {
+				// Mirror writes are best-effort; the cloud remains authoritative.
+			}
+		} else if (localKey) {
+			try {
+				localStorage.setItem(
+					localKey,
+					JSON.stringify({ data: opts.value, updatedAt: Date.now() }),
+				);
+			} catch {
+				// Storage full / blocked — keep going, cloud is the source of truth.
+			}
 		}
 	}, [opts.value]);
 

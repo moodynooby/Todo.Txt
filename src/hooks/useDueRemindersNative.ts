@@ -22,6 +22,9 @@ export function useDueRemindersNative(taskData: ParsedTodoContent) {
 		);
 		// Fire only for incomplete tasks; dedupe per content snapshot so a
 		// reparse (e.g. live typing) doesn't restack the same notification.
+		// Uses the same checkbox grammar as `todoParser.ts` (an empty flag
+		// like `-[]` is not a checkbox), so the due-task nudge and the parser
+		// agree on what counts as incomplete.
 		const pending = todayTasks.filter(
 			(task) => !task.completed && !task.raw.match(/^-?\[[ xX]\]\s/),
 		);

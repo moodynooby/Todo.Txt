@@ -55,10 +55,30 @@ export const getFirestoreDb = (): Firestore => {
 	return db;
 };
 
+// Fix F13: the old check validated only the API key, so a corrupted or
+// placeholder `authDomain` / `projectId` passed it and surfaced later as an
+// opaque auth error. Every field the SDK requires must be present and
+// non-placeholder now.
+const PLACEHOLDER_KEYS = new Set([
+	"your_api_key_here",
+	"your_project.firebaseapp.com",
+	"your_project_id",
+	"your_project.appspot.com",
+	"your_sender_id",
+	"your_app_id",
+]);
+
 export const isFirebaseConfigured = (): boolean => {
-	return (
-		!!import.meta.env.VITE_FIREBASE_API_KEY &&
-		import.meta.env.VITE_FIREBASE_API_KEY !== "your_api_key_here"
+	const fields = [
+		import.meta.env.VITE_FIREBASE_API_KEY,
+		import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+		import.meta.env.VITE_FIREBASE_PROJECT_ID,
+		import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+		import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+		import.meta.env.VITE_FIREBASE_APP_ID,
+	];
+	return fields.every(
+		(value) => !!value && !PLACEHOLDER_KEYS.has(value as string),
 	);
 };
 

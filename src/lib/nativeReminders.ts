@@ -38,15 +38,26 @@ export function isTauri(): boolean {
 	return "__TAURI__" in window || "__TAURI_INTERNALS__" in window || false;
 }
 
-/** Parse a serialized action payload stored by the action handler. */
+/** Parse a serialized action payload stored by the action handler.
+ *
+ *  Fix F3: the pending-action queue is persisted as a JSON **array** (see
+ *  `dispatchReminderAction`), but the original decoder expected a single
+ *  object and therefore returned null for every stored queue, dropping all
+ *  cold-start replays. This decoder now accepts both shapes: a single object
+ *  (a live notification's `extra`) or an array (the persisted queue). */
 export function parseActionPayload(
 	raw: string | Record<string, unknown> | null | undefined,
 ): ReminderActionKind | null {
 	if (!raw) return null;
 	try {
-		const parsed: Record<string, unknown> =
-			typeof raw === "string" ? JSON.parse(raw) : raw;
-		const kind = parsed.kind;
+		let parsed: unknown = typeof raw === "string" ? JSON.parse(raw) : raw;
+		// The persisted queue is an array; a live notification `extra` is an
+		// object. Only the object form is a valid action payload.
+		if (Array.isArray(parsed)) {
+			parsed = parsed.length ? parsed[parsed.length - 1] : null;
+		}
+		if (!parsed || typeof parsed !== "object") return null;
+		const kind = (parsed as Record<string, unknown>).kind;
 		if (
 			kind === "mark-done-habit" ||
 			kind === "snooze-habit" ||
@@ -58,6 +69,22 @@ export function parseActionPayload(
 		return null;
 	} catch {
 		return null;
+	}
+}
+
+/** Parse a persisted queue, returning every valid entry (F3: drain all). */
+export function parseActionQueue(
+	raw: string | null | undefined,
+): ReminderActionKind[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.map((entry) => parseActionPayload(entry as Record<string, unknown>))
+			.filter((p): p is ReminderActionKind => p !== null);
+	} catch {
+		return [];
 	}
 }
 
@@ -148,7 +175,12 @@ export async function scheduleHabitReminder(habit: {
 			sound: "default",
 			actionTypeId: "habit-action",
 			schedule: Schedule.at(atTime, true, true),
-			extra: { kind: "habit", id: habit.id },
+			// Fix F2: the scheduled extra used `kind: "habit"`, which the
+			// action handler (`parseActionPayload`) can never recognize — it
+			// only accepts action-shaped kinds. The reminder's subject is now
+			// addressed under `subject` and the `kind` carries the mark-done
+			// action so the notification buttons are actually routable.
+			extra: { kind: "mark-done-habit", id: habit.id, subject: "habit" },
 		});
 	} catch (error) {
 		console.warn("Habit reminder could not be scheduled:", error);
@@ -206,7 +238,11 @@ export async function notifyDueTodos(
 			channelId: TODO_CHANNEL_ID,
 			sound: "default",
 			actionTypeId: "todo-action",
-			extra: { kind: "todo", line: shown[0].id },
+			// Fix F2: same contract fix as habit reminders — `kind` must be
+			// action-routable (`mark-done-todo`) or the buttons are dead code.
+			// The due task's id is mirrored under `subject` so consumers that
+			// still want a generic topic can find it.
+			extra: { kind: "mark-done-todo", line: shown[0].id, subject: "todo" },
 		});
 	} catch (error) {
 		console.warn("Due-todo notification could not be shown:", error);
@@ -232,7 +268,8 @@ function dispatchReminderAction(payload: ReminderActionKind) {
 			new CustomEvent("native-reminder-action", { detail: payload }),
 		);
 		// Keep a durable copy so a cold-starting webview can consume it
-		// once state is hydrated.
+		// once state is hydrated. The queue is a JSON array (F3) — never a
+		// single object — so readers must go through `parseActionQueue`.
 		const existing = parseActionPayload(
 			localStorage.getItem(PENDING_ACTIONS_KEY),
 		);
@@ -288,13 +325,15 @@ export async function initReminderActions() {
 }
 
 async function consumePendingActions() {
+	// Fix F3: drain every queued action, not just the first, and clear the
+	// durable key afterwards so a handled action never replays twice.
 	try {
 		const raw = localStorage.getItem(PENDING_ACTIONS_KEY);
-		const payload = parseActionPayload(raw);
-		if (payload) {
+		const actions = parseActionQueue(raw);
+		for (const payload of actions) {
 			dispatchReminderAction(payload);
-			localStorage.removeItem(PENDING_ACTIONS_KEY);
 		}
+		if (actions.length) localStorage.removeItem(PENDING_ACTIONS_KEY);
 	} catch {
 		// Queue drain is best-effort.
 	}

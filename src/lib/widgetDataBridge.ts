@@ -90,11 +90,11 @@ export function projectHabits(habits: Habit[]): WidgetHabitProjection[] {
 export async function pushWidgetData(payload: WidgetPayload): Promise<void> {
 	if (!isTauri()) return;
 	try {
+		// Fix F6: the `push_widget_data` Rust command takes a named `payload`
+		// parameter; the flat pass previously failed deserialization silently,
+		// leaving widgets rendering stale data. Arguments must be wrapped.
 		const { invoke } = await import("@tauri-apps/api/core");
-		await invoke(
-			WIDGET_SYNC_COMMAND,
-			payload as unknown as Record<string, unknown>,
-		);
+		await invoke(WIDGET_SYNC_COMMAND, { payload });
 	} catch (error) {
 		// Mirror updates are best-effort; the widget simply shows stale
 		// (still valid) data until the next push.

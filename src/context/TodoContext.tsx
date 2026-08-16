@@ -96,7 +96,19 @@ export function TodoProvider({
 		// Only push remote/local state into the editor when the incoming
 		// content actually differs from what the editor already holds; the
 		// editor remains the single source of truth while the user types.
-		if (editor && state.content !== lastMarkdownRef.current) {
+		//
+		// Fix F12: `setContent` resets TipTap's undo history and selection on
+		// every call, so a remote snapshot arriving mid-keystroke (another
+		// device syncs while the user types) wiped the undo stack and could
+		// jump the cursor. Deferring remote replacement until the editor is
+		// not focused keeps in-progress editing untouched; the reducer state
+		// is still authoritative, so the remote content lands as soon as the
+		// user stops typing.
+		if (
+			editor &&
+			state.content !== lastMarkdownRef.current &&
+			!editor.isFocused
+		) {
 			lastMarkdownRef.current = state.content;
 			editor.commands.setContent(state.content || "", {
 				contentType: "markdown",

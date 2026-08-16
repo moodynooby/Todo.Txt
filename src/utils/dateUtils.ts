@@ -1,17 +1,24 @@
-const formatDate = (d: Date = new Date()): string => {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+// Fix F11: all date strings are authored-device-local `YYYY-MM-DD`. That is
+// the portable todo.txt convention, so relativity (`today` / `tomorrow` /
+// `overdue`) is evaluated against the VIEWING device's clock at parse time,
+// never mutated in the file. If a file authored in one timezone is opened on
+// a device whose local date differs, due-task groupings can shift by a day —
+// this is inherent to the plain-text format, not a bug to paper over here.
+const formatDate = (d: Date): string =>
+	`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-export const getToday = (): string => formatDate();
+// An optional `now` anchor makes relativity testable and lets callers pin a
+// reference moment instead of always using the ambient clock.
+export const getToday = (now: Date = new Date()): string => formatDate(now);
 
-export const getTomorrow = (): string => {
-	const d = new Date();
+export const getTomorrow = (now: Date = new Date()): string => {
+	const d = new Date(now);
 	d.setDate(d.getDate() + 1);
 	return formatDate(d);
 };
 
-export const getYesterday = (): string => {
-	const d = new Date();
+export const getYesterday = (now: Date = new Date()): string => {
+	const d = new Date(now);
 	d.setDate(d.getDate() - 1);
 	return formatDate(d);
 };
