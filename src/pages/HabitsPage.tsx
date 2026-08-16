@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useHabitsContext } from "@/context/HabitsContext";
+import ExactAlarmPermission from "@/features/habits/ExactAlarmPermission";
 import { HABIT_COLORS, type HabitColor, type HabitDraft } from "@/types/habits";
 import {
 	formatLocalDate,
@@ -171,6 +172,7 @@ export default function HabitsPage() {
 				</header>
 
 				<SimpleGrid cols={{ base: 1, lg: 12 }} spacing="xl">
+					<ExactAlarmPermission />
 					<Paper className="today-panel" p="xl" withBorder>
 						<Box className="today-panel-art" />
 						<Group

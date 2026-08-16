@@ -123,6 +123,12 @@ export async function scheduleHabitReminder(habit: {
 		await cancelHabitReminder(habit.id);
 		return;
 	}
+	/* Android 12+ exact scheduling: the Kotlin exact-alarm plugin owns the
+	 * alarm when the device allows it (USE_EXACT_ALARM granted at install
+	 * for habit-tracking apps), which chains tomorrow's alarm natively so
+	 * reminders fire while the app is closed. On devices that decline the
+	 * permission, the notification plugin's inexact `Schedule.at`
+	 * (allowWhileIdle) path is used transparently. */
 	try {
 		const [hours, minutes] = habit.reminderTime.split(":").map(Number);
 		const atTime = new Date();
@@ -131,8 +137,11 @@ export async function scheduleHabitReminder(habit: {
 		if (atTime.getTime() <= Date.now()) {
 			atTime.setDate(atTime.getDate() + 1);
 		}
+		const exact = await import("@/lib/exactAlarms");
+		const usedExact = await exact.scheduleHabitReminderExact(habit);
+		if (usedExact) return;
 		sendNotification({
-			id: Math.abs(hashId(`habit_${habit.id}`)),
+			id: Math.abs(hashIdExposed(`habit_${habit.id}`)),
 			title: "A small moment for you",
 			body: `Time for ${habit.name}. One small mark is still momentum.`,
 			channelId: HABIT_CHANNEL_ID,
@@ -148,8 +157,18 @@ export async function scheduleHabitReminder(habit: {
 
 /** Cancel a habit's recurring reminder (on delete/archive/toggle). */
 export async function cancelHabitReminder(habitId: string) {
+	/* The exact-alarm plugin cancels by the same `habit_<id>` key, and the
+	 * call is idempotent, so a single attempt covers both scheduling paths. */
 	try {
-		await cancel([Math.abs(hashId(`habit_${habitId}`))]);
+		const exact = await import("@/lib/exactAlarms");
+		await exact.cancelHabitReminderExact(habitId);
+		return;
+	} catch {
+		// Exact path unavailable (desktop / web / plugin failure): fall
+		// through to the notification-plugin cancellation below.
+	}
+	try {
+		await cancel([Math.abs(hashIdExposed(`habit_${habitId}`))]);
 	} catch (error) {
 		console.warn("Habit reminder could not be cancelled:", error);
 	}
@@ -161,7 +180,7 @@ export async function notifyDueTodos(
 ) {
 	try {
 		// Clear any prior nudge so restacking doesn't pile up stale IDs.
-		await cancel([Math.abs(hashId("todo-due-today"))]);
+		await cancel([Math.abs(hashIdExposed("todo-due-today"))]);
 		/* Per the parser grammar (`src/utils/todoParser.ts`), `-[x]` and the
 		 * `x ` prefix both mean complete; the checkbox regex uses `.` so any
 		 * flag char is matched. */
@@ -172,7 +191,7 @@ export async function notifyDueTodos(
 
 		const shown = pending.slice(0, 3);
 		sendNotification({
-			id: Math.abs(hashId("todo-due-today")),
+			id: Math.abs(hashIdExposed("todo-due-today")),
 			title:
 				shown.length === 1
 					? "A task waits on you"
@@ -195,7 +214,9 @@ export async function notifyDueTodos(
 }
 
 /** Stable string hash so recurring reminders keep the same OS id. */
-function hashId(input: string): number {
+/* Exported so the exact-alarm router and widget bridge keep identical id
+ * conventions with the notification-plugin fallback. */
+export function hashIdExposed(input: string): number {
 	let hash = 0;
 	for (let i = 0; i < input.length; i++) {
 		hash = (hash << 5) - hash + input.charCodeAt(i);

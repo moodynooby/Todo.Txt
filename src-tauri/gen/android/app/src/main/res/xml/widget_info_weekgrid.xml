@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Week Grid widget: 4x2/4x3 showing the trailing 7 days per habit.
+     Android 12+ responsive flags are enabled. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/widget_week_grid"
+    android:minWidth="180dp"
+    android:minHeight="120dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="120dp"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="260dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional"
+    android:description="@string/widget_weekgrid_description"
+    android:previewLayout="@layout/widget_week_grid" />

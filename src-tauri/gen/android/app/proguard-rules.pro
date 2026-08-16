@@ -19,3 +19,15 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ---------------------------------------------------------------------------
+# Month-2 native additions: keep all receiver / provider / plugin classes
+# alive on release builds (R8 is enabled via isMinifyEnabled = true).
+# Receivers and providers are instantiated reflectively by the system from
+# the manifest, so R8 would otherwise strip them.
+# ---------------------------------------------------------------------------
+-keep class net.todotxt.app.plugins.exactalarms.** { *; }
+-keep class net.todotxt.app.plugins.widgetdata.** { *; }
+-keepclassmembers class net.todotxt.app.MainActivity {
+    public *;
+}
