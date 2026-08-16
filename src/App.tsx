@@ -21,11 +21,15 @@ import { TimerProvider, useTimerContext } from "@/context/TimerContext";
 import { TodoProvider, useTodoContext } from "@/context/TodoContext";
 import { useViewContext, ViewProvider } from "@/context/ViewContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
+import HabitNativeReminder from "@/features/habits/HabitNativeReminder";
 import HabitReminderManager from "@/features/habits/HabitReminderManager";
 import Timer from "@/features/timer/Timer";
 import { useDueReminders } from "@/hooks/useDueReminders";
+import { useDueRemindersNative } from "@/hooks/useDueRemindersNative";
+import { useTodoNativeActions } from "@/hooks/useTodoNativeActions";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
 import { readHabitsBackup } from "@/lib/habitsBackup";
+import { initReminderActions } from "@/lib/nativeReminders";
 import HabitsPage from "@/pages/HabitsPage";
 import NotesPage from "@/pages/NotesPage";
 import TodoPage from "@/pages/TodoPage";
@@ -104,6 +108,11 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 	 * is open, e.g. `due:today@17:00` or `due:2026-08-16T14:30`. */
 	useDueReminders(taskData);
 
+	/* Native due-date nudges (Tauri only): fire while the app is closed too. */
+	useDueRemindersNative(taskData);
+	/* Native "Mark done" actions for todo tasks (Tauri only). */
+	useTodoNativeActions();
+
 	/* Ask for notification permission once the user has loaded a document, so
 	 * the due reminders above can fire as soon as permission is granted. */
 	useEffect(() => {
@@ -111,6 +120,11 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 		if (Notification.permission === "default") {
 			Notification.requestPermission().catch(() => undefined);
 		}
+	}, []);
+
+	/* Native side: boot Tauri's notification channels/action types once. */
+	useEffect(() => {
+		void initReminderActions();
 	}, []);
 
 	const handleSave = useCallback(
@@ -222,6 +236,7 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 						style={{ height: "calc(64px + env(safe-area-inset-bottom))" }}
 					/>
 					<HabitReminderManager />
+					<HabitNativeReminder />
 				</AppShell.Main>
 			</AppShell>
 

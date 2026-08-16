@@ -179,6 +179,11 @@ body {
 	border: 1px solid var(--app-border);
 	background: var(--app-surface-muted);
 	border-radius: var(--m3-radius-control);
+	align-items: center;
+	height: auto;
+	max-height: 2.2rem;
+	margin-block: auto;
+	padding-block: 0.15rem;
 }
 
 .app-header .mantine-SegmentedControl-indicator {
@@ -189,6 +194,31 @@ body {
 
 .app-header .mantine-SegmentedControl-label {
 	color: var(--app-ink-muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-inline: 0.55rem;
+	min-height: 2.2rem;
+	max-height: 2.2rem;
+	white-space: nowrap;
+	line-height: 1;
+	vertical-align: middle;
+}
+
+.app-header .mantine-SegmentedControl-label > div {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	line-height: 1;
+	vertical-align: middle;
+	transform: translateY(-0.5px);
+}
+
+.app-header .mantine-SegmentedControl-label > div > span {
+	display: inline-block;
+	line-height: 1;
+	transform: translateY(0.5px);
 }
 
 .app-wordmark {
