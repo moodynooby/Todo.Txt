@@ -32,10 +32,28 @@ export function useWidgetSync(): void {
 		if (!isTauri()) return;
 		if (timerRef.current) clearTimeout(timerRef.current);
 		timerRef.current = setTimeout(() => {
+			const habits = projectHabits(habitsState.habits);
+			const best = habits.reduce(
+				(pick, habit) => (habit.streak > pick.streak ? habit : pick),
+				habits[0] ?? { streak: 0, name: "" },
+			);
 			const payload = {
 				date: new Date().toISOString().slice(0, 10),
 				tasks: projectTasks(todoState.content),
-				habits: projectHabits(habitsState.habits),
+				habits,
+				momentum: {
+					bestStreak: best.streak,
+					bestHabitName: "streak" in best ? (best.name ?? "") : "",
+					avgRate28: habits.length
+						? Math.round(
+								habits.reduce((sum, habit) => sum + habit.rate28, 0) /
+									habits.length,
+							)
+						: 0,
+					habitsDoneToday: habits.filter((habit) => habit.completedToday)
+						.length,
+					habitsTotal: habits.length,
+				},
 			};
 			void pushWidgetData(payload);
 		}, SYNC_DEBOUNCE_MS);

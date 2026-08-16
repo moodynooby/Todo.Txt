@@ -75,10 +75,22 @@ internal class WidgetDataStore(context: Context) {
                             put("last7", JSONArray().apply {
                                 habit.last7.forEach { put(it) }
                             })
+                            put("last12Weeks", JSONArray().apply {
+                                habit.last12Weeks.forEach { week ->
+                                    put(JSONArray().apply { week.forEach { put(it) } })
+                                }
+                            })
                             put("completedToday", habit.completedToday)
                             habit.reminderTime?.let { put("reminderTime", it) }
                         })
                     }
+                })
+                put("momentum", JSONObject().apply {
+                    put("bestStreak", payload.momentum.bestStreak)
+                    put("bestHabitName", payload.momentum.bestHabitName)
+                    put("avgRate28", payload.momentum.avgRate28)
+                    put("habitsDoneToday", payload.momentum.habitsDoneToday)
+                    put("habitsTotal", payload.momentum.habitsTotal)
                 })
             }
             val temp = File(file.parentFile, "$FILE_NAME.tmp")
@@ -111,10 +123,22 @@ internal class WidgetDataStore(context: Context) {
                         rate28 = it.optInt("rate28"),
                         last30 = it.optJSONArray("last30")?.toBoolList() ?: emptyList(),
                         last7 = it.optJSONArray("last7")?.toBoolList() ?: emptyList(),
+                        last12Weeks = it.optJSONArray("last12Weeks")?.toList {
+                            it.toBoolList()
+                        } ?: emptyList(),
                         completedToday = it.optBoolean("completedToday"),
                         reminderTime = if (it.has("reminderTime")) it.optString("reminderTime") else null,
                     )
                 } ?: emptyList(),
+                momentum = root.optJSONObject("momentum")?.let { node ->
+                    WidgetMomentum(
+                        bestStreak = node.optInt("bestStreak"),
+                        bestHabitName = node.optString("bestHabitName", ""),
+                        avgRate28 = node.optInt("avgRate28"),
+                        habitsDoneToday = node.optInt("habitsDoneToday"),
+                        habitsTotal = node.optInt("habitsTotal"),
+                    )
+                } ?: WidgetMomentum(),
             )
         }
     }

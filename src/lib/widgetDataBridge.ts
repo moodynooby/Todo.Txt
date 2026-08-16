@@ -38,8 +38,10 @@ export interface WidgetHabitProjection {
 	rate28: number;
 	/** Boolean per trailing day, oldest first — feeds heatmap / grid widgets. */
 	last30: boolean[];
-	/** Boolean per trailing day, oldest first (Mon–Sun week grid). */
+	/** Boolean per trailing day, oldest first (week grid rows). */
 	last7: boolean[];
+	/** 12 trailing weeks, each a 7-day Mon–Sun row oldest-first — heatmap. */
+	last12Weeks: boolean[][];
 	completedToday: boolean;
 	/** Reminder time, used by the Today widget to order habit rows. */
 	reminderTime?: string;
@@ -58,6 +60,7 @@ export function projectHabits(habits: Habit[]): WidgetHabitProjection[] {
 	const today = formatLocalDate(new Date());
 	const last30 = getLastDays(30).map(formatLocalDate);
 	const last7 = getLastDays(7).map(formatLocalDate);
+	const last84 = getLastDays(84).map(formatLocalDate);
 	return habits
 		.filter((habit) => !habit.archived)
 		.map((habit) => ({
@@ -73,6 +76,11 @@ export function projectHabits(habits: Habit[]): WidgetHabitProjection[] {
 			),
 			last30: last30.map((date) => habit.completedDates.includes(date)),
 			last7: last7.map((date) => habit.completedDates.includes(date)),
+			last12Weeks: Array.from({ length: 12 }, (_, weekIndex) =>
+				last84
+					.slice(weekIndex * 7, weekIndex * 7 + 7)
+					.map((date) => habit.completedDates.includes(date)),
+			),
 			completedToday: habit.completedDates.includes(today),
 			reminderTime: habit.reminderTime,
 		}));

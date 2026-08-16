@@ -7,4 +7,12 @@
     <string name="widget_streaks_title">"Habit Streaks"</string>
     <string name="widget_streaks_empty">"Enable habits to see streaks here."</string>
     <string name="widget_streaks_description">"Current and best streaks for every active habit."</string>
+    <string name="widget_weekgrid_title">Week Grid</string>
+    <string name="widget_weekgrid_empty">Enable habits to see the week view.</string>
+    <string name="widget_weekgrid_description">A Mon\u2013Sun grid of the last 7 days for every habit.</string>
+    <string name="widget_heatmap_title">Don't Break the Chain</string>
+    <string name="widget_heatmap_empty">Add a habit to start the chain.</string>
+    <string name="widget_heatmap_description">A 12-week heatmap of your strongest habit.</string>
+    <string name="widget_momentum_empty">Your momentum begins with the first habit.</string>
+    <string name="widget_momentum_description">One oversized hero metric: streak, consistency, or today's progress.</string>
 </resources>

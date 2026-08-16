@@ -50,6 +50,9 @@ class WidgetDataPlugin(activity: android.app.Activity) : Plugin(activity) {
         val WIDGET_PROVIDERS = listOf(
             "net.todotxt.app.plugins.widgetdata.TodoWidgetProvider",
             "net.todotxt.app.plugins.widgetdata.HabitsStreaksWidgetProvider",
+            "net.todotxt.app.plugins.widgetdata.HabitsWeekGridWidgetProvider",
+            "net.todotxt.app.plugins.widgetdata.HabitsHeatmapWidgetProvider",
+            "net.todotxt.app.plugins.widgetdata.HabitsMomentumWidgetProvider",
         )
 
         /** Re-renders every registered widget of the app. */
@@ -92,8 +95,26 @@ internal class PushHabitArgs {
     var rate28: Int = 0
     var last30: List<Boolean> = emptyList()
     var last7: List<Boolean> = emptyList()
+    var last12Weeks: List<List<Boolean>> = emptyList()
     var completedToday: Boolean = false
     var reminderTime: String? = null
+}
+
+@InvokeArg
+internal class PushMomentumArgs {
+    var bestStreak: Int = 0
+    var bestHabitName: String = ""
+    var avgRate28: Int = 0
+    var habitsDoneToday: Int = 0
+    var habitsTotal: Int = 0
+
+    fun toMomentum(): WidgetMomentum = WidgetMomentum(
+        bestStreak = bestStreak,
+        bestHabitName = bestHabitName,
+        avgRate28 = avgRate28,
+        habitsDoneToday = habitsDoneToday,
+        habitsTotal = habitsTotal,
+    )
 }
 
 @InvokeArg
@@ -101,8 +122,10 @@ internal class PushArgs {
     var date: String = ""
     lateinit var tasks: List<PushTaskArgs>
     lateinit var habits: List<PushHabitArgs>
+    var momentum: PushMomentumArgs = PushMomentumArgs()
 
     fun toPayload(): WidgetPayload = WidgetPayload(
+        momentum = momentum.toMomentum(),
         date = date,
         tasks = tasks.map { task ->
             WidgetTask(id = task.id, text = task.text, done = task.done, due = task.due)
@@ -117,6 +140,7 @@ internal class PushArgs {
                 rate28 = habit.rate28,
                 last30 = habit.last30,
                 last7 = habit.last7,
+                last12Weeks = habit.last12Weeks,
                 completedToday = habit.completedToday,
                 reminderTime = habit.reminderTime,
             )
