@@ -29,6 +29,18 @@ function writeReminderLog(log: Set<string>): void {
 export default function HabitReminderManager() {
 	const { state } = useHabitsContext();
 
+	/* Native side: whenever the habit list or a reminder setting changes,
+	 * reconcile the exact-alarm store with the current desired schedule
+	 * (Tauri builds only; no-ops on web/desktop). */
+	useEffect(() => {
+		const enabled = state.habits.filter(
+			(habit) => habit.reminderEnabled && habit.reminderTime,
+		);
+		import("@/lib/exactAlarms")
+			.then((exact) => exact.syncExactAlarms(enabled))
+			.catch(() => undefined);
+	}, [state.habits]);
+
 	useEffect(() => {
 		const checkReminders = () => {
 			if (

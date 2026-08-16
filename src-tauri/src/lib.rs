@@ -1,3 +1,6 @@
+#[cfg(mobile)]
+pub mod mobile;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Build the Tauri application. The chain is broken into statements so that
@@ -12,6 +15,13 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_deep_link::init());
+
+    #[cfg(mobile)]
+    {
+        builder = builder
+            .plugin(self::mobile::init())
+            .plugin(self::mobile::init_widget_data());
+    }
 
     #[cfg(not(mobile))]
     {
