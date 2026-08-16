@@ -3,6 +3,7 @@ import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { RichTextEditor } from "@mantine/tiptap";
 import { Filter as FilterIcon } from "lucide-react";
 import { useEffect } from "react";
+import AdvancedToolsDialog from "@/components/AdvancedToolsDialog";
 import { Editor } from "@/components/Editor";
 import EditorPlay from "@/components/Editor/EditorPlay";
 import Sidebar from "@/components/Sidebar/Sidebar";
@@ -46,6 +47,10 @@ const TodoPage = ({
 	const isMobile = useMediaQuery("(max-width: 768px)");
 	const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
 		useDisclosure(false);
+	const [
+		advancedToolsOpened,
+		{ open: openAdvancedTools, close: closeAdvancedTools },
+	] = useDisclosure(false);
 
 	const sidebarState = useSidebarState({
 		taskData,
@@ -160,6 +165,7 @@ const TodoPage = ({
 					onSave={onSave}
 					onOpen={onOpen}
 					onAiTools={onAiTools}
+					onAdvancedTools={openAdvancedTools}
 					className="tiptap-container"
 					style={{
 						flex: 1,
@@ -217,6 +223,12 @@ const TodoPage = ({
 					</Transition>
 				)}
 			</Flex>
+
+			<AdvancedToolsDialog
+				opened={advancedToolsOpened}
+				onClose={closeAdvancedTools}
+				taskData={taskData}
+			/>
 
 			{/* Mobile: bottom-sheet filter FAB (secondary control) */}
 			{isMobile && (

@@ -1,5 +1,6 @@
 import { Group, Menu, Tooltip } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import SmartSuggestionChips from "@/components/SmartSuggestionChips";
 import { RichTextEditor } from "@mantine/tiptap";
 import type { Editor as TipTapEditor } from "@tiptap/core";
 import {
@@ -9,6 +10,7 @@ import {
 	File as FileIcon,
 	FileText,
 	FolderOpen,
+	GitBranch,
 	Save,
 	Sparkles,
 } from "lucide-react";
@@ -33,6 +35,7 @@ interface EditorProps {
 	onSave?: (format: SaveFormat) => void;
 	onOpen?: () => void;
 	onAiTools?: () => void;
+	onAdvancedTools?: () => void;
 	/* Playfulness layer */
 	playLayer?: React.ReactNode;
 	warmPlaceholder?: string;
@@ -46,6 +49,7 @@ export function Editor({
 	onSave,
 	onOpen,
 	onAiTools,
+	onAdvancedTools,
 	playLayer,
 	warmPlaceholder,
 }: EditorProps) {
@@ -192,8 +196,30 @@ export function Editor({
 									<Sparkles size={16} />
 								</Tooltip>
 							</RichTextEditor.Control>
+
+							<RichTextEditor.Control
+								onClick={onAdvancedTools}
+								active={false}
+								aria-label="Advanced task tools"
+							>
+								<Tooltip label="Advanced task tools" position="top" withArrow>
+									<GitBranch size={16} />
+								</Tooltip>
+							</RichTextEditor.Control>
 						</RichTextEditor.ControlsGroup>
 					)}
+
+					<div
+						className="editor-smart-suggestions"
+						style={{
+							maxWidth: "100%",
+							overflowX: "auto",
+							overflowY: "hidden",
+							WebkitOverflowScrolling: "touch",
+						}}
+					>
+						<SmartSuggestionChips editor={editor} />
+					</div>
 				</RichTextEditor.Toolbar>
 			)}
 
