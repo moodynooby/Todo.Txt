@@ -7,6 +7,8 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
+import org.gradle.api.Action
+import org.gradle.process.ExecSpec
 
 abstract class BuildTask : DefaultTask() {
     @get:Inject
@@ -23,16 +25,15 @@ abstract class BuildTask : DefaultTask() {
 
     @TaskAction
     fun assemble() {
-        val executable = """pnpm""";
+        val executable = "pnpm"
         try {
             runTauriCli(executable)
         } catch (e: Exception) {
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                // Try different Windows-specific extensions
                 val fallbacks = listOf(
                     "$executable.exe",
                     "$executable.cmd",
-                    "$executable.bat",
+                    "$executable.bat"
                 )
                 
                 var lastException: Exception = e
@@ -46,44 +47,39 @@ abstract class BuildTask : DefaultTask() {
                 }
                 throw lastException
             } else {
-                throw e;
+                throw e
             }
         }
     }
 
-    fun runTauriCli(executable: String) {
+    private fun runTauriCli(executable: String) {
         val rootDirRel = rootDirRel ?: throw GradleException("rootDirRel cannot be null")
         val projectDir = projectDir ?: throw GradleException("projectDir cannot be null")
         val target = target ?: throw GradleException("target cannot be null")
         val release = release ?: throw GradleException("release cannot be null")
-        val args = listOf("tauri", "android", "android-studio-script");
-
+        
         val ndkEnv = NdkLinkerEnv(projectDir)
 
-        execOperations.exec {
-            workingDir(File(projectDir, rootDirRel))
-            executable(executable)
-            args(args)
-            if (logger.isEnabled(LogLevel.DEBUG)) {
-                args("-vv")
-            } else if (logger.isEnabled(LogLevel.INFO)) {
-                args("-v")
+        execOperations.exec(object : Action<ExecSpec> {
+            override fun execute(spec: ExecSpec) {
+                spec.workingDir(File(projectDir, rootDirRel))
+                spec.executable(executable)
+                spec.args("tauri", "android", "android-studio-script")
+                if (logger.isEnabled(LogLevel.DEBUG)) {
+                    spec.args("-vv")
+                } else if (logger.isEnabled(LogLevel.INFO)) {
+                    spec.args("-v")
+                }
+                if (release) {
+                    spec.args("--release")
+                }
+                spec.args("--target", target)
+                ndkEnv.environment().forEach { (key, value) -> spec.environment(key, value) }
             }
-            if (release) {
-                args("--release")
-            }
-            args(listOf("--target", target))
-            ndkEnv.environment().forEach { (key, value) -> environment(key, value) }
-        }.assertNormalExitValue()
+        }).assertNormalExitValue()
     }
 }
 
-/**
- * The tauri CLI's `android android-studio-script` subcommand does not set the
- * CARGO_TARGET_*_LINKER/RUSTFLAGS variables (unlike `tauri android build`),
- * so cargo would fall back to the host linker. Resolve the Android NDK linker
- * and inject those variables so the cross-compile actually links.
- */
 class NdkLinkerEnv(projectDir: String) {
     private val ndkHome: File? = findNdkHome(projectDir)
     private val apiLevel = System.getenv("ANDROID_NATIVE_API_LEVEL") ?: "24"
@@ -92,7 +88,7 @@ class NdkLinkerEnv(projectDir: String) {
         "aarch64-linux-android" to "aarch64-linux-android",
         "armv7-linux-androideabi" to "armv7a-linux-androideabi",
         "i686-linux-android" to "i686-linux-android",
-        "x86_64-linux-android" to "x86_64-linux-android",
+        "x86_64-linux-android" to "x86_64-linux-android"
     )
 
     fun environment(): Map<String, String> {
