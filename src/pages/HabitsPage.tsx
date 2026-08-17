@@ -172,7 +172,6 @@ export default function HabitsPage() {
 				</header>
 
 				<SimpleGrid cols={{ base: 1, lg: 12 }} spacing="xl">
-					<ExactAlarmPermission />
 					<Paper className="today-panel" p="xl" withBorder>
 						<Box className="today-panel-art" />
 						<Group
