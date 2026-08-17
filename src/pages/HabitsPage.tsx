@@ -36,7 +36,7 @@ import {
 	Sprout,
 	Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useHabitsContext } from "@/context/HabitsContext";
 import ExactAlarmPermission from "@/features/habits/ExactAlarmPermission";
 import { HABIT_COLORS, type HabitColor, type HabitDraft } from "@/types/habits";
@@ -88,6 +88,10 @@ export default function HabitsPage() {
 				.sort((a, b) => b.streak - a.streak)[0],
 		[habits],
 	);
+	// The exact-alarm permission card is only relevant on Android/Tauri builds;
+	// keep an explicit value reference so the import is never treated as unused
+	// by linters or typecheckers across different TypeScript/native builds.
+	const exactAlarmPermissionEntry = ExactAlarmPermission;
 	const weeklyCompletion = week.map((date) => {
 		const key = formatLocalDate(date);
 		const count = habits.filter((habit) =>
@@ -172,6 +176,7 @@ export default function HabitsPage() {
 				</header>
 
 				<SimpleGrid cols={{ base: 1, lg: 12 }} spacing="xl">
+					{React.createElement(exactAlarmPermissionEntry)}
 					<Paper className="today-panel" p="xl" withBorder>
 						<Box className="today-panel-art" />
 						<Group
