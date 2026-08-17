@@ -137,7 +137,9 @@ async function reconcileDocument(
 		hasLocal: boolean;
 	},
 ): Promise<void> {
-	let snap;
+	let snap: import("@/lib/firestoreClient").DocSnapshot<
+		Record<string, unknown>
+	>;
 	try {
 		snap = await getDocWithRetry(getFirestoreDb(), uid, path);
 	} catch (e) {

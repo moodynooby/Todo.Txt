@@ -1,6 +1,5 @@
 import { Group, Menu, Tooltip } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import SmartSuggestionChips from "@/components/SmartSuggestionChips";
 import { RichTextEditor } from "@mantine/tiptap";
 import type { Editor as TipTapEditor } from "@tiptap/core";
 import {
@@ -15,6 +14,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import { useEffect } from "react";
+import SmartSuggestionChips from "@/components/SmartSuggestionChips";
 
 import type { SaveFormat } from "@/lib/documentExport";
 

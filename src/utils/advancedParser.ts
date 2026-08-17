@@ -188,7 +188,7 @@ export function parseTaskMetadata(text: string): ParsedTaskMetadata {
 		);
 
 	const recModeMatch = text.match(/\brec:(strict|workdays|completion)/i);
-	let recMode: RecurrenceRule["mode"] = recModeMatch
+	const recMode: RecurrenceRule["mode"] = recModeMatch
 		? (recModeMatch[1].toLowerCase() as any)
 		: "strict";
 
@@ -277,7 +277,7 @@ export class DependencyGraph {
 				let isBlocked = false;
 				for (const reqId of node.after) {
 					const reqNode = this.nodes.get(reqId);
-					if (!reqNode || !reqNode.completed) {
+					if (!reqNode?.completed) {
 						isBlocked = true;
 						break;
 					}
