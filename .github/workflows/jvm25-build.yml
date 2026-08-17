@@ -32,15 +32,22 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '25'
-          distribution: 'oracle' # Or 'temurin' if available, but Oracle usually has early access
+          distribution: 'oracle'
 
       - name: Install dependencies
         run: pnpm install
 
       - name: Install Android SDK Components
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" "build-tools;36.0.0" "ndk;30.0.15729638"
+          # The Android SDK is pre-installed on ubuntu-latest runners
+          # We need to find the correct path for sdkmanager
+          SDK_MANAGER=$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
+          if [ ! -f "$SDK_MANAGER" ]; then
+            SDK_MANAGER=$ANDROID_HOME/tools/bin/sdkmanager
+          fi
+          
+          yes | $SDK_MANAGER --licenses
+          $SDK_MANAGER "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" "build-tools;36.0.0" "ndk;30.0.15729638"
 
       - name: Set Environment Variables
         run: |
