@@ -57,5 +57,5 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/30.0.15729638" >> $GITHUB_ENV
 
-      - name: Build Desktop (AppImage)
-        run: pnpm tauri build --bundles appimage
+      - name: Build Desktop (Deb)
+        run: pnpm tauri build --bundles deb
