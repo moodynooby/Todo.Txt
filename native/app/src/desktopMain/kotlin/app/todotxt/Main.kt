@@ -4,10 +4,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.MenuBar
+import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
@@ -18,24 +23,41 @@ import app.todotxt.ui.AppRoot
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
     Storage.load()
+    var isOpen by remember { mutableStateOf(true) }
     val windowState = rememberWindowState(
         size = DpSize(1180.dp, 780.dp),
         position = WindowPosition(Alignment.Center),
     )
 
-    Window(
-        onCloseRequest = ::exitApplication,
-        state = windowState,
-        title = "T0do.TxT",
-    ) {
-        MenuBar {
-            Menu("File", mnemonic = 'F') {
-                Item("Quit", onClick = ::exitApplication)
-            }
-            Menu("Help", mnemonic = 'H') {
-                Item("About T0do.TxT", onClick = {})
-            }
+    val icon = painterResource("icon.png")
+
+    Tray(
+        icon = icon,
+        menu = {
+            Item("Show Window", onClick = { isOpen = true })
+            Separator()
+            Item("Quick Add Todo", onClick = { isOpen = true /* Focus add field logic */ })
+            Item("Quit", onClick = ::exitApplication)
         }
-        AppRoot(Modifier.fillMaxSize())
+    )
+
+    if (isOpen) {
+        Window(
+            onCloseRequest = { isOpen = false },
+            state = windowState,
+            title = "T0do.TxT",
+            icon = icon,
+        ) {
+            MenuBar {
+                Menu("File", mnemonic = 'F') {
+                    Item("Hide", onClick = { isOpen = false })
+                    Item("Quit", onClick = ::exitApplication)
+                }
+                Menu("Help", mnemonic = 'H') {
+                    Item("About T0do.TxT", onClick = {})
+                }
+            }
+            AppRoot(Modifier.fillMaxSize())
+        }
     }
 }

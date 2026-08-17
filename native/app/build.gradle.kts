@@ -57,6 +57,8 @@ kotlin {
                 implementation(compose.preview)
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.androidx.work.runtime)
+                implementation(libs.androidx.glance.appwidget)
+                implementation(libs.androidx.glance.material3)
             }
         }
         val desktopMain by getting {
