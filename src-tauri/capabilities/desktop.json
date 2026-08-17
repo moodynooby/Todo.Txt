@@ -1,6 +1,18 @@
 {
-	"identifier": "desktop-capability",
-	"platforms": ["macOS", "windows", "linux"],
-	"windows": ["main"],
-	"permissions": ["window-state:default", "global-shortcut:default"]
+ "identifier": "desktop-capability",
+ "platforms": [
+  "macOS",
+  "windows",
+  "linux"
+ ],
+ "windows": [
+  "main"
+ ],
+ "permissions": [
+  "window-state:default",
+  "global-shortcut:default",
+  "allow-push-desktop-widget-data",
+  "allow-show-main-window",
+  "allow-toggle-desktop-widget"
+ ]
 }

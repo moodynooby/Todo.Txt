@@ -39,6 +39,12 @@ import type { Filter, ParsedTodoContent } from "@/types/todo";
 import { parseTodoContent } from "@/utils/todoParser";
 
 const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
+const WidgetPage = lazy(() => import("@/pages/WidgetPage"));
+
+/** Whether the current URL belongs to one of the floating desktop widgets. */
+const isWidgetRoute = (): boolean =>
+	typeof window !== "undefined" &&
+	window.location.pathname.startsWith("/widget/");
 
 interface AppContentProps {
 	activeFilter: Filter | null;
@@ -158,6 +164,16 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 		},
 		[dispatchTimer],
 	);
+
+	/* Floating desktop widgets load their own minimal route so the app
+	 * shell never paints behind the transparent, frameless windows. */
+	if (isWidgetRoute()) {
+		return (
+			<Suspense fallback={null}>
+				<WidgetPage />
+			</Suspense>
+		);
+	}
 
 	return (
 		<SyncProvider

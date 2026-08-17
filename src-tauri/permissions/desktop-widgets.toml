@@ -1,0 +1,18 @@
+# Application-side permission definitions for the desktop widgets.
+# Tauri only auto-generates command permissions for plugin crates; commands
+# that live in the application crate itself must declare their permissions
+# here (app-developer permissions are TOML-only, per the Tauri docs).
+[[permission]]
+identifier = "allow-push-desktop-widget-data"
+description = "Lets the frontend push its projected todo/habit state into the desktop widgets via the tray data bridge."
+commands.allow = ["push_desktop_widget_data"]
+
+[[permission]]
+identifier = "allow-toggle-desktop-widget"
+description = "Lets the frontend toggle a floating desktop widget's visibility."
+commands.allow = ["toggle_desktop_widget"]
+
+[[permission]]
+identifier = "allow-show-main-window"
+description = "Lets the frontend show and focus the main application window."
+commands.allow = ["show_main_window"]

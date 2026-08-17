@@ -47,10 +47,20 @@ export interface WidgetHabitProjection {
 	reminderTime?: string;
 }
 
+export interface WidgetHabitMomentum {
+	bestStreak: number;
+	bestHabitName: string;
+	avgRate28: number;
+	habitsDoneToday: number;
+	habitsTotal: number;
+}
+
 export interface WidgetPayload {
 	date: string;
 	tasks: WidgetTaskProjection[];
 	habits: WidgetHabitProjection[];
+	/** Desktop + Android widget summary — best streak, today's progress, 28-day rate. */
+	momentum?: WidgetHabitMomentum;
 }
 
 const WIDGET_SYNC_COMMAND = "plugin:widget-data|push";
