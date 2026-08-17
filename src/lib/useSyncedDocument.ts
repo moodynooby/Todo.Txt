@@ -75,8 +75,13 @@ export interface SyncedDocumentOptions<T> {
 export interface SyncEngine {
 	/** Enqueue a field-map merge for a document. Batches with all others. */
 	enqueue: (update: DocUpdate) => void;
-	/** Subscribe to live updates for one document. */
-	subscribe: (path: UserDocPath, onNewer: (data: AnyRecord) => void) => void;
+	/** Subscribe to live updates for one document. `updatedAt` carries the
+	 *  server timestamp of the snapshot (needed to keep offline seeds
+	 *  server-relative). */
+	subscribe: (
+		path: UserDocPath,
+		onNewer: (data: AnyRecord, updatedAt?: number) => void,
+	) => void;
 	/** Read a document once with retry (for startup conflict resolution). */
 	readOnce: (path: UserDocPath) => Promise<{
 		exists: boolean;
@@ -243,7 +248,10 @@ class SyncEngineImpl implements SyncEngine {
 	private unsubscribes = new Map<string, () => void>();
 	private subscriptions = new Map<
 		string,
-		{ path: UserDocPath; onNewer: (data: AnyRecord) => void }
+		{
+			path: UserDocPath;
+			onNewer: (data: AnyRecord, updatedAt?: number) => void;
+		}
 	>();
 	private queue: DocUpdate[] = [];
 	private processing = false;
@@ -291,7 +299,10 @@ class SyncEngineImpl implements SyncEngine {
 		}, WRITE_DEBOUNCE_MS);
 	};
 
-	subscribe = (path: UserDocPath, onNewer: (data: AnyRecord) => void): void => {
+	subscribe = (
+		path: UserDocPath,
+		onNewer: (data: AnyRecord, updatedAt?: number) => void,
+	): void => {
 		const key = `${path.collection}/${path.id}`;
 		this.subscriptions.set(key, { path, onNewer });
 		const existing = this.unsubscribes.get(key);
@@ -304,8 +315,11 @@ class SyncEngineImpl implements SyncEngine {
 			getFirestoreDb(),
 			uid,
 			path,
-			(data) => {
-				onNewer(data as AnyRecord);
+			(data, updatedAt) => {
+				// `applyWithMirror` (the registration side) expects the server
+				// timestamp as its second argument — forwarding it is what keeps
+				// offline mirror seeds server-relative after live updates.
+				onNewer(data as AnyRecord, updatedAt);
 				this.markHealthy("synced");
 			},
 			0,
