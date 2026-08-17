@@ -20,9 +20,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import app.todotxt.domain.Drawing
+import app.todotxt.domain.DrawingPoint
+import app.todotxt.domain.DrawingStroke
+import app.todotxt.persistence.Storage
 import kotlinx.coroutines.coroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -52,10 +60,41 @@ data class DrawStroke(
 
 @Composable
 fun DrawPage() {
+    val drawings by Storage.drawings.collectAsState()
     val strokes = remember { mutableStateListOf<DrawStroke>() }
+
+    // Load initial drawing on first composition
+    LaunchedEffect(drawings) {
+        if (strokes.isEmpty() && drawings.isNotEmpty()) {
+            val last = drawings.last()
+            strokes.addAll(last.strokes.map { ds ->
+                DrawStroke(
+                    points = ds.points.map { Offset(it.x, it.y) }.toMutableList(),
+                    color = Color(ds.colorHex.removePrefix("#").toLong(16) or 0xFF000000),
+                    thickness = ds.thickness
+                )
+            })
+        }
+    }
+
     val currentStroke = remember { mutableStateOf<DrawStroke?>(null) }
     val color = remember { mutableStateOf(Color.Black) }
     val thickness = remember { mutableStateOf(4f) }
+
+    fun saveDrawing() {
+        val drawing = Drawing(
+            id = "default",
+            name = "My Sketch",
+            strokes = strokes.map { s ->
+                DrawingStroke(
+                    points = s.points.map { DrawingPoint(it.x, it.y) },
+                    colorHex = "#%08x".format(s.color.toArgb()),
+                    thickness = s.thickness
+                )
+            }
+        )
+        Storage.updateDrawings { listOf(drawing) }
+    }
 
     val palette = listOf(
         Color.Black, Color(0xFF173D35), Color(0xFF2F6F61), Color(0xFFD9784F),
@@ -100,8 +139,11 @@ fun DrawPage() {
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
             )
             Text("%.0f".format(thickness.value))
-            Button(onClick = { strokes.clear(); currentStroke.value = null }) {
+            Button(onClick = { strokes.clear(); currentStroke.value = null; saveDrawing() }) {
                 Text("Clear")
+            }
+            Button(onClick = { saveDrawing() }) {
+                Text("Save")
             }
         }
 
@@ -137,6 +179,7 @@ fun DrawPage() {
                                 }
                                 strokes.add(stroke)
                                 currentStroke.value = null
+                                saveDrawing()
                             }
                         }
                     }

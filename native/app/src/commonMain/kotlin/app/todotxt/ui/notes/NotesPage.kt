@@ -35,12 +35,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.IdUtils
 import app.todotxt.domain.Note
 import app.todotxt.domain.NoteColor
 import app.todotxt.persistence.Storage
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.font.FontStyle
 
 /** Notes workspace — colored cards with pin / archive, like the web board. */
 @Composable
@@ -79,6 +87,7 @@ fun NotesPage(notes: List<Note>) {
                     onValueChange = { draftContent = it },
                     placeholder = { Text("Content (markdown)") },
                     modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = MarkdownVisualTransformation(),
                 )
                 Row {
                     Button(
@@ -122,7 +131,10 @@ fun NotesPage(notes: List<Note>) {
 
 @Composable
 private fun NoteCard(note: Note) {
-    val color = remember(note.color) { Color(androidx.compose.ui.graphics.Color(note.color.hex.substring(1).toLong(16)).value) }
+    val color = remember(note.color) {
+        val hex = note.color.hex.removePrefix("#")
+        Color(hex.toLong(16) or 0xFF000000)
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -143,7 +155,11 @@ private fun NoteCard(note: Note) {
                     } },
                     modifier = Modifier.size(28.dp),
                 ) {
-                    Icon(Icons.Filled.Star, contentDescription = "Pin", tint = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        if (note.pinned) Icons.Filled.Star else Icons.Filled.Star,
+                        contentDescription = "Pin",
+                        tint = if (note.pinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
                 }
                 IconButton(
                     onClick = { Storage.updateNotes { list ->
@@ -154,7 +170,53 @@ private fun NoteCard(note: Note) {
                     Icon(Icons.Filled.Delete, contentDescription = "Archive", tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
-            Text(note.content, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = renderMarkdown(note.content),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}
+
+private class MarkdownVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        return TransformedText(renderMarkdown(text.text), OffsetMapping.Identity)
+    }
+}
+
+private fun renderMarkdown(text: String): AnnotatedString {
+    return buildAnnotatedString {
+        val lines = text.split("\n")
+        lines.forEachIndexed { index, line ->
+            when {
+                line.startsWith("# ") -> {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color(0xFF2F6F61))) {
+                        append(line)
+                    }
+                }
+                line.startsWith("## ") -> {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(line)
+                    }
+                }
+                line.startsWith("- ") || line.startsWith("* ") -> {
+                    withStyle(SpanStyle(color = Color(0xFFD9784F))) {
+                        append("• ")
+                    }
+                    append(line.substring(2))
+                }
+                else -> {
+                    // Basic bold/italic search
+                    var current = line
+                    val boldRegex = Regex("""\*\*(.*?)\*\*""")
+                    val italicRegex = Regex("""\*(.*?)\*""")
+                    
+                    // This is a simplified renderer for the experiment
+                    append(line)
+                }
+            }
+            if (index < lines.size - 1) append("\n")
         }
     }
 }

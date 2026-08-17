@@ -3,7 +3,9 @@ package app.todotxt.persistence
 import app.todotxt.domain.GroqSettings
 import app.todotxt.domain.Habit
 import app.todotxt.domain.Note
+import app.todotxt.domain.Drawing
 import app.todotxt.domain.TimerState
+import app.todotxt.service.ReminderManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -47,6 +49,9 @@ object Storage {
     private val _groq = MutableStateFlow(GroqSettings())
     val groq: StateFlow<GroqSettings> = _groq.asStateFlow()
 
+    private val _drawings = MutableStateFlow(emptyList<Drawing>())
+    val drawings: StateFlow<List<Drawing>> = _drawings.asStateFlow()
+
     fun load() {
         scope.launch {
             _content.value = PlatformStorage.readString("todo.txt") ?: ""
@@ -54,6 +59,7 @@ object Storage {
             _habits.value = readHabitsFile()
             _timers.value = readTimersFile()
             _groq.value = readGroqFile()
+            _drawings.value = readDrawingsFile()
         }
     }
 
@@ -73,6 +79,7 @@ object Storage {
         _habits.value = transform(_habits.value)
         scope.launch {
             PlatformStorage.writeString("habits.json", json.encodeToString(_habits.value))
+            ReminderManager.scheduleReminders(_habits.value)
         }
     }
 
@@ -88,6 +95,13 @@ object Storage {
         _groq.value = transform(_groq.value)
         scope.launch {
             PlatformStorage.writeString("groq.json", json.encodeToString(_groq.value))
+        }
+    }
+
+    fun updateDrawings(transform: (List<Drawing>) -> List<Drawing>) {
+        _drawings.value = transform(_drawings.value)
+        scope.launch {
+            PlatformStorage.writeString("drawings.json", json.encodeToString(_drawings.value))
         }
     }
 
@@ -110,6 +124,11 @@ object Storage {
         PlatformStorage.readString("groq.json")?.takeIf { it.isNotBlank() }
             ?.let { json.decodeFromString<GroqSettings>(it) } ?: GroqSettings()
     }.getOrDefault(GroqSettings())
+
+    private fun readDrawingsFile(): List<Drawing> = runCatching {
+        PlatformStorage.readString("drawings.json")?.takeIf { it.isNotBlank() }
+            ?.let { json.decodeFromString<List<Drawing>>(it) } ?: emptyList()
+    }.getOrDefault(emptyList())
 }
 
 expect object PlatformStorage {

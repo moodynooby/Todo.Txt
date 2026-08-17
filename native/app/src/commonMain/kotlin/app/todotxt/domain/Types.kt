@@ -103,3 +103,22 @@ data class GroqSettings(
     val apiKey: String? = null,
     val model: String = "llama-3.3-70b-versatile",
 )
+
+/** Vector drawing sketch. Mirrors the Excalidraw scene persistence. */
+@Serializable
+data class Drawing(
+    val id: String,
+    val name: String,
+    val strokes: List<DrawingStroke>,
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+@Serializable
+data class DrawingStroke(
+    val points: List<DrawingPoint>,
+    val colorHex: String,
+    val thickness: Float,
+)
+
+@Serializable
+data class DrawingPoint(val x: Float, val y: Float)
