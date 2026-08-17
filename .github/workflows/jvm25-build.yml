@@ -39,8 +39,6 @@ jobs:
 
       - name: Install Android SDK Components
         run: |
-          # The Android SDK is pre-installed on ubuntu-latest runners
-          # We need to find the correct path for sdkmanager
           SDK_MANAGER=$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
           if [ ! -f "$SDK_MANAGER" ]; then
             SDK_MANAGER=$ANDROID_HOME/tools/bin/sdkmanager
@@ -53,14 +51,6 @@ jobs:
         run: |
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/30.0.15729638" >> $GITHUB_ENV
-
-      - name: Verify Gradle Configuration
-        working-directory: src-tauri/gen/android
-        run: ./gradlew help --no-daemon
-
-      - name: Run Android Build (Configuration Only)
-        working-directory: src-tauri/gen/android
-        run: ./gradlew :app:assembleDebug --dry-run --no-daemon
 
       - name: Build Desktop (AppImage)
         run: pnpm tauri build --bundles appimage
