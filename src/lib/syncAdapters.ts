@@ -13,7 +13,7 @@ import {
 	TIMERS_DOC,
 	TODO_DOC,
 } from "@/lib/syncPaths";
-import { readTodoBackup } from "@/lib/todoBackup";
+import { readTodoBackup, writeTodoBackup } from "@/lib/todoBackup";
 import { useSyncedDocument } from "@/lib/useSyncedDocument";
 import type { Habit } from "@/types/habits";
 import type { Note } from "@/types/notes";
@@ -48,8 +48,17 @@ export function useSyncedTodo(): void {
 				type: "SET_CONTENT",
 				payload: { content, timestamp: Date.now() },
 			}),
-		localKey: "todo_content_backup",
-		encode: (content) => ({ content }),
+		// Fix (regression): the adapter previously relied on the engine's
+		// default `localKey` mirror, which wrote `{ data, updatedAt }` — but
+		// the todo backup reader expects `{ content, updatedAt }`. After the
+		// first local edit the backup became unreadable, so a reload lost the
+		// editor content (and on some paths rendered the raw stored JSON).
+		// An explicit mirror keeps the shape identical to `todoBackup.ts`.
+		mirror: (content, syncedAt) =>
+			writeTodoBackup(
+				content,
+				typeof syncedAt === "number" ? syncedAt : undefined,
+			),
 		decode: (record) =>
 			typeof record.content === "string" ? record.content : undefined,
 	});

@@ -71,6 +71,94 @@ interface SyncProviderProps {
 
 const readBackup = (): BackupData | null => readTodoBackup();
 
+// ---------------------------------------------------------------------------
+// Connect-time value normalization (regression fixes).
+//
+// The startup reconciliation pull path used to dispatch whatever Firestore
+// returned straight into feature state, bypassing the per-feature adapter
+// normalizers (`afterRead`). Raw habits missing `completedDates`/`archived`
+// crashed the habits view; a non-string todo value could have reached the
+// editor. These helpers apply the SAME rules the live-sync adapters do.
+// ---------------------------------------------------------------------------
+
+function normalizeTodoValue(value: unknown): string {
+	return typeof value === "string" ? value : "";
+}
+
+function normalizeNotesValue(value: unknown): import("@/types/notes").Note[] {
+	return Array.isArray(value) ? (value as import("@/types/notes").Note[]) : [];
+}
+
+/** The same rules as the habits adapter's `afterRead` (syncAdapters.ts): the
+ *  habits UI and utility functions assume `completedDates` is a string array
+ *  and `archived` is a boolean — a raw remote array can break all of them. */
+function normalizeHabitsValue(
+	value: unknown,
+): import("@/types/habits").Habit[] {
+	if (!Array.isArray(value)) return [];
+	return value
+		.filter(
+			(h) =>
+				h && typeof h === "object" && "id" in (h as Record<string, unknown>),
+		)
+		.map((h) => {
+			const habit = h as Record<string, unknown> &
+				import("@/types/habits").Habit;
+			return {
+				...habit,
+				completedDates: Array.isArray(habit.completedDates)
+					? habit.completedDates.filter(
+							(d): d is string => typeof d === "string",
+						)
+					: [],
+				archived: Boolean(habit.archived),
+			} as import("@/types/habits").Habit;
+		});
+}
+
+/** Decide + apply a reconciliation for one document without blocking the
+ *  others. A single document read failure must never hold up the whole
+ *  connect flow (regression: sequential `await` reads multiplied network
+ *  latency and made one bad read stall the app). */
+async function reconcileDocument(
+	uid: string,
+	path: import("@/lib/firestoreClient").UserDocPath,
+	opts: {
+		valueKey: string;
+		seed: import("@/lib/syncReconcile").ReconcileSeed | null;
+		onPush: (value: unknown) => void;
+		onPull: (
+			value: unknown,
+			snapshot: import("@/lib/firestoreClient").DocSnapshot<
+				Record<string, unknown>
+			>,
+		) => void;
+		onMissingRemote: (backupPresent: boolean) => Promise<void> | void;
+		hasLocal: boolean;
+	},
+): Promise<void> {
+	let snap;
+	try {
+		snap = await getDocWithRetry(getFirestoreDb(), uid, path);
+	} catch (e) {
+		console.error(`Connect read failed for ${path.collection}/${path.id}:`, e);
+		// No snapshot to reconcile against — fall back to the push-path seed so
+		// local offline edits are still re-queued rather than dropped.
+		snap = { exists: false, data: undefined, updatedAt: 0 };
+	}
+	const decision = decideReconcile(snap, {
+		valueKey: opts.valueKey,
+		seed: opts.seed,
+	});
+	if (decision.action === "push") {
+		opts.onPush(decision.value);
+	} else if (decision.action === "pull") {
+		opts.onPull(decision.value, snap);
+	} else if (!snap.exists && opts.hasLocal && opts.onMissingRemote) {
+		await opts.onMissingRemote(opts.hasLocal);
+	}
+}
+
 export const readContentBackupJson = (): string | null => {
 	const backup = readBackup();
 	return backup?.content ?? null;
@@ -152,121 +240,114 @@ export function SyncProvider(props: SyncProviderProps) {
 			//    re-queued so it becomes the outgoing write instead of
 			//    vanishing, and the engine outbox guarantees it survives
 			//    teardown (syncOutbox).
-			const todoSnap = await getDocWithRetry<{ content?: string }>(
-				getFirestoreDb(),
-				uid,
-				TODO_DOC,
-			);
-
+			//
+			//    Fix (regression): the three reads used to run sequentially,
+			//    each wrapped in retry backoff — on slow or flaky networks
+			//    connect stalled for tens of seconds. They now run in
+			//    parallel, and a failure on one document cannot block the
+			//    others or leave the app stuck in "connecting".
 			const localBackup = readBackup();
-			const todoDecision = decideReconcile(todoSnap, {
-				valueKey: "content",
-				seed: localBackup
-					? {
-							localSeed: {
-								value: localBackup.content,
-								updatedAt: localBackup.updatedAt,
-							},
-						}
-					: null,
-			});
-			if (todoDecision.action === "push") {
-				dispatchTodo({
-					type: "SET_CONTENT",
-					payload: {
-						content: todoDecision.value as string,
-						timestamp: Date.now(),
-					},
-				});
-				engine.enqueue({
-					path: TODO_DOC,
-					data: {
-						content: todoDecision.value as string,
-						updatedAt: Date.now(),
-					},
-				});
-			} else if (todoDecision.action === "pull") {
-				dispatchTodo({
-					type: "SET_CONTENT",
-					payload: {
-						content: todoDecision.value as string,
-						timestamp: Date.now(),
-					},
-				});
-				writeTodoBackup(todoDecision.value as string, todoSnap.updatedAt);
-			} else if (
-				!todoSnap.exists &&
-				localBackup &&
-				localStorage.getItem(`${MIGRATED_KEY}_${uid}`) !== "true"
-			) {
-				await performMigration(engine, uid);
-			}
-
-			const notesSnap = await getDocWithRetry<{ value?: unknown[] }>(
-				getFirestoreDb(),
-				uid,
-				NOTES_DOC,
-			);
 			const notesSeed = readNotesBackupWithTs();
-			const notesDecision = decideReconcile(notesSnap, {
-				valueKey: "value",
-				seed: notesSeed
-					? {
-							localSeed: {
-								value: notesSeed.notes,
-								updatedAt: notesSeed.updatedAt,
-							},
-						}
-					: null,
-			});
-			if (notesDecision.action === "push") {
-				dispatchNotes({
-					type: "SET_NOTES",
-					payload: notesDecision.value as import("@/types/notes").Note[],
-				});
-				engine.enqueue({
-					path: NOTES_DOC,
-					data: { value: notesDecision.value, updatedAt: Date.now() },
-				});
-			} else if (notesDecision.action === "pull") {
-				dispatchNotes({
-					type: "SET_NOTES",
-					payload: notesDecision.value as import("@/types/notes").Note[],
-				});
-			}
-
-			const habitsSnap = await getDocWithRetry<{ habits?: unknown[] }>(
-				getFirestoreDb(),
-				uid,
-				HABITS_DOC,
-			);
 			const habitsSeed = readHabitsBackupWithTs();
-			const habitsDecision = decideReconcile(habitsSnap, {
-				valueKey: "habits",
-				seed: habitsSeed
-					? {
-							localSeed: {
-								value: habitsSeed.data,
-								updatedAt: habitsSeed.updatedAt,
-							},
+			await Promise.all([
+				reconcileDocument(uid, TODO_DOC, {
+					valueKey: "content",
+					hasLocal: Boolean(localBackup),
+					seed: localBackup
+						? {
+								localSeed: {
+									value: localBackup.content,
+									updatedAt: localBackup.updatedAt,
+								},
+							}
+						: null,
+					onPush: (value) => {
+						const content = normalizeTodoValue(value);
+						dispatchTodo({
+							type: "SET_CONTENT",
+							payload: { content, timestamp: Date.now() },
+						});
+						engine.enqueue({
+							path: TODO_DOC,
+							data: { content, updatedAt: Date.now() },
+						});
+					},
+					onPull: (value, snap) => {
+						const content = normalizeTodoValue(value);
+						dispatchTodo({
+							type: "SET_CONTENT",
+							payload: { content, timestamp: Date.now() },
+						});
+						writeTodoBackup(content, snap.updatedAt);
+					},
+					onMissingRemote: () => {
+						if (
+							localBackup &&
+							localStorage.getItem(`${MIGRATED_KEY}_${uid}`) !== "true"
+						) {
+							return performMigration(engine, uid);
 						}
-					: null,
-			});
-			if (habitsDecision.action === "push") {
-				dispatchHabits({
-					type: "SET_HABITS",
-					payload: habitsDecision.value as import("@/types/habits").Habit[],
-				});
-				engine.enqueue({
-					path: HABITS_DOC,
-					data: { habits: habitsDecision.value, updatedAt: Date.now() },
-				});
-			} else if (habitsDecision.action === "pull") {
-				dispatchHabits({
-					type: "SET_HABITS",
-					payload: habitsDecision.value as import("@/types/habits").Habit[],
-				});
-			}
+					},
+				}),
+				reconcileDocument(uid, NOTES_DOC, {
+					valueKey: "value",
+					hasLocal: Boolean(notesSeed),
+					seed: notesSeed
+						? {
+								localSeed: {
+									value: notesSeed.notes,
+									updatedAt: notesSeed.updatedAt,
+								},
+							}
+						: null,
+					onPush: (value) => {
+						const notes = normalizeNotesValue(value);
+						dispatchNotes({ type: "SET_NOTES", payload: notes });
+						engine.enqueue({
+							path: NOTES_DOC,
+							data: { value: notes, updatedAt: Date.now() },
+						});
+					},
+					onPull: (value) => {
+						dispatchNotes({
+							type: "SET_NOTES",
+							payload: normalizeNotesValue(value),
+						});
+					},
+					onMissingRemote: () => undefined,
+				}),
+				reconcileDocument(uid, HABITS_DOC, {
+					valueKey: "habits",
+					hasLocal: Boolean(habitsSeed),
+					seed: habitsSeed
+						? {
+								localSeed: {
+									value: habitsSeed.data,
+									updatedAt: habitsSeed.updatedAt,
+								},
+							}
+						: null,
+					onPush: (value) => {
+						const habits = normalizeHabitsValue(value);
+						dispatchHabits({ type: "SET_HABITS", payload: habits });
+						engine.enqueue({
+							path: HABITS_DOC,
+							data: { habits, updatedAt: Date.now() },
+						});
+					},
+					onPull: (value) => {
+						// Fix (regression): pulled habits previously bypassed
+						// the adapter's `afterRead` normalization — missing
+						// `completedDates`/`archived` broke the habits view
+						// (habitUtils crash on malformed records).
+						dispatchHabits({
+							type: "SET_HABITS",
+							payload: normalizeHabitsValue(value),
+						});
+					},
+					onMissingRemote: () => undefined,
+				}),
+			]);
 
 			engine.connected = true;
 			setSyncStatus("synced");
