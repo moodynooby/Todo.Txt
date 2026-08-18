@@ -16,8 +16,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,6 +66,12 @@ fun TodoPage(content: String) {
     var filter by remember { mutableStateOf<FilterType?>(null) }
     var selectedIds by remember { mutableStateOf(setOf<Int>()) }
     var importMenuOpen by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showCompleted by remember { mutableStateOf(true) }
+    var exportFormatOpen by remember { mutableStateOf(false) }
+    var editTarget by remember { mutableStateOf<app.todotxt.domain.Task?>(null) }
+    var scheduleOpen by remember { mutableStateOf(false) }
+    var clearDoneConfirm by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -102,12 +116,59 @@ fun TodoPage(content: String) {
             modifier = Modifier.padding(vertical = 8.dp),
         )
 
+        // Search + show-completed toggle (web Sidebar parity: SearchInput,
+        // CompletionToggle). Natural-language scheduling lives behind the
+        // wand-like dialog entry.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search tasks…") },
+                leadingIcon = {
+                    Icon(Icons.Filled.Search, contentDescription = null)
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Filled.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = { scheduleOpen = true }) {
+                Icon(Icons.Filled.Edit, contentDescription = "Schedule a task")
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Show completed",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Checkbox(checked = showCompleted, onCheckedChange = { showCompleted = it })
+        }
+
         // Filter chips mirror the web filter bar (priority / project / context / due / done).
         Row(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             FilterChip(
                 selected = filter == null,
                 onClick = { filter = null },
                 label = { Text("All") },
+            )
+            FilterChip(
+                selected = filter == FilterType.PRIORITY,
+                onClick = { filter = FilterType.PRIORITY },
+                label = { Text("(A/B/C)") },
             )
             FilterChip(
                 selected = filter == FilterType.PROJECT,
@@ -131,7 +192,17 @@ fun TodoPage(content: String) {
             )
         }
 
-        val shown = filteredTasks(parsed, filter)
+        // Clear-completed: removes every completed line from the raw document
+        // (web parity: AI "Cleanup Done" tool and the sidebar count view).
+        Row(modifier = Modifier.padding(vertical = 4.dp)) {
+            TextButton(
+                onClick = { clearDoneConfirm = true },
+                enabled = parsed.completedCount > 0,
+            ) {
+                Text("Clear completed (${parsed.completedCount})")
+            }
+        }
+        val shown = filteredTasks(parsed, filter, searchQuery, showCompleted)
         if (selectedIds.isNotEmpty()) {
             BulkActionsBar(
                 selectedIds = selectedIds,
@@ -151,6 +222,54 @@ fun TodoPage(content: String) {
             },
             onSelect = { id -> selectedIds = setOf(id) },
             onDeselect = { selectedIds = emptySet() },
+            onEditTask = { editTarget = it },
+        )
+    }
+
+    // Export format dialog: plain text (default), markdown, or HTML — matching
+    // the web documentExport.ts SaveFormat choice.
+    if (exportFormatOpen) {
+        ExportFormatDialog(
+            content = content,
+            onDismiss = { exportFormatOpen = false },
+        )
+    }
+
+    // Natural-language scheduling dialog (web AdvancedToolsDialog parity).
+    if (scheduleOpen) {
+        SchedulingDialog(onDismiss = { scheduleOpen = false })
+    }
+
+    // Inline task edit: rewrites the task's line in the raw document.
+    editTarget?.let { target ->
+        EditTaskDialog(
+            task = target,
+            onDismiss = { editTarget = null },
+        )
+    }
+
+    // Clear-completed confirmation.
+    if (clearDoneConfirm) {
+        AlertDialog(
+            onDismissRequest = { clearDoneConfirm = false },
+            title = { Text("Clear completed tasks?") },
+            text = {
+                val snapshot = remember(content) { TodoParser.parseTodoContent(content) }
+                Text("${snapshot.completedCount} completed task(s) will be removed from todo.txt.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        clearDoneConfirm = false
+                        val lines = content.split("\n")
+                            .filter { !TodoParser.parseTodoLine(it).completed }
+                        Storage.setContent(lines.joinToString("\n"))
+                    },
+                ) { Text("Clear") }
+            },
+            dismissButton = {
+                TextButton(onClick = { clearDoneConfirm = false }) { Text("Cancel") }
+            },
         )
     }
 }
@@ -158,10 +277,18 @@ fun TodoPage(content: String) {
 private fun filteredTasks(
     parsed: ParsedTodoContent,
     filter: FilterType?,
+    searchQuery: String,
+    showCompleted: Boolean,
 ): List<app.todotxt.domain.Task> {
-    val tasks = parsed.tasks
+    var tasks = parsed.tasks
+    if (!showCompleted) tasks = tasks.filter { !it.completed }
+    val q = searchQuery.trim().lowercase()
+    if (q.isNotEmpty()) {
+        tasks = tasks.filter { it.text.lowercase().contains(q) || it.raw.lowercase().contains(q) }
+    }
     return when (filter) {
         null -> tasks
+        FilterType.PRIORITY -> tasks.filter { it.priority != null }
         FilterType.PROJECT -> tasks.filter { it.projects.isNotEmpty() }
         FilterType.CONTEXT -> tasks.filter { it.contexts.isNotEmpty() }
         FilterType.DUE -> tasks.filter { it.due != null }
@@ -178,6 +305,7 @@ private fun TodoList(
     onToggleSelection: (Int) -> Unit,
     onSelect: (Int) -> Unit,
     onDeselect: () -> Unit,
+    onEditTask: (app.todotxt.domain.Task) -> Unit,
 ) {
     val content by Storage.content.collectAsState()
 
@@ -201,12 +329,15 @@ private fun TodoList(
                 isSelected = task.id in selectedIds,
                 onMove = ::moveLine,
                 onToggle = {
-                    val updated = TodoParser.setLineCompleted(content, task.id, !task.completed)
+                    // setTaskCompleted resolves the line by raw text, so it
+                    // stays correct after reorders, inserts, and deletes.
+                    val updated = TodoParser.setTaskCompleted(content, task, !task.completed)
                     Storage.setContent(updated)
                 },
                 onSelect = onSelect,
                 onDeselect = onDeselect,
                 onToggleSelection = onToggleSelection,
+                onEdit = { onEditTask(task) },
             )
         }
     }
@@ -223,6 +354,7 @@ private fun TaskRow(
     onSelect: (Int) -> Unit,
     onDeselect: () -> Unit,
     onToggleSelection: (Int) -> Unit,
+    onEdit: () -> Unit = {},
 ) {
     Surface(
         modifier = Modifier

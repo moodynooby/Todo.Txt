@@ -16,19 +16,26 @@ export interface CoreExports {
 	/** Habit data class constructor */
 	a: HabitConstructor;
 	/** free function addDaysString */
-	b: (date: string, days: number) => string;
+	e: (base: string, days: number) => string;
 	/** HabitColor EVERGREEN singleton */
-	c: number;
+	f: number;
 	/** HabitUtils_getInstance factory */
-	d: () => HabitUtils;
+	g: () => HabitUtils;
+	/** SchedulingParser_getInstance factory (Tier 2 addition) */
+	h: () => SchedulingParser;
 	/** TodoParser_getInstance factory */
-	e: () => TodoParser;
+	i: () => TodoParser;
+	/** Kotlin object instances for deserialized types */
+	SchedulingParser: SchedulingParser;
+	ScheduleResult: unknown;
 }
 
 export interface TodoParser {
 	parseTodoLine(line: string, ...rest: unknown[]): ParsedTodoLine;
 	parseTodoContent(text: string): ParsedTodoContent;
-	setLineCompleted(content: ParsedTodoContent, index: number, completed: boolean): ParsedTodoContent;
+	setLineCompleted(content: string, index: number, completed: boolean): string;
+	/** Robust completion: rewrites the matching raw line in the current content. */
+	setTaskCompleted(content: string, task: unknown, completed: boolean): string;
 	today(): string;
 	tomorrow(): string;
 	yesterday(): string;
@@ -59,7 +66,7 @@ export interface ParsedTodoLine {
 }
 
 export interface ParsedTodoContent {
-	tasks_1: unknown[];
+	tasks_1: { get_size_woubt6_k$(): number; get_c1px32_k$(index: number): ParsedTodoLine };
 	priorities_1: unknown;
 	projects_1: unknown;
 	contexts_1: unknown;
@@ -98,6 +105,29 @@ declare global {
 		todotxtCore?: CoreNamespace;
 	}
 	var todotxtCore: CoreNamespace | undefined;
+}
+
+export interface SchedulingParser {
+	/** Parse a natural-language scheduling phrase (e.g. "in 3 days", "every Monday at 9:00").
+	 * JS IR mangles the method name; use `parseSchedulingPhrase_vuneq5_k$(phrase)`.
+	 * Returns ScheduleResult { rule_1 } | { relative_1 } | { message_1 } (Error). */
+	parseSchedulingPhrase(phrase: string, today?: string): unknown;
+	parseSchedulingPhrase_vuneq5_k$(phrase: string, today?: string): unknown;
+}
+
+export interface RelativeDate {
+	relative: { days: number };
+	at?: string;
+}
+
+export interface RecurrenceResult {
+	recurrence: {
+		frequency: string;
+		interval: number;
+		time?: string;
+		nthWeekdays?: unknown[];
+		relativeDays?: number[];
+	};
 }
 
 declare const _default: CoreNamespace;

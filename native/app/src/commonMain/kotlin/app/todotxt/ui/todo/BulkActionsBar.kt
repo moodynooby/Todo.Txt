@@ -68,27 +68,30 @@ fun BulkActionsBar(
     }
 }
 
-/** Mark all selected tasks (un)completed by rewriting their lines. */
+/** Mark all selected tasks (un)completed by rewriting their lines. Uses
+ * `setTaskCompleted`, which resolves each line by raw text so the bulk action
+ * stays correct after reorders, inserts, and deletes. */
 private fun bulkComplete(selectedIds: Set<Int>, tasks: List<Task>, completed: Boolean) {
     if (selectedIds.isEmpty()) return
     var content = Storage.content.value
     val byId = tasks.associateBy { it.id }
     selectedIds.forEach { id ->
         byId[id]?.let { task ->
-            content = TodoParser.setLineCompleted(content, task.id, completed)
+            content = TodoParser.setTaskCompleted(content, task, completed)
         }
     }
     Storage.setContent(content)
 }
 
-/** Remove the raw lines of all selected tasks. */
+/** Remove the raw lines of all selected tasks, matching by raw text so stale
+ * line ids (after a reorder or insert) can never delete the wrong line. */
 private fun bulkDelete(selectedIds: Set<Int>, tasks: List<Task>) {
     if (selectedIds.isEmpty()) return
-    val removeIds = tasks.filter { it.id in selectedIds }.map { it.id }.toSet()
-    val lines = Storage.content.value.lineSequence()
-    val updated = lines
-        .mapIndexed { index, line -> index to line }
-        .filterNot { (index, _) -> removeIds.contains(index) }
-        .joinToString("\n") { (_, line) -> line }
+    val removeRaw = tasks
+        .filter { it.id in selectedIds }
+        .map { it.raw.trim() }
+        .toSet()
+    val lines = Storage.content.value.split("\n")
+    val updated = lines.filter { it.trim() !in removeRaw }.joinToString("\n")
     Storage.setContent(updated)
 }

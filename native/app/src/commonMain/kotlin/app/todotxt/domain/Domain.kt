@@ -22,5 +22,6 @@ typealias DrawingStroke = app.todotxt.core.DrawingStroke
 typealias DrawingPoint = app.todotxt.core.DrawingPoint
 
 typealias TodoParser = app.todotxt.core.TodoParser
+typealias SchedulingParser = app.todotxt.core.SchedulingParser
 typealias HabitUtils = app.todotxt.core.HabitUtils
 typealias IdUtils = app.todotxt.core.IdUtils

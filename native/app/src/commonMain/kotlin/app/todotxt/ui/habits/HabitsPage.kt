@@ -14,12 +14,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,17 +40,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import app.todotxt.domain.Habit
 import app.todotxt.domain.HabitColor
 import app.todotxt.domain.HabitUtils
 import app.todotxt.domain.IdUtils
 import app.todotxt.persistence.Storage
+import app.todotxt.persistence.exportTodoDocument
 
 /** Habits workspace — Field Notes Ritual daily check-ins. */
 @Composable
 fun HabitsPage(habits: List<Habit>) {
     var showCreate by remember { mutableStateOf(false) }
     var draftName by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf("") }
+    var editTarget by remember { mutableStateOf<Habit?>(null) }
+    var exportMenuOpen by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text(
@@ -51,6 +70,42 @@ fun HabitsPage(habits: List<Habit>) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp),
         )
+
+        // Search + habits export, mirroring the web habitsBackup surface.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search habits…") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Filled.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = { exportMenuOpen = true }) {
+                Icon(Icons.Filled.Share, contentDescription = "Export habits")
+            }
+            DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text("Export habits (JSON)") },
+                    onClick = {
+                        exportMenuOpen = false
+                        exportHabits()
+                    },
+                )
+            }
+        }
 
         Button(
             onClick = { showCreate = !showCreate },
@@ -94,15 +149,40 @@ fun HabitsPage(habits: List<Habit>) {
         }
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(habits.filter { !it.archived }, key = { it.id }) { habit ->
-                HabitCard(habit)
+            items(
+                habits.filter { !it.archived }
+                    .filter { searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) },
+                key = { it.id },
+            ) { habit ->
+                HabitCard(habit, onEdit = { editTarget = habit })
             }
         }
     }
+
+    editTarget?.let { habit ->
+        EditHabitDialog(habit = habit, onDismiss = { editTarget = null })
+    }
 }
 
+/** Habits export (web parity: `habitsBackup.ts` JSON mirror shape). */
+private fun exportHabits() {
+    val habits = Storage.habits.value
+    val items = habits.joinToString(",") { habit ->
+        buildString {
+            append("""{"id":""" + habit.id.escapeJson() + """","name":""" + habit.name.escapeJson() + """","color":""" + habit.color.name + """","reminder":${habit.reminderEnabled},"completedDates":[""" + habit.completedDates.joinToString(",") { """"$it"""" } + """],"createdAt":""" + habit.createdAt + ""","updatedAt":""" + habit.updatedAt + """}""")
+        }
+    }
+    exportTodoDocument("""{"habits":[${items}],"updatedAt":""" + System.currentTimeMillis() + """}""")
+}
+
+private fun String.escapeJson(): String =
+    replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
+
 @Composable
-private fun HabitCard(habit: Habit) {
+private fun HabitCard(
+    habit: Habit,
+    onEdit: () -> Unit = {},
+) {
     val streak = remember(habit) { HabitUtils.getHabitStreak(habit) }
     val best = remember(habit) { HabitUtils.getBestStreak(habit) }
     val rate = remember(habit) { HabitUtils.getCompletionRate(habit) }
@@ -132,6 +212,35 @@ private fun HabitCard(habit: Habit) {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 8.dp).weight(1f),
                 )
+                IconButton(
+                    onClick = {
+                        Storage.updateHabits { list ->
+                            if (habit.archived) {
+                                list.map { if (it.id == habit.id) it.copy(archived = false) else it }
+                            } else {
+                                list.map { if (it.id == habit.id) it.copy(archived = true) else it }
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        if (habit.archived) Icons.Filled.Refresh else Icons.Filled.Delete,
+                        contentDescription = if (habit.archived) "Restore" else "Archive",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        Storage.updateHabits { list -> list.filter { it.id != habit.id } }
+                    },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                }
+                IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurface)
+                }
                 Button(
                     onClick = { Storage.updateHabits { list ->
                         list.map { if (it.id == habit.id) HabitUtils.toggleDate(it, today) else it }
@@ -147,15 +256,101 @@ private fun HabitCard(habit: Habit) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Stat("Streak", "$streak")
                 Stat("Best", "$best")
                 Stat("28-day", "$rate%")
             }
 
+            // Per-habit reminder toggle — schedules an exact alarm on Android
+            // and a system notification on Desktop when the reminder is on.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Daily reminder",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(
+                    checked = habit.reminderEnabled,
+                    onCheckedChange = { remind ->
+                        Storage.updateHabits { list ->
+                            list.map { if (it.id == habit.id) it.copy(reminderEnabled = remind) else it }
+                        }
+                    },
+                )
+            }
+
             Heatmap(heatmap = heatmap, completed = habit.completedDates.toSet())
         }
     }
+}
+
+/** Edit dialog (web parity: HabitCardEditor) — name, colour, reminder. */
+@Composable
+private fun EditHabitDialog(
+    habit: Habit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(habit.name) }
+    var color by remember { mutableStateOf(habit.color) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit habit") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    HabitColor.entries.forEach { c ->
+                        val swatch = Color(c.red, c.green, c.blue)
+                        Box(
+                            Modifier
+                                .size(26.dp)
+                                .clip(CircleShape)
+                                .background(swatch)
+                                .clickable { color = c },
+                        )
+                        if (c == color) {
+                            Box(
+                                Modifier
+                                    .size(30.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onSurface),
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val now = System.currentTimeMillis()
+                    Storage.updateHabits { list ->
+                        list.map {
+                            if (it.id == habit.id) it.copy(
+                                name = name, color = color, updatedAt = now,
+                            ) else it
+                        }
+                    }
+                    onDismiss()
+                },
+            ) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 @Composable

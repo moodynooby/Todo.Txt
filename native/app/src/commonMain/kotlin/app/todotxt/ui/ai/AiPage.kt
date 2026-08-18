@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 package app.todotxt.ui.ai
 
 import androidx.compose.foundation.layout.Arrangement
@@ -11,10 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -32,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.GroqSettings
+import app.todotxt.domain.TodoParser
 import app.todotxt.persistence.Storage
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
@@ -61,7 +66,23 @@ private val MODELS = listOf(
     "gemma2-9b-it",
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * AI tool chips (web parity: `aiTools.ts` / AiToolsDialog). The LLM prompts
+ * are deterministic wrappers; "Cleanup done" is applied locally without an AI
+ * call, matching the web's in-place cleanup.
+ */
+private data class AiTool(val name: String, val systemHint: String)
+
+private val AI_TOOLS = listOf(
+    AiTool("Shorten", "Make the todo list shorter. Keep meaning, cut wordiness. Output raw todo.txt lines only."),
+    AiTool("Reduce", "Reduce the list to its essentials: remove duplicates and trivial items. Output raw todo.txt lines only."),
+    AiTool("Reformat", "Reformat the list consistently: normalise priorities, projects (+name), contexts (@name) and due: tags."),
+    AiTool("Reorganize", "Reorganize by priority and project; uncompleted first. Output raw todo.txt lines only."),
+    AiTool("Cleanup Done", "Local cleanup — remove completed tasks directly, no AI call needed."),
+    AiTool("Fix Grammar", "Fix spelling and grammar in task text. Output raw todo.txt lines only."),
+)
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AiPage() {
     val settings by Storage.groq.collectAsState()
@@ -69,6 +90,7 @@ fun AiPage() {
     var model by remember(settings) { mutableStateOf(settings.model) }
     var menuExpanded by remember { mutableStateOf(false) }
     var prompt by remember { mutableStateOf("") }
+    var selectedTool by remember { mutableStateOf<AiTool?>(null) }
     var response by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var running by remember { mutableStateOf(false) }
@@ -92,6 +114,23 @@ fun AiPage() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 16.dp),
         )
+
+        // Tool chips: tap one to pre-fill a structured prompt targeting the
+        // current todo.txt document.
+        AI_TOOLS.chunked(3).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { tool ->
+                    FilterChip(
+                        selected = selectedTool == tool,
+                        onClick = { selectedTool = if (selectedTool == tool) null else tool },
+                        label = { Text(tool.name) },
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
             value = apiKey,
@@ -150,14 +189,31 @@ fun AiPage() {
         ) {
             Button(
                 onClick = {
-                    if (apiKey.isNotBlank() && prompt.isNotBlank()) {
+                    if (selectedTool?.name == "Cleanup Done") {
+                        // Applied locally: remove completed lines from todo.txt.
+                        val content = Storage.content.value
+                        val lines = content.split("\n")
+                            .filter { !TodoParser.parseTodoLine(it).completed }
+                        Storage.setContent(lines.joinToString("\n"))
+                        response = "Completed tasks removed from todo.txt."
+                        selectedTool = null
+                    } else if (apiKey.isNotBlank() && prompt.isNotBlank()) {
                         Storage.updateGroq { GroqSettings(apiKey = apiKey, model = model) }
                         running = true
                         error = null
                         response = null
                         val key = apiKey
                         val modelId = model
-                        val userPrompt = prompt
+                        val userPrompt = buildString {
+                            selectedTool?.let { tool ->
+                                appendLine(tool.systemHint)
+                                appendLine()
+                                appendLine("Below is the current todo.txt:")
+                                appendLine(Storage.content.value)
+                                appendLine()
+                            }
+                            append(prompt)
+                        }
                         scope.launch {
                             runCatching { runGroqCompletion(key, modelId, userPrompt) }
                                 .onSuccess { response = it }
@@ -166,10 +222,29 @@ fun AiPage() {
                         }
                     }
                 },
-                enabled = !running,
+                enabled = !running && (prompt.isNotBlank() || selectedTool != null),
                 shape = RoundedCornerShape(20.dp),
             ) {
-                Text(if (running) "Thinking…" else "Ask")
+                Text(
+                    when {
+                        running -> "Thinking…"
+                        selectedTool?.name == "Cleanup Done" -> "Cleanup done tasks"
+                        else -> "Ask"
+                    },
+                )
+            }
+        }
+
+        // Apply the AI result back into todo.txt when it looks like todo lines.
+        response?.let { body ->
+            if (body.lines().any { TodoParser.parseTodoLine(it).id >= 0 && it.isNotBlank() }) {
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = {
+                    Storage.setContent(body.trim())
+                    response = "Applied to todo.txt."
+                }) {
+                    Text("Apply result to todo.txt")
+                }
             }
         }
 

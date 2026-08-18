@@ -13,9 +13,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -28,13 +30,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.TimerState
 import app.todotxt.persistence.Storage
 import app.todotxt.platform.playBeep
+import app.todotxt.platform.setFullscreen
 import kotlinx.coroutines.delay
 import kotlin.math.floor
+
 
 /**
  * Floating stopwatch / Pomodoro timer.
@@ -57,15 +62,6 @@ fun TimerPage() {
         }
     }
 
-    fun nowElapsed(): Long {
-        val started = current.startedAt
-        return if (started != null) {
-            (current.elapsed ?: 0L) + (System.currentTimeMillis() - started)
-        } else {
-            current.elapsed ?: 0L
-        }
-    }
-
     fun formatted(ms: Long): String {
         val totalSeconds = ms / 1000
         val minutes = floor(totalSeconds / 60.0).toLong()
@@ -79,6 +75,36 @@ fun TimerPage() {
     }
 
     var titleDraft by remember { mutableStateOf(current.title ?: "") }
+    var durationDraft by remember { mutableStateOf((current.durationMs / 60_000).coerceAtLeast(1).toString()) }
+    var fullscreen by remember { mutableStateOf(false) }
+
+    // Countdown support (web parity: timer target duration + color progress):
+    // remaining = duration - elapsed; colors shift teal → yellow → red as the
+    // timer gets closer to zero, matching the web Timer's progress visuals.
+    fun nowElapsed(): Long {
+        val started = current.startedAt
+        return if (started != null) {
+            (current.elapsed ?: 0L) + (System.currentTimeMillis() - started)
+        } else {
+            current.elapsed ?: 0L
+        }
+    }
+
+    fun remainingMs(): Long? {
+        val duration = current.durationMs
+        if (duration <= 0) return null
+        return (duration - nowElapsed()).coerceAtLeast(0)
+    }
+
+    @androidx.compose.runtime.Composable
+    fun timerColor(ms: Long?): Color {
+        if (ms == null) return MaterialTheme.colorScheme.onSurface
+        return when {
+            ms < 180_000 -> MaterialTheme.colorScheme.error
+            ms < 600_000 -> Color(0xFFC9A227)
+            else -> MaterialTheme.colorScheme.primary
+        }
+    }
 
     Column(
         Modifier.fillMaxSize().padding(16.dp),
@@ -93,10 +119,12 @@ fun TimerPage() {
 
         Spacer(Modifier.height(24.dp))
 
+        val remaining = remainingMs()
         Text(
-            formatted(nowElapsed()),
+            formatted(if (remaining != null) remaining else nowElapsed()),
             style = MaterialTheme.typography.displayLarge,
             fontWeight = FontWeight.Light,
+            color = timerColor(remaining),
         )
 
         Spacer(Modifier.height(24.dp))
@@ -108,14 +136,26 @@ fun TimerPage() {
             singleLine = true,
         )
 
+        Spacer(Modifier.height(8.dp))
+
+        // Target duration input (minutes) — web parity: countdown target.
+        OutlinedTextField(
+            value = durationDraft,
+            onValueChange = { if (it.all { c -> c.isDigit() } || it.isEmpty()) durationDraft = it },
+            placeholder = { Text("Target minutes (0 = stopwatch)") },
+            singleLine = true,
+        )
+
         Spacer(Modifier.height(16.dp))
 
         Row(horizontalArrangement = Arrangement.Center) {
             if (!current.isActive) {
                 Button(
                     onClick = {
+                        val minutes = durationDraft.toLongOrNull()?.coerceAtLeast(0) ?: 0L
                         Storage.updateTimer(current.copy(
                             title = titleDraft.takeIf { it.isNotBlank() },
+                            durationMs = minutes * 60_000L,
                             isActive = true,
                             startedAt = System.currentTimeMillis(),
                         ))
@@ -153,6 +193,34 @@ fun TimerPage() {
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                 ) {
                     Text("Pause")
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Immersive fullscreen (web parity: TimerFullscreen).
+        IconButton(onClick = {
+            fullscreen = !fullscreen
+            setFullscreen(fullscreen)
+        }) {
+            Icon(
+                if (fullscreen) Icons.Filled.Refresh else Icons.Filled.CheckCircle,
+                contentDescription = if (fullscreen) "Exit fullscreen" else "Fullscreen",
+            )
+        }
+
+        // Countdown completion: beep + stop automatically when the target is hit.
+        if (current.isActive && remaining != null && remaining <= 0) {
+            playBeep()
+            LaunchedEffect(Unit) {
+                val frozen = Storage.timers.value ?: current
+                if (frozen.isActive) {
+                    Storage.updateTimer(frozen.copy(
+                        isActive = false,
+                        elapsed = frozen.durationMs,
+                        startedAt = null,
+                    ))
                 }
             }
         }

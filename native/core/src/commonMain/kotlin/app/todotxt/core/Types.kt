@@ -94,6 +94,7 @@ data class TimerState(
     val elapsed: Long = 0L,
     val isActive: Boolean = false,
     val startedAt: Long? = null,
+    val durationMs: Long = 0L,
     val createdAt: Long = 0L,
 )
 
@@ -109,7 +110,7 @@ data class GroqSettings(
 data class Drawing(
     val id: String,
     val name: String,
-    val strokes: List<DrawingStroke>,
+    val strokes: List<DrawingStroke> = emptyList(),
     val createdAt: Long = 0L,
 )
 

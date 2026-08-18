@@ -49,6 +49,9 @@ object Storage {
     private val _groq = MutableStateFlow(GroqSettings())
     val groq: StateFlow<GroqSettings> = _groq.asStateFlow()
 
+    private val _settings = MutableStateFlow(AppSettings())
+    val settings: StateFlow<AppSettings> = _settings.asStateFlow()
+
     private val _drawings = MutableStateFlow(emptyList<Drawing>())
     val drawings: StateFlow<List<Drawing>> = _drawings.asStateFlow()
 
@@ -59,6 +62,7 @@ object Storage {
             _habits.value = readHabitsFile()
             _timers.value = readTimersFile()
             _groq.value = readGroqFile()
+            _settings.value = readSettingsFile()
             _drawings.value = readDrawingsFile()
         }
     }
@@ -98,6 +102,13 @@ object Storage {
         }
     }
 
+    fun updateSettings(transform: (AppSettings) -> AppSettings) {
+        _settings.value = transform(_settings.value)
+        scope.launch {
+            PlatformStorage.writeString("settings.json", json.encodeToString(_settings.value))
+        }
+    }
+
     fun updateDrawings(transform: (List<Drawing>) -> List<Drawing>) {
         _drawings.value = transform(_drawings.value)
         scope.launch {
@@ -119,6 +130,11 @@ object Storage {
         PlatformStorage.readString("timer.json")?.takeIf { it.isNotBlank() && it != "null" }
             ?.let { json.decodeFromString<TimerState>(it) }
     }.getOrDefault(null)
+
+    private fun readSettingsFile(): AppSettings = runCatching {
+        PlatformStorage.readString("settings.json")?.takeIf { it.isNotBlank() }
+            ?.let { json.decodeFromString<AppSettings>(it) } ?: AppSettings()
+    }.getOrDefault(AppSettings())
 
     private fun readGroqFile(): GroqSettings = runCatching {
         PlatformStorage.readString("groq.json")?.takeIf { it.isNotBlank() }

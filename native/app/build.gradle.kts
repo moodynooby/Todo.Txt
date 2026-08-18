@@ -45,6 +45,9 @@ kotlin {
                 implementation(libs.androidx.lifecycle.runtime.compose)
                 implementation(libs.kermit)
                 api(project(":core"))
+                // Tier 2: Tiptap-like rich editor (Excalidraw-like vector tools are
+                // implemented natively in DrawPage — see that file).
+                implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc11")
             }
         }
         val commonTest by getting {

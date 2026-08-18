@@ -155,6 +155,20 @@ object TodoParser {
      * Rewrite the line at `lineIndex` so it is marked complete (or undone).
      * Port of `setLineCompleted` — used by native notification actions.
      */
+    /**
+     * Rewrite the line carrying [task] so it is marked complete (or undone),
+     * resolving the line by matching the task's raw text against the *current*
+     * document. Unlike [setLineCompleted] (which trusts a line index), this
+     * survives reorders, insertions, and deletions that happened after the
+     * task was parsed — important for UI flows that keep a stale [Task] around.
+     */
+    fun setTaskCompleted(content: String, task: Task, completed: Boolean): String {
+        val lines = content.split("\n").toMutableList()
+        val index = lines.indexOfFirst { it.trim() == task.raw.trim() }
+        if (index < 0) return content
+        return setLineCompleted(content, index, completed)
+    }
+
     fun setLineCompleted(content: String, lineIndex: Int, completed: Boolean): String {
         val lines = content.split("\n").toMutableList()
         if (lineIndex < 0 || lineIndex >= lines.size) return content
