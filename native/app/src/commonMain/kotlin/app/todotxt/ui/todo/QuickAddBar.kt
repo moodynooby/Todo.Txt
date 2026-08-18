@@ -25,7 +25,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.FocusRequester
 import app.todotxt.domain.ParsedTodoContent
 import app.todotxt.persistence.Storage
 import app.todotxt.theme.Shapes
@@ -40,6 +42,7 @@ import app.todotxt.theme.Shapes
 fun QuickAddBar(
     parsed: ParsedTodoContent,
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
     onAdd: (String) -> Unit = { draft ->
         if (draft.isNotBlank()) {
             val existing = Storage.content.value
@@ -63,7 +66,9 @@ fun QuickAddBar(
                         it.endsWith("due:") || it.contains(" due:")
                 },
                 placeholder = { Text("Add a todo… (+project @context due:today)") },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
                 shape = RoundedCornerShape(Shapes.Xl),
                 singleLine = true,
             )

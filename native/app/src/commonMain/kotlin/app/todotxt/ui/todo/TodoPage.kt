@@ -49,7 +49,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.FilterType
 import app.todotxt.domain.ParsedTodoContent
+import app.todotxt.persistence.UndoStack
 import app.todotxt.domain.TodoParser
+import androidx.compose.ui.focus.focusRequester
+import app.todotxt.ui.keyboard.keyboardShortcuts
+import app.todotxt.ui.keyboard.keyboardFocusable
+import app.todotxt.ui.keyboard.rememberKeyboardHost
 import app.todotxt.persistence.ImportExportBridge
 import app.todotxt.persistence.Storage
 import app.todotxt.persistence.exportTodoDocument
@@ -73,7 +78,20 @@ fun TodoPage(content: String) {
     var scheduleOpen by remember { mutableStateOf(false) }
     var clearDoneConfirm by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    // Keyboard-driven workspace (desktop): `/` focuses search, `n` focuses
+    // quick-add, `Ctrl/Cmd+Z` undoes the last destructive action.
+    val hostFocus = rememberKeyboardHost()
+    val searchFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val addFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+
+    Column(
+        Modifier
+            .keyboardFocusable()
+            .focusRequester(hostFocus)
+            .keyboardShortcuts(searchFocus = searchFocus, addFocus = addFocus) // common expect: no-op on Android
+            .fillMaxSize()
+            .padding(16.dp),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -113,6 +131,7 @@ fun TodoPage(content: String) {
         val parsed = remember(content) { TodoParser.parseTodoContent(content) }
         QuickAddBar(
             parsed = parsed,
+            focusRequester = addFocus,
             modifier = Modifier.padding(vertical = 8.dp),
         )
 
@@ -140,7 +159,9 @@ fun TodoPage(content: String) {
                     }
                 },
                 singleLine = true,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(searchFocus),
             )
             IconButton(onClick = { scheduleOpen = true }) {
                 Icon(Icons.Filled.Edit, contentDescription = "Schedule a task")
@@ -237,6 +258,9 @@ fun TodoPage(content: String) {
             onDeselect = { selectedIds = emptySet() },
             onEditTask = { editTarget = it },
         )
+        // UX upgrade: a compact done-today ring + 13-week contribution
+        // heatmap — pure Canvas drawing, GitHub-style.
+        StatsHeader(parsed = parsed, modifier = Modifier.padding(top = 4.dp))
         // Pet strip: tap it to scroll back to the quick-add bar area.
         PetStrip(
             taskCount = activeTasks.size,
@@ -245,6 +269,9 @@ fun TodoPage(content: String) {
             onNudge = {},
             modifier = Modifier.padding(top = 8.dp),
         )
+        // UX upgrade: the pending undo entry renders as a toast at the
+        // bottom of the workspace — tapping Undo restores the snapshot.
+        UndoToast()
     }
 
     // Export format dialog: plain text (default), markdown, or HTML — matching
@@ -284,6 +311,13 @@ fun TodoPage(content: String) {
                         clearDoneConfirm = false
                         val lines = content.split("\n")
                             .filter { !TodoParser.parseTodoLine(it).completed }
+                        // Push the snapshot BEFORE replacing the document so
+                        // the undo toast can restore everything cleared.
+                        val cleared = TodoParser.parseTodoContent(content).completedCount
+                        UndoStack.push(
+                            todoContent = content,
+                            description = "$cleared completed task(s) cleared",
+                        )
                         Storage.setContent(lines.joinToString("\n"))
                     },
                 ) { Text("Clear") }
@@ -344,21 +378,53 @@ private fun TodoList(
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         itemsIndexed(tasks) { index, task ->
-            TaskRow(
-                task = task,
-                index = index,
-                isSelected = task.id in selectedIds,
-                onMove = ::moveLine,
-                onToggle = {
+            // UX upgrade: swipe gestures as a native affordance — drag right
+            // to complete, drag left to reopen, each reversible via Undo.
+            SwipeRow(
+                complete = task.completed,
+                content = { rowModifier ->
+                    TaskRow(
+                        task = task,
+                        index = index,
+                        isSelected = task.id in selectedIds,
+                        onMove = ::moveLine,
+                        modifier = rowModifier,
+                        onToggle = {
                     // setTaskCompleted resolves the line by raw text, so it
                     // stays correct after reorders, inserts, and deletes.
+                    UndoStack.push(
+                        todoContent = content,
+                        description = if (task.completed) "Task unchecked" else "Task completed",
+                    )
                     val updated = TodoParser.setTaskCompleted(content, task, !task.completed)
                     Storage.setContent(updated)
                 },
-                onSelect = onSelect,
-                onDeselect = onDeselect,
-                onToggleSelection = onToggleSelection,
-                onEdit = { onEditTask(task) },
+                        onSelect = onSelect,
+                        onDeselect = onDeselect,
+                        onToggleSelection = onToggleSelection,
+                        onEdit = { onEditTask(task) },
+                    )
+                },
+                onSwipeComplete = {
+                    if (!task.completed) {
+                        UndoStack.push(
+                            todoContent = content,
+                            description = "Task completed (swipe)",
+                        )
+                        val updated = TodoParser.setTaskCompleted(content, task, completed = true)
+                        Storage.setContent(updated)
+                    }
+                },
+                onSwipeUncomplete = {
+                    if (task.completed) {
+                        UndoStack.push(
+                            todoContent = content,
+                            description = "Task reopened (swipe)",
+                        )
+                        val updated = TodoParser.setTaskCompleted(content, task, completed = false)
+                        Storage.setContent(updated)
+                    }
+                },
             )
         }
     }
@@ -371,6 +437,7 @@ private fun TaskRow(
     index: Int,
     isSelected: Boolean,
     onMove: (Int, Int) -> Unit = { _, _ -> },
+    modifier: Modifier = Modifier,
     onToggle: () -> Unit,
     onSelect: (Int) -> Unit,
     onDeselect: () -> Unit,
@@ -378,7 +445,7 @@ private fun TaskRow(
     onEdit: () -> Unit = {},
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
             .background(

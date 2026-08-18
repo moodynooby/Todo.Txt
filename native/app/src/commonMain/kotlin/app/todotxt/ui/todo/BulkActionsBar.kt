@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import app.todotxt.domain.Task
 import app.todotxt.domain.TodoParser
 import app.todotxt.persistence.Storage
+import app.todotxt.persistence.UndoStack
 
 /**
  * Bulk-actions toolbar (web parity: task selection + bulk complete / delete /
@@ -73,6 +74,10 @@ fun BulkActionsBar(
  * stays correct after reorders, inserts, and deletes. */
 private fun bulkComplete(selectedIds: Set<Int>, tasks: List<Task>, completed: Boolean) {
     if (selectedIds.isEmpty()) return
+    UndoStack.push(
+        todoContent = Storage.content.value,
+        description = "${selectedIds.size} task(s) ${if (completed) "completed" else "unchecked"}",
+    )
     var content = Storage.content.value
     val byId = tasks.associateBy { it.id }
     selectedIds.forEach { id ->
@@ -87,6 +92,10 @@ private fun bulkComplete(selectedIds: Set<Int>, tasks: List<Task>, completed: Bo
  * line ids (after a reorder or insert) can never delete the wrong line. */
 private fun bulkDelete(selectedIds: Set<Int>, tasks: List<Task>) {
     if (selectedIds.isEmpty()) return
+    UndoStack.push(
+        todoContent = Storage.content.value,
+        description = "${selectedIds.size} task(s) deleted",
+    )
     val removeRaw = tasks
         .filter { it.id in selectedIds }
         .map { it.raw.trim() }
