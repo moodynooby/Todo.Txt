@@ -1,4 +1,4 @@
-package app.todotxt.domain
+package app.todotxt.core
 
 import kotlinx.serialization.Serializable
 

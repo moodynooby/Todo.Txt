@@ -1,4 +1,4 @@
-package app.todotxt.domain
+package app.todotxt.core
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

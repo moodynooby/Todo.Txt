@@ -44,6 +44,7 @@ kotlin {
                 implementation(libs.androidx.lifecycle.viewmodel)
                 implementation(libs.androidx.lifecycle.runtime.compose)
                 implementation(libs.kermit)
+                api(project(":core"))
             }
         }
         val commonTest by getting {

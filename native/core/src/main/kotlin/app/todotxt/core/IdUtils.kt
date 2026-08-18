@@ -1,4 +1,4 @@
-package app.todotxt.domain
+package app.todotxt.core
 
 /** Simple monotonic-ish id generator mirroring the web `nanoid`-style ids. */
 object IdUtils {

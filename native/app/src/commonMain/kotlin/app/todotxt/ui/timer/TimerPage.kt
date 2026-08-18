@@ -56,10 +56,13 @@ fun TimerPage() {
         }
     }
 
-    fun nowElapsed(): Long = if (current.startedAt != null) {
-        (current.elapsed ?: 0L) + (System.currentTimeMillis() - current.startedAt)
-    } else {
-        current.elapsed ?: 0L
+    fun nowElapsed(): Long {
+        val started = current.startedAt
+        return if (started != null) {
+            (current.elapsed ?: 0L) + (System.currentTimeMillis() - started)
+        } else {
+            current.elapsed ?: 0L
+        }
     }
 
     fun formatted(ms: Long): String {
