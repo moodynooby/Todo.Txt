@@ -1,65 +1,86 @@
 # Continuous Integration & Releases
 
-The repository ships a GitHub Actions workflow (`.github/workflows/tauri.yml`)
-that turns every git tag into a full set of native installers, and gives fast
-feedback on every push and pull request.
+The repository contains two products in the same repo:
 
-## What the workflow does
+1. **Web app** (`webapp-src/`, `main` branch) — React + Vite SPA served as a
+   browser app / PWA.
+2. **Native app** (`native/`, `native/kotlin-compose` branch) — Kotlin
+   Compose Multiplatform targeting **Android** and **Desktop JVM** (Windows /
+   Linux). No Tauri, no iOS, no macOS.
 
-| Job | Trigger | Output |
-|---|---|---|
-| `check` | Every push / PR | Lint + typecheck + Linux desktop build (`tauri build`) |
-| `build-desktop` | Tagged releases only | `.deb`, `.rpm`, `.AppImage` (Ubuntu), `.exe`/`.msi` (Windows), `.dmg` (macOS) |
-| `build-android` | Tagged releases only | Universal `.apk` and Google Play-ready `.aab` |
-| `release` | Tagged releases only | Assembles all artifacts into a GitHub Release with auto-generated notes |
+Each has its own build system, and both are expected to compile cleanly on the
+`native/kotlin-compose` branch:
 
-## Releasing
+```bash
+# Web app (main branch)
+cd webapp-src && npm install && npm run build        # Vite production build
+cd webapp-src && npx tsc --noEmit                    # typecheck
 
-1. Bump `version` in `src-tauri/tauri.conf.json` (e.g. `1.0.2`).
-2. Tag and push: `git tag v1.0.2 && git push origin v1.0.2`.
-3. The workflow runs; when it finishes a GitHub Release appears under
-   [Releases](https://github.com/moodynooby/Todo.Txt/releases) with every
-   installer attached.
+# Native app (native/kotlin-compose branch)
+cd native
+export ANDROID_HOME=$HOME/android-sdk
+./gradlew :app:compileKotlinDesktop                  # desktop JVM target
+./gradlew :app:compileDebugKotlinAndroid             # android target
+./gradlew :core:jvmTest                              # shared-core tests
+./gradlew :core:jsBrowserProductionWebpack           # rebuild @todotxt/core JS bundle
+```
 
-Tags containing `beta`, `alpha`, or `rc` are marked as pre-releases.
+The shared core (`native/core/`) ships a Kotlin/JS bundle consumed by the web
+app as a local file dependency (`@todotxt/core` →
+`file:../Todo.Txt/native/core/npm-package`). The `npm-package/` directory is
+**not committed** (see `.gitignore`); regenerate it with the Gradle command
+above and then `npm install` inside `webapp-src/`.
 
-## Required repository secrets
+## Releasing the web app
 
-Desktop builds work with zero configuration. Android Play Store builds need
-signing; upload these secrets in
+1. Bump `version` in `webapp-src/package.json`.
+2. Tag and push on `main`: `git tag v1.0.2 && git push origin v1.0.2`.
+
+The web app is deployable as a static build from `webapp-src/dist/` on any
+static host or served behind any HTTP server.
+
+## Releasing the native app
+
+1. Bump `versionName` / `versionCode` in
+   `native/app/build.gradle.kts`.
+2. Tag and push on `native/kotlin-compose`:
+   `git tag app-v1.0.2 && git push origin app-v1.0.2`.
+3. Build installers locally (or wire up a GitHub Actions workflow per the
+   commands above):
+
+```bash
+cd native && ./gradlew assembleRelease            # universal APK
+cd native && ./gradlew packageReleaseDistributionForCurrentOS  # desktop installer
+```
+
+## Android release signing (one time)
+
+Play Store builds need a keystore; upload these secrets to
 [Settings → Secrets and variables → Actions](https://github.com/moodynooby/Todo.Txt/settings/secrets/actions):
 
-| Secret | Purpose | How to create |
-|---|---|---|
-| `ANDROID_KEYSTORE_BASE64` | Release signing keystore | `base64 -w0 app/release.keystore` after generating one with `keytool` |
-| `ANDROID_KEYSTORE_PASSWORD` | Keystore password | Same as in `key.properties` |
-| `ANDROID_KEY_ALIAS` | Key alias | Same as in `key.properties` |
-| `ANDROID_KEY_PASSWORD` | Key password | Same as in `key.properties` |
-| `APPLE_CERTIFICATE` | macOS signing (optional) | Exported `.p12`, base64-encoded |
-| `APPLE_CERTIFICATE_PASSWORD`, `KEYCHAIN_PASSWORD` | Unlock certificate in CI | Chosen when exporting the `.p12` |
-
-Without the Android secrets the workflow still produces a debug-signed APK,
-which is fine for sideloading but will be rejected by the Play Store.
-
-### Generating an Android keystore (one time)
+| Secret | Purpose |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | Release signing keystore (`base64 -w0 app/release.keystore`) |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Key alias |
+| `ANDROID_KEY_PASSWORD` | Key password |
 
 ```bash
 keytool -genkeypair -v -keystore release.keystore -alias todotxt \
   -keyalg RSA -keysize 2048 -validity 10000
-base64 -w0 release.keystore  # paste into ANDROID_KEYSTORE_BASE64
 ```
 
-Keep `release.keystore` somewhere safe and permanent — losing it means you
-can never update the app on the Play Store under the same package identity.
+Keep `release.keystore` safe and permanent — losing it means you can never
+update the app on the Play Store under the same package identity.
 
 ## Local development
 
-The workflow mirrors the local commands, so nothing in CI is surprising:
-
 ```bash
-pnpm install        # dependencies (pnpm, required by this repo)
-pnpm check          # biome lint + typecheck
-pnpm tauri build    # desktop installer for your platform
-pnpm tauri android build --apk   # Android APK
-pnpm tauri android build --aab   # Android App Bundle
+# Web app
+cd webapp-src && pnpm install && pnpm dev     # Vite dev server (port 5173)
+
+# Native app
+cd native
+./gradlew :app:run -DmainClass=app.todotxt.MainKt   # desktop run
+./gradlew :app:installDebug                          # install on connected device/emulator
 ```

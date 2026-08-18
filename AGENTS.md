@@ -1,18 +1,26 @@
 # Agent Guidelines for Todo.Txt
 
-Single-page todo.txt app: React 19 + Vite + TypeScript, Mantine 9 UI, TipTap 3 editor (Markdown ext), Excalidraw drawing, Firebase Auth + Firestore sync, GROQ AI (`@ai-sdk/groq`), PWA via vite-plugin-pwa. No test framework.
+This repo now ships **two products** on the `native/kotlin-compose` branch:
+
+1. **Native app (`native/`)** — the frontrunner. Kotlin Compose Multiplatform (Android + Desktop JVM; no iOS/macOS). Compose UI, CameraX + ML Kit QR scanning, Glance habit widgets (Momentum / Heatmap / Quick-Check), Ktor QR-based P2P sync with LWW-CRDT core (continuous WebSocket), notification actions (Mark Done / Snooze), multi-timer. Kotlin 2.1.21, CMP 1.7.3, AGP 8.7.3.
+2. **Web app (`webapp-src/`)** — browser/PWA only (Tauri removed). React 19 + Vite + TypeScript, Mantine 9 UI, TipTap 3 editor (Markdown ext), Excalidraw drawing, Firebase Auth + Firestore sync, GROQ AI (`@ai-sdk/groq`), PWA via vite-plugin-pwa.
+
+**Shared core (`native/core/`)**: a KMP module with JVM + JS/IR targets — habit merge, streaks, heatmap, scheduling parsing (LwwMap CRDT + SchedulingParser + CoreEntry JS exports). The web app consumes the Kotlin/JS bundle as a local `@todotxt/core` dependency (`file:../Todo.Txt/native/core/npm-package`, gitignored — rebuild with `./gradlew :core:jsBrowserProductionWebpack` and copy output to `npm-package/`).
 
 ## Commands
 
 | Action | Command |
 |--------|---------|
-| dev server | `npm run dev` (port 5173) |
-| build | `npm run build` |
-| preview | `npm run preview` (port 4173) |
-| lint + fix | `npm run lint` (biome check --write — rewrites files) |
-| format | `npm run format` |
-| typecheck | `npm run typecheck` (tsc --noEmit) |
-| full check | `npm run check` (lint + typecheck) — run before finishing |
+| native typecheck + build (both targets) | `cd native && ./gradlew :app:compileKotlinDesktop :app:compileDebugKotlinAndroid --no-daemon --console=plain` |
+| native core tests | `cd native && ./gradlew :core:jvmTest --no-daemon` |
+| rebuild shared core JS bundle | `cd native && ./gradlew :core:jsBrowserProductionWebpack` (copy output to `native/core/npm-package/`) |
+| web dev server | `cd webapp-src && npm run dev` (port 5173) |
+| web build | `cd webapp-src && npm run build` |
+| web preview | `cd webapp-src && npm run preview` (port 4173) |
+| web lint + fix | `cd webapp-src && npm run lint` (biome check --write — rewrites files) |
+| web format | `cd webapp-src && npm run format` |
+| web typecheck | `cd webapp-src && npm run typecheck` (tsc --noEmit) |
+| web full check | `cd webapp-src && npm run check` (lint + typecheck) — run before finishing |
 
 ## Setup & gotchas
 
