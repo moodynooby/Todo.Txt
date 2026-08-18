@@ -22,11 +22,14 @@ good in practice as on paper?*
 | --- | --- |
 | Domain layer (`Task`, `Habit`, `Note`, settings, parser, habit math) | Ported + unit tested |
 | Field Notes Ritual M3 Expressive theme | Ported to `FieldNotesTheme` |
-| Workspaces: Todos, Habits, Notes, Draw, Timer | Implemented |
+| Workspaces: Todos, Habits, Notes, Draw, Timer, AI, Sync | Implemented |
 | AI tools (Groq) | Implemented (key stored locally) |
 | Persistence | `expect/actual`: files on disk (desktop), DataStore (Android) |
+| Notifications | Android habit/due reminders with Mark Done + Snooze actions |
+| Widgets | Android Glance widgets: habit momentum, heatmap, quick-check toggle |
+| P2P Sync | QR-based bidirectional CRDT sync (LWW Map) — works Android↔Desktop↔Web |
+| Shared core | JVM + JS/IR targets — same logic across native and web |
 | Tests | `commonTest` ports the web app's parser + habit utility suites — all green |
-| Build outputs | Android debug APK + Debian package both produced |
 
 ## Build
 
@@ -42,22 +45,24 @@ Requires JDK 21 and Android SDK (platform 35, build-tools) with `ANDROID_HOME` s
 
 ## What is deliberately out of scope
 
-- Notes editor (Tiptap) and Excalidraw scenes: the Draw workspace keeps strokes
-  in memory for now; full rich-text and scene persistence are the next iteration
-- Firebase/Firestore sync: local-first only, as the experiment intends
-- AlarmManager exact alarms, home-screen widgets, and iOS surfaces: next phases
+- **Rich notes editor** (Tiptap-equivalent): the Notes workspace uses a multi-line
+  `TextField` for now; full rich-text with TipTap parity is planned
+- **Excalidraw-equivalent drawing**: the Draw workspace keeps strokes in memory;
+  full scene persistence and vector editing are the next iteration
+- **iOS / macOS**: deliberately not targeted — Android + Desktop (Windows/Linux) only
 
 ## Architecture map
 
 ```
-native/app/src/
-├── commonMain/kotlin/app/todotxt/
-│   ├── domain/      Task, Habit, Note types + TodoParser, HabitUtils, IdUtils
-│   ├── theme/       FieldNotesTheme (M3 Expressive tokens from the web app)
-│   ├── persistence/ expect Storage + common repository
-│   └── ui/          AppRoot + todo, habits, notes, timer, draw, ai pages
-├── androidMain/     MainActivity, Application, Android file storage actual
-└── desktopMain/     Swing main, menu bar, desktop file storage actual
+native/app/src/commonMain/kotlin/app/todotxt/
+├── crdt/          LwwMap — shared P2P sync merge logic
+├── domain/        Task, Habit, Note types + TodoParser, HabitUtils, IdUtils
+├── keyboard/      expect/actual keyboard shortcuts (desktop only)
+├── persistence/   expect/actual Storage + repository (multi-timer, undo stack)
+├── service/       AlarmPermissionManager, DueReminderManager, P2pSyncManager
+├── theme/         FieldNotesTheme (M3 Expressive)
+├── ui/            AppRoot + workspace pages (todo, habits, notes, timer, draw, ai, sync)
+└── widgets/       (androidMain) Glance habit widgets + toggle callback
 ```
 
 The `domain` layer mirrors `src/types/` and `src/utils/` from the web repo one-to-one,

@@ -1,10 +1,10 @@
 # `todotxt-core` — Frontend-Agnostic Todo.Txt Core
 
-This module contains the **pure business logic** of the Todo.Txt application, completely independent of any UI framework, platform, or presentation layer. It can be consumed by:
+This module contains the **pure business logic** of the Todo.Txt application, completely independent of any UI framework, platform, or presentation layer. It compiles to **JVM** (native app) and **JS/IR** (web app via `@todotxt/core`), ensuring identical parsing and habit math across all platforms.
 
-- The **Compose Multiplatform native app** (`../app/`)
-- A future **Kotlin/JS web frontend** (replacing or complementing the React web app)
-- A **server-side Kotlin backend** (sync API, validation, CLI tools)
+Consumed by:
+- The **Compose Multiplatform native app** (Android + Desktop via JVM target)
+- The **React web app** (via JS bundle built from the JS target)
 - Any other Kotlin consumer via the published Maven artifact
 
 ## Contents
@@ -14,7 +14,11 @@ This module contains the **pure business logic** of the Todo.Txt application, co
 | `Types.kt` | Serializable domain models: `Task`, `Habit`, `Note`, `TimerState`, `GroqSettings`, `Drawing`, plus `Filter`/`FilterType` and the `HabitColor`/`NoteColor` design tokens |
 | `TodoParser.kt` | The full `todo.txt` grammar: checkbox markers, priority, `+projects`, `@contexts`, `due:` relative + `T`/`@` time forms, `setLineCompleted` completion formatting |
 | `HabitUtils.kt` | Habit math: streaks, best streak, completion rate, momentum, 12-week heatmap grid, date toggling |
+| `SchedulingParser.kt` | Relative date/time parsing for due-date scheduling |
+| `crdt/LwwMap.kt` | Last-Write-Wins CRDT for P2P sync merge |
+| `Platform.kt` | `expect fun currentTimeMillis()` — platform clock |
 | `IdUtils.kt` | `newId()` generator for notes/habits |
+| `CoreEntry.kt` (jsMain) | JS export entry: `parseTodoContentJs`, `mergeHabitsJs`, `streakForHabitJs`, `heatmapForHabitJs`, `toggleHabitDateJs` |
 
 ## Build and test
 
