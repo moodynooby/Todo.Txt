@@ -38,3 +38,4 @@ tsconfig.tsbuildinfo
 # Tauri (removed — keeping for safety)
 /src-tauri/target/
 Cargo.lock
+package-lock.json
