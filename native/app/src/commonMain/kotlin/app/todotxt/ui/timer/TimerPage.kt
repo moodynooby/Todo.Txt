@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.TimerState
 import app.todotxt.persistence.Storage
+import app.todotxt.platform.playBeep
 import kotlinx.coroutines.delay
 import kotlin.math.floor
 
@@ -141,6 +142,7 @@ fun TimerPage() {
             } else {
                 Button(
                     onClick = {
+                        playBeep()
                         Storage.updateTimer(current.copy(
                             isActive = false,
                             elapsed = nowElapsed(),
