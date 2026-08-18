@@ -42,6 +42,7 @@ import app.todotxt.ui.habits.HabitsPage
 import app.todotxt.ui.notes.NotesPage
 import app.todotxt.ui.timer.TimerPage
 import app.todotxt.ui.todo.TodoPage
+import app.todotxt.ui.editor.EditorPage
 
 enum class Workspace(val title: String) {
     TODO("Todos"),
@@ -50,6 +51,7 @@ enum class Workspace(val title: String) {
     DRAW("Draw"),
     TIMER("Timer"),
     AI("AI"),
+    EDITOR("Editor"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,6 +109,12 @@ fun AppRoot(modifier: Modifier = Modifier) {
                         icon = { Icon(Icons.Filled.FavoriteBorder, contentDescription = "AI") },
                         label = { Text("AI") },
                     )
+                    NavigationRailItem(
+                        selected = workspace == Workspace.EDITOR,
+                        onClick = { workspace = Workspace.EDITOR },
+                        icon = { Icon(Icons.Filled.Edit, contentDescription = "Editor") },
+                        label = { Text("Editor") },
+                    )
                     // Settings: theme mode picker (web parity: appearance
                     // switch) — kept compact inside the rail.
                     var menuExpanded by remember { mutableStateOf(false) }
@@ -155,6 +163,10 @@ fun AppRoot(modifier: Modifier = Modifier) {
                     Workspace.DRAW -> DrawPage()
                     Workspace.TIMER -> TimerPage()
                     Workspace.AI -> AiPage()
+                    Workspace.EDITOR -> EditorPage(
+                        initialContent = content,
+                        onBack = { workspace = Workspace.TODO },
+                    )
                 }
             }
         }

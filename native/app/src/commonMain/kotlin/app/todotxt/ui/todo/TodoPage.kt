@@ -203,6 +203,19 @@ fun TodoPage(content: String) {
             }
         }
         val shown = filteredTasks(parsed, filter, searchQuery, showCompleted)
+        // Web parity (EditorPlay): task-rhythm dots, empty-state art, and
+        // the pet companion strip that reacts to document activity.
+        val activeTasks = parsed.tasks.filter { !it.completed }
+        val petMood = rememberPetMood(activeTasks.size, parsed.completedCount)
+        if (activeTasks.isNotEmpty()) {
+            TaskRhythmStrip(
+                taskCount = activeTasks.size,
+                doneCount = parsed.completedCount,
+            )
+        }
+        if (shown.isEmpty() && activeTasks.isEmpty()) {
+            EmptyStateArt()
+        }
         if (selectedIds.isNotEmpty()) {
             BulkActionsBar(
                 selectedIds = selectedIds,
@@ -223,6 +236,14 @@ fun TodoPage(content: String) {
             onSelect = { id -> selectedIds = setOf(id) },
             onDeselect = { selectedIds = emptySet() },
             onEditTask = { editTarget = it },
+        )
+        // Pet strip: tap it to scroll back to the quick-add bar area.
+        PetStrip(
+            taskCount = activeTasks.size,
+            doneCount = parsed.completedCount,
+            mood = petMood,
+            onNudge = {},
+            modifier = Modifier.padding(top = 8.dp),
         )
     }
 

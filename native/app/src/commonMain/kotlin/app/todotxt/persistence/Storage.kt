@@ -5,6 +5,8 @@ import app.todotxt.domain.Habit
 import app.todotxt.domain.Note
 import app.todotxt.domain.Drawing
 import app.todotxt.domain.TimerState
+import app.todotxt.domain.TodoParser
+import app.todotxt.service.DueReminderManager
 import app.todotxt.service.ReminderManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,12 +66,18 @@ object Storage {
             _groq.value = readGroqFile()
             _settings.value = readSettingsFile()
             _drawings.value = readDrawingsFile()
+            // Arm due-date reminders on launch so overdue tasks nudge
+            // immediately (web: fire on every parse while the app is open).
+            DueReminderManager.scheduleDueReminders(TodoParser.parseTodoContent(_content.value))
         }
     }
 
     fun setContent(value: String) {
         _content.value = value
         scope.launch { PlatformStorage.writeString("todo.txt", value) }
+        // Due-date reminders (web `useDueRemindersNative` parity): re-arm on
+        // every document change so the OS nudge reflects the latest content.
+        DueReminderManager.scheduleDueReminders(TodoParser.parseTodoContent(value))
     }
 
     fun updateNotes(transform: (List<Note>) -> List<Note>) {
