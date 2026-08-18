@@ -190,45 +190,52 @@ fun NotesPage(notes: List<Note>) {
         val unpinned = active.filter { !it.pinned }
         val archived = notes.filter { it.archived }
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(4.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (pinned.isNotEmpty()) {
-                item {
-                    Text(
-                        "Pinned",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 6.dp),
-                    )
-                }
-                items(pinned) { note -> NoteCard(note, onEdit = { editTarget = note }) }
+        if (active.isEmpty() && archived.isEmpty()) {
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                app.todotxt.ui.todo.EmptyStateArt()
             }
-            if (unpinned.isNotEmpty()) {
-                item {
-                    Text(
-                        if (pinned.isEmpty()) "Active" else "Others",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 6.dp),
-                    )
-                }
-                items(unpinned) { note -> NoteCard(note, onEdit = { editTarget = note }) }
-            }
-            if (archived.isNotEmpty()) {
-                item {
-                    Button(
-                        onClick = { showArchived = !showArchived },
-                        shape = RoundedCornerShape(20.dp),
-                    ) {
-                        Text("${if (showArchived) "Hide" else "Show"} archived (${archived.size})")
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (pinned.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Pinned",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 6.dp),
+                        )
                     }
+                    items(pinned) { note -> NoteCard(note, onEdit = { editTarget = note }) }
                 }
-                if (showArchived) {
-                    items(archived) { note -> NoteCard(note, onEdit = { editTarget = note }) }
+                if (unpinned.isNotEmpty()) {
+                    item {
+                        Text(
+                            if (pinned.isEmpty()) "Active" else "Others",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 6.dp),
+                        )
+                    }
+                    items(unpinned) { note -> NoteCard(note, onEdit = { editTarget = note }) }
+                }
+                if (archived.isNotEmpty()) {
+                    item {
+                        Button(
+                            onClick = { showArchived = !showArchived },
+                            shape = RoundedCornerShape(20.dp),
+                        ) {
+                            Text("${if (showArchived) "Hide" else "Show"} archived (${archived.size})")
+                        }
+                    }
+                    if (showArchived) {
+                        items(archived) { note -> NoteCard(note, onEdit = { editTarget = note }) }
+                    }
                 }
             }
         }

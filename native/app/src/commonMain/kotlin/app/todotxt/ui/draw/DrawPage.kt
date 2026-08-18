@@ -236,6 +236,12 @@ fun DrawPage() {
                 history.forEach { s -> drawToolStroke(s) }
                 pending.value?.let { s -> drawToolStroke(s) }
             }
+
+            if (history.isEmpty() && pending.value == null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    app.todotxt.ui.todo.EmptyStateArt()
+                }
+            }
         }
     }
 }

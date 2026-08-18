@@ -47,6 +47,13 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.TextButton
+import app.todotxt.service.AlarmPermissionManager
 import app.todotxt.domain.Habit
 import app.todotxt.domain.HabitColor
 import app.todotxt.domain.HabitUtils
@@ -63,6 +70,8 @@ fun HabitsPage(habits: List<Habit>) {
     var editTarget by remember { mutableStateOf<Habit?>(null) }
     var exportMenuOpen by remember { mutableStateOf(false) }
 
+    val alarmPermission = AlarmPermissionManager.rememberPermissionStatus()
+
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text(
             "Habits",
@@ -70,6 +79,36 @@ fun HabitsPage(habits: List<Habit>) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp),
         )
+
+        // Exact-alarm permission guide (web parity: ExactAlarmPermission.tsx).
+        if (AlarmPermissionManager.requiresExactAlarmGrant() && !alarmPermission.value) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                    Text(
+                        "Reminder accuracy",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                    Text(
+                        "Allow exact alarms so habit reminders fire at your chosen time.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                }
+                TextButton(onClick = { AlarmPermissionManager.openExactAlarmSettings() }) {
+                    Text("Open Settings")
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         // Search + habits export, mirroring the web habitsBackup surface.
         Row(
@@ -148,13 +187,21 @@ fun HabitsPage(habits: List<Habit>) {
             }
         }
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(
-                habits.filter { !it.archived }
-                    .filter { searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) },
-                key = { it.id },
-            ) { habit ->
-                HabitCard(habit, onEdit = { editTarget = habit })
+        val visibleHabits = habits.filter { !it.archived }
+            .filter { searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) }
+
+        if (visibleHabits.isEmpty()) {
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                app.todotxt.ui.todo.EmptyStateArt()
+            }
+        } else {
+            LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(
+                    visibleHabits,
+                    key = { it.id },
+                ) { habit ->
+                    HabitCard(habit, onEdit = { editTarget = habit })
+                }
             }
         }
     }

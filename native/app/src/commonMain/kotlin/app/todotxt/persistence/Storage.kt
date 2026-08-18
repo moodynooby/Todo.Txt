@@ -45,8 +45,8 @@ object Storage {
     private val _habits = MutableStateFlow(emptyList<Habit>())
     val habits: StateFlow<List<Habit>> = _habits.asStateFlow()
 
-    private val _timers = MutableStateFlow<TimerState?>(null)
-    val timers: StateFlow<TimerState?> = _timers.asStateFlow()
+    private val _timers = MutableStateFlow<List<TimerState>>(emptyList())
+    val timers: StateFlow<List<TimerState>> = _timers.asStateFlow()
 
     private val _groq = MutableStateFlow(GroqSettings())
     val groq: StateFlow<GroqSettings> = _groq.asStateFlow()
@@ -95,11 +95,10 @@ object Storage {
         }
     }
 
-    fun updateTimer(value: TimerState?) {
-        _timers.value = value
+    fun updateTimers(transform: (List<TimerState>) -> List<TimerState>) {
+        _timers.value = transform(_timers.value)
         scope.launch {
-            val raw = if (value == null) "null" else json.encodeToString(value)
-            PlatformStorage.writeString("timer.json", raw)
+            PlatformStorage.writeString("timer.json", json.encodeToString(_timers.value))
         }
     }
 
@@ -134,10 +133,10 @@ object Storage {
             ?.let { json.decodeFromString<List<Habit>>(it) } ?: emptyList()
     }.getOrDefault(emptyList())
 
-    private fun readTimersFile(): TimerState? = runCatching {
+    private fun readTimersFile(): List<TimerState> = runCatching {
         PlatformStorage.readString("timer.json")?.takeIf { it.isNotBlank() && it != "null" }
-            ?.let { json.decodeFromString<TimerState>(it) }
-    }.getOrDefault(null)
+            ?.let { json.decodeFromString<List<TimerState>>(it) }
+    }.getOrDefault(emptyList()) ?: emptyList()
 
     private fun readSettingsFile(): AppSettings = runCatching {
         PlatformStorage.readString("settings.json")?.takeIf { it.isNotBlank() }

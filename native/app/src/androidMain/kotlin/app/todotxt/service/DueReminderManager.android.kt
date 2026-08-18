@@ -92,6 +92,7 @@ class DueAlarmReceiver : BroadcastReceiver() {
         val snapshot = intent.getStringExtra("snapshot").orEmpty()
         val tasks = snapshot.split(",").filter { it.contains(":") }
         val count = tasks.size
+        intentExtras.set(if (tasks.isNotEmpty()) "todo:id=${tasks.joinToString(",") { it.substringBefore(":") }},due=$due" else null)
         ReminderManager.showImmediateNotification(
             "Due $due",
             if (count == 1) "You have a task due: ${tasks.first().substringAfter(":")}"
