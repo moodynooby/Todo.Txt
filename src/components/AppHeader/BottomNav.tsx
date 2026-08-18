@@ -4,6 +4,7 @@ import NotebookIcon from "@/assets/3dicons-notebook-dynamic-color.webp";
 import DrawingIcon from "@/assets/3dicons-painting-kit-dynamic-color.webp";
 import TicIcon from "@/assets/3dicons-tick-dynamic-color.webp";
 import { useViewContext } from "@/context/ViewContext";
+import { Wifi } from "lucide-react";
 
 /**
  * M3 Expressive bottom navigation — mobile only (`visibleFrom` hidden below).
@@ -34,6 +35,11 @@ const TABS = [
 		value: "excalidraw",
 		label: "Draw",
 		icon: DrawingIcon,
+	},
+	{
+		value: "sync",
+		label: "Sync",
+		icon: Wifi,
 	},
 ];
 

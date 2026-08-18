@@ -38,7 +38,6 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useHabitsContext } from "@/context/HabitsContext";
-import ExactAlarmPermission from "@/features/habits/ExactAlarmPermission";
 import { HABIT_COLORS, type HabitColor, type HabitDraft } from "@/types/habits";
 import {
 	formatLocalDate,
