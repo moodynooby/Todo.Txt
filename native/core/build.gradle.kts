@@ -1,7 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
+    kotlin("multiplatform") version "2.1.21"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.21"
-    `java-library`
     `maven-publish`
 }
 
@@ -13,27 +12,43 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(21)
-}
+    // JVM target consumed by the Compose Multiplatform native app
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "21"
+        }
+        withJava()
+    }
 
-dependencies {
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-    testImplementation(kotlin("test"))
-}
+    // JS target consumed by the TypeScript web app (npm package `todotxt-core`)
+    js(IR) {
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+            distribution {
+                outputDirectory = file("$buildDir/dist/js")
+            }
+        }
+    }
 
-tasks.test {
-    useJUnitPlatform()
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+    }
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
-            artifactId = "todotxt-core"
-            groupId = "app.todotxt"
-            version = "1.0.0"
-        }
-    }
     repositories {
         mavenLocal()
     }

@@ -107,8 +107,8 @@ private fun HabitCard(habit: Habit) {
     val best = remember(habit) { HabitUtils.getBestStreak(habit) }
     val rate = remember(habit) { HabitUtils.getCompletionRate(habit) }
     val heatmap = remember(habit) { HabitUtils.getHeatmap(habit) }
-    val today = remember { HabitUtils.todayString() }
-    val doneToday = today in habit.completedDates
+    val today = remember { HabitUtils.today() }
+    val doneToday = habit.completedDates.contains(today)
 
     Card(
         modifier = Modifier.fillMaxWidth(),

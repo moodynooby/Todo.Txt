@@ -1,7 +1,11 @@
 package app.todotxt.core
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+/** Common date helpers, resolved per platform (JVM uses java.time, JS uses the
+ * browser `Date` API). Kept deliberately minimal so the parser core stays
+ * framework-agnostic. */
+expect fun todayString(): String
+
+expect fun addDaysString(base: String, days: Int): String
 
 /**
  * Field Notes Ritual todo.txt parser.
@@ -38,9 +42,9 @@ object TodoParser {
     private val RE_DUE_FALLBACK = Regex("""due:(\S+)""")
     private val RE_DUE_TIME_ONLY = Regex("""due:[T@](\d{1,2}:\d{2}(?::\d{2})?)""")
 
-    fun today(): String = LocalDate.now().toString()
-    fun tomorrow(): String = LocalDate.now().plusDays(1).toString()
-    fun yesterday(): String = LocalDate.now().minusDays(1).toString()
+    fun today(): String = todayString()
+    fun tomorrow(): String = addDaysString(today(), 1)
+    fun yesterday(): String = addDaysString(today(), -1)
 
     /** Normalise `14:3`, `9:05`, or `14:30:00` into `HH:MM`. */
     fun normaliseTime(raw: String): String {

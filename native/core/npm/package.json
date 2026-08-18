@@ -1,0 +1,23 @@
+{
+	"name": "todotxt-core",
+	"version": "1.0.0",
+	"description": "Language-agnostic todo.txt core: parser, domain types, and habit math — compiled from Kotlin Multiplatform (JVM + JS) so the same code powers the Kotlin native app and the TypeScript web app.",
+	"type": "module",
+	"main": "dist/todotxt-core.js",
+	"types": "index.d.ts",
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"import": "./dist/todotxt-core.js",
+			"default": "./dist/todotxt-core.js"
+		}
+	},
+	"files": [
+		"dist",
+		"index.d.ts",
+		"README.md"
+	],
+	"keywords": ["todotxt", "todo.txt", "habits", "parser", "multiplatform"],
+	"license": "MIT",
+	"private": true
+}

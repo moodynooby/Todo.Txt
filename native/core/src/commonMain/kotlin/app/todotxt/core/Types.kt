@@ -94,7 +94,7 @@ data class TimerState(
     val elapsed: Long = 0L,
     val isActive: Boolean = false,
     val startedAt: Long? = null,
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = 0L,
 )
 
 /** User-entered GROQ AI settings (stored at settings/groq on the web). */
@@ -110,7 +110,7 @@ data class Drawing(
     val id: String,
     val name: String,
     val strokes: List<DrawingStroke>,
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = 0L,
 )
 
 @Serializable

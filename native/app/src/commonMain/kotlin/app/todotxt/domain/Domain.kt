@@ -17,6 +17,9 @@ typealias Note = app.todotxt.core.Note
 typealias NoteColor = app.todotxt.core.NoteColor
 typealias TimerState = app.todotxt.core.TimerState
 typealias GroqSettings = app.todotxt.core.GroqSettings
+typealias Drawing = app.todotxt.core.Drawing
+typealias DrawingStroke = app.todotxt.core.DrawingStroke
+typealias DrawingPoint = app.todotxt.core.DrawingPoint
 
 typealias TodoParser = app.todotxt.core.TodoParser
 typealias HabitUtils = app.todotxt.core.HabitUtils

@@ -1,24 +1,20 @@
 package app.todotxt.core
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 /** Field Notes Ritual: lightweight, local-date helpers for daily habit rhythm. */
 object HabitUtils {
 
-    fun formatLocalDate(date: LocalDate): String =
-        date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+    fun formatLocalDate(date: String): String = date
 
-    fun todayString(): String = formatLocalDate(LocalDate.now())
+    fun today(): String = todayString()
 
-    /** The last [count] dates, oldest first, like `getLastDays`. */
-    fun getLastDays(count: Int): List<String> =
-        (count - 1 downTo 0).map { index: Int ->
-            LocalDate.now().minusDays(index.toLong())
-        }.map { date: LocalDate -> formatLocalDate(date) }
+    /** The last [count] dates, oldest first, like the web `getLastDays`. */
+    fun getLastDays(count: Int): List<String> {
+        val today = todayString()
+        return (count - 1 downTo 0).map { addDaysString(today, -it) }
+    }
 
     fun isHabitCompleteOn(habit: Habit, date: String): Boolean =
-        date in habit.completedDates
+        habit.completedDates.contains(date)
 
     /**
      * Current streak: walk backwards from today (or yesterday if today is
@@ -26,12 +22,12 @@ object HabitUtils {
      */
     fun getHabitStreak(habit: Habit): Int {
         val completed: Set<String> = habit.completedDates.toSet()
-        var cursor = LocalDate.now()
-        if (!completed.contains(formatLocalDate(cursor))) cursor = cursor.minusDays(1)
+        var cursor = todayString()
+        if (!completed.contains(cursor)) cursor = addDaysString(cursor, -1)
         var streak = 0
-        while (completed.contains(formatLocalDate(cursor))) {
+        while (completed.contains(cursor)) {
             streak += 1
-            cursor = cursor.minusDays(1)
+            cursor = addDaysString(cursor, -1)
         }
         return streak
     }
@@ -44,18 +40,17 @@ object HabitUtils {
         val dates = habit.completedDates.sorted()
         var best = 0
         var current = 0
-        var previous: LocalDate? = null
+        var previous: String? = null
         for (date in dates) {
-            val parsed = LocalDate.parse(date)
             current = if (previous == null) {
                 1
-            } else if (java.time.temporal.ChronoUnit.DAYS.between(previous, parsed) == 1L) {
+            } else if (daysBetween(previous, date) == 1) {
                 current + 1
             } else {
                 1
             }
             if (current > best) best = current
-            previous = parsed
+            previous = date
         }
         return best
     }
@@ -63,7 +58,7 @@ object HabitUtils {
     /** Completion rate over the last [days] days, as a 0..100 percentage. */
     fun getCompletionRate(habit: Habit, days: Int = 28): Int {
         val dates = getLastDays(days)
-        val hits = dates.count { it in habit.completedDates }
+        val hits = dates.count { habit.completedDates.contains(it) }
         return (hits.toDouble() / days * 100).toInt()
     }
 
@@ -75,8 +70,7 @@ object HabitUtils {
         val days = getLastDays(7)
         val names = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
         return days.mapIndexed { index, date ->
-            val name = names[LocalDate.parse(date).dayOfWeek.value - 1]
-            name to (date in habit.completedDates)
+            names[dayOfWeek(date)] to habit.completedDates.contains(date)
         }
     }
 
@@ -86,13 +80,13 @@ object HabitUtils {
      * or null for future dates (they stay empty).
      */
     fun getHeatmap(habit: Habit, weeks: Int = 12): List<List<String?>> {
-        val today = LocalDate.now()
-        val start = today.minusDays((weeks * 7 - 1).toLong())
+        val today = todayString()
+        val start = addDaysString(today, -(weeks * 7 - 1))
         val completed = habit.completedDates.toSet()
         return (0 until weeks).map { week: Int ->
             (0 until 7).map { day: Int ->
-                val date = start.plusDays((week * 7 + day).toLong())
-                if (date.isAfter(today)) null else formatLocalDate(date)
+                val date = addDaysString(start, week * 7 + day)
+                if (date > today) null else date
             }
         }
     }
@@ -100,6 +94,39 @@ object HabitUtils {
     fun toggleDate(habit: Habit, date: String): Habit {
         val dates = habit.completedDates.toMutableList()
         if (dates.contains(date)) dates.remove(date) else dates.add(date)
-        return habit.copy(completedDates = dates, updatedAt = System.currentTimeMillis())
+        return habit.copy(completedDates = dates, updatedAt = currentTimeMillis())
     }
+}
+
+/** Days between two ISO date strings (a <= b); works in pure string math. */
+internal fun daysBetween(a: String, b: String): Int {
+    fun julian(date: String): Int {
+        val parts = date.split("-")
+        val year = parts[0].toInt()
+        val month = parts[1].toInt()
+        val day = parts[2].toInt()
+        // Rata Die day number (simplified)
+        val y = year - if (month <= 2) 1 else 0
+        val m = (month + 9) % 12
+        val c = y / 100
+        val yy = y % 100
+        return 365 * y + yy / 4 - c / 4 + c * 3652425 / 10000 +
+            (m * 979 + 29) / 30 + day
+    }
+    return julian(b) - julian(a)
+}
+
+/** 0 = Monday .. 6 = Sunday, derived from the ISO date string. */
+internal fun dayOfWeek(isoDate: String): Int {
+    val parts = isoDate.split("-")
+    val year = parts[0].toInt()
+    val month = parts[1].toInt()
+    val day = parts[2].toInt()
+    val m = if (month <= 2) month + 12 else month
+    val y = if (month <= 2) year - 1 else year
+    val k = y % 100
+    val j = y / 100
+    // Zeller's congruence gives 0=Saturday..6=Friday; shift to Mon..Sun
+    val zeller = (day + (26 * (m + 1)) / 10 + k + k / 4 + j / 4 + 5 * j) % 7
+    return (zeller + 5) % 7
 }
