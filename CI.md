@@ -2,7 +2,7 @@
 
 The repository contains two products in the same repo:
 
-1. **Web app** (`webapp-src/`, `main` branch) — React + Vite SPA served as a
+1. **Web app** (repo root (`src/`, `package.json`), `main` branch) — React + Vite SPA served as a
    browser app / PWA.
 2. **Native app** (`native/`, `native/kotlin-compose` branch) — Kotlin
    Compose Multiplatform targeting **Android** and **Desktop JVM** (Windows /
@@ -13,8 +13,8 @@ Each has its own build system, and both are expected to compile cleanly on the
 
 ```bash
 # Web app (main branch)
-cd webapp-src && npm install && npm run build        # Vite production build
-cd webapp-src && npx tsc --noEmit                    # typecheck
+cd . && npm install && npm run build        # Vite production build
+cd . && npx tsc --noEmit                    # typecheck
 
 # Native app (native/kotlin-compose branch)
 cd native
@@ -29,14 +29,14 @@ The shared core (`native/core/`) ships a Kotlin/JS bundle consumed by the web
 app as a local file dependency (`@todotxt/core` →
 `file:../Todo.Txt/native/core/npm-package`). The `npm-package/` directory is
 **not committed** (see `.gitignore`); regenerate it with the Gradle command
-above and then `npm install` inside `webapp-src/`.
+above and then `npm install` inside repo root (`src/`, `package.json`).
 
 ## Releasing the web app
 
-1. Bump `version` in `webapp-src/package.json`.
+1. Bump `version` in `package.json`.
 2. Tag and push on `main`: `git tag v1.0.2 && git push origin v1.0.2`.
 
-The web app is deployable as a static build from `webapp-src/dist/` on any
+The web app is deployable as a static build from `dist/` on any
 static host or served behind any HTTP server.
 
 ## Releasing the native app
@@ -77,7 +77,7 @@ update the app on the Play Store under the same package identity.
 
 ```bash
 # Web app
-cd webapp-src && pnpm install && pnpm dev     # Vite dev server (port 5173)
+cd . && pnpm install && pnpm dev     # Vite dev server (port 5173)
 
 # Native app
 cd native
