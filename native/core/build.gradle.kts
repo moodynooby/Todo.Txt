@@ -20,18 +20,21 @@ kotlin {
         withJava()
     }
 
-    // JS target consumed by the TypeScript web app (npm package `todotxt-core`)
+    // JS target consumed by the TypeScript web app (npm package `@todotxt/core`)
     js(IR) {
+        nodejs {
+            // Node.js target for npm publishing
+        }
         browser {
             testTask {
                 useKarma {
                     useChromeHeadless()
                 }
             }
-            distribution {
-                outputDirectory = file("$buildDir/dist/js")
-            }
         }
+        // Generate npm package structure
+        useCommonJs()
+        binaries.executable()
     }
 
     sourceSets {
