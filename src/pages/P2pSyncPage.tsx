@@ -50,34 +50,37 @@ export default function P2pSyncPage() {
 	const mergeHabits = useCallback((remoteHabits: any[]) => {
 		const local = habitsRef.current;
 
-		// Use the shared Kotlin/JS core for LWW merge with completedDates union
-		// This is the exact same logic as the native app's LwwMap
+		// Try shared Kotlin/JS core first (same LWW logic as native app)
 		try {
 			const localJson = JSON.stringify(local);
 			const remoteJson = JSON.stringify(remoteHabits);
 			const mergedJson = mergeHabitsJs(localJson, remoteJson);
 			habitsRef.current = JSON.parse(mergedJson);
+			return;
 		} catch (e) {
-			console.error("[P2P] Merge failed, falling back to local logic:", e);
-			// Fallback: simple union if shared core not available
-			const merged = new Map<string, any>();
-			local.forEach((h: any) => merged.set(h.id, h));
-			remoteHabits.forEach((remote) => {
-				const localHabit = merged.get(remote.id);
-				if (!localHabit) {
-					merged.set(remote.id, remote);
-				} else {
-					const mergedDates = Array.from(
-						new Set([...localHabit.completedDates, ...remote.completedDates]),
-					);
-					merged.set(remote.id, {
-						...remote,
-						completedDates: mergedDates,
-					});
-				}
-			});
-			habitsRef.current = Array.from(merged.values());
+			console.warn("[P2P] Shared core merge failed, using web fallback:", e);
 		}
+
+		// Fallback: use web app's existing reconcile logic
+		const merged = new Map<string, any>();
+		local.forEach((h: any) => merged.set(h.id, h));
+		remoteHabits.forEach((remote: any) => {
+			const localHabit = merged.get(remote.id);
+			if (!localHabit) {
+				merged.set(remote.id, remote);
+			} else {
+				const mergedDates = Array.from(
+					new Set([...localHabit.completedDates, ...remote.completedDates]),
+				);
+				const base = remote.updatedAt >= localHabit.updatedAt ? remote : localHabit;
+				merged.set(remote.id, {
+					...base,
+					completedDates: mergedDates,
+					updatedAt: Math.max(localHabit.updatedAt, remote.updatedAt),
+				});
+			}
+		});
+		habitsRef.current = Array.from(merged.values());
 	}, []);
 
 	const connectToHost = useCallback((url: string) => {
