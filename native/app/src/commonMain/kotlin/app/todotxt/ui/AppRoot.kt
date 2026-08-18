@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Settings
+
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.Icon
@@ -43,6 +44,10 @@ import app.todotxt.ui.notes.NotesPage
 import app.todotxt.ui.timer.TimerPage
 import app.todotxt.ui.todo.TodoPage
 import app.todotxt.ui.editor.EditorPage
+import app.todotxt.ui.sync.P2pSyncPage
+
+/** Android: open camera for QR scanning. Desktop: no-op. */
+expect fun rememberScanRequest(): () -> Unit
 
 enum class Workspace(val title: String) {
     TODO("Todos"),
@@ -52,6 +57,7 @@ enum class Workspace(val title: String) {
     TIMER("Timer"),
     AI("AI"),
     EDITOR("Editor"),
+    SYNC("Sync"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,6 +121,12 @@ fun AppRoot(modifier: Modifier = Modifier) {
                         icon = { Icon(Icons.Filled.Edit, contentDescription = "Editor") },
                         label = { Text("Editor") },
                     )
+                    NavigationRailItem(
+                        selected = workspace == Workspace.SYNC,
+                        onClick = { workspace = Workspace.SYNC },
+                        icon = { Icon(Icons.Filled.FavoriteBorder, contentDescription = "Sync") },
+                        label = { Text("Sync") },
+                    )
                     // Settings: theme mode picker (web parity: appearance
                     // switch) — kept compact inside the rail.
                     var menuExpanded by remember { mutableStateOf(false) }
@@ -166,6 +178,9 @@ fun AppRoot(modifier: Modifier = Modifier) {
                     Workspace.EDITOR -> EditorPage(
                         initialContent = content,
                         onBack = { workspace = Workspace.TODO },
+                    )
+                    Workspace.SYNC -> P2pSyncPage(
+                        onScanRequest = rememberScanRequest()
                     )
                 }
             }

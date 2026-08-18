@@ -44,6 +44,9 @@ kotlin {
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.netty)
                 implementation(libs.ktor.server.content.negotiation)
+                implementation(libs.ktor.server.websockets)
+                implementation(libs.ktor.client.websockets)
+                implementation(libs.zxing)
 
                 implementation(libs.androidx.lifecycle.viewmodel)
                 implementation(libs.androidx.lifecycle.runtime.compose)
@@ -67,12 +70,15 @@ kotlin {
                 implementation(libs.androidx.work.runtime)
                 implementation(libs.androidx.glance.appwidget)
                 implementation(libs.androidx.glance.material3)
+                implementation(libs.camerax)
+                implementation(libs.camerax.lifecycle)
+                implementation(libs.camerax.view)
+                implementation(libs.mlkit.barcode)
             }
         }
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                implementation(libs.zxing)
             }
         }
     }
