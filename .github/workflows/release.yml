@@ -62,8 +62,17 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
-          $found = Get-ChildItem -Recurse -Path native/app/build/compose/binaries -Filter *.msi | Select-Object -First 1
-          if ($found) { Copy-Item $found.FullName out/ } else { Write-Error "No MSI found"; exit 1 }
+          Write-Output (Get-Location)
+          Get-ChildItem -Recurse -Path . -Filter *.msi -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Output "MSI: $($_.FullName)"
+            Copy-Item $_.FullName out/
+          }
+          if ((Get-ChildItem out).Count -eq 0) {
+            Write-Output "Available build dirs:"
+            Get-ChildItem -Recurse -Directory -Path native -Filter build -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { Write-Output $_.FullName }
+            Write-Error "No MSI found"
+            exit 1
+          }
           Get-ChildItem out
 
       - uses: actions/upload-artifact@v4
