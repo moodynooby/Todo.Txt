@@ -134,6 +134,22 @@ on CI: full Gradle wrapper (including `gradlew.bat`), `icon.ico` for jpackage,
 disabled for desktop release packaging (the bundled ProGuard 7.x cannot read
 JDK 17+ jmods — desktop distributions ship unminified instead).
 
+### Android signing
+
+The Android job always produces a **signed** (and therefore installable) APK.
+By default it generates a CI-only keystore — fine for sideloading, but do not
+use it for Play Store distribution (replacing the signing key breaks upgrades).
+For production signing, set these repository secrets:
+
+| Secret | Value |
+|---|---|
+| `BASE64_KEYSTORE` | `base64` of your `.jks` / `.keystore` file |
+| `KEYSTORE_PASSWORD` | Store password |
+| `KEY_ALIAS` | Key alias |
+| `KEY_PASSWORD` | Key password |
+
+When the secrets are present the workflow signs with your keystore instead.
+
 ## Quality gates (run before committing)
 
 | Check | Command |
