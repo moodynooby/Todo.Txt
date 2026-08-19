@@ -41,8 +41,6 @@ jobs:
     if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: native/kotlin-compose
 
       - uses: actions/setup-java@v4
         with:
@@ -88,8 +86,6 @@ jobs:
     if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: native/kotlin-compose
 
       - uses: actions/setup-java@v4
         with:
@@ -122,8 +118,6 @@ jobs:
     if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: native/kotlin-compose
 
       - uses: actions/setup-java@v4
         with:
@@ -163,10 +157,23 @@ jobs:
             echo "KEY_PASSWORD=todo-ci-pass" >> $GITHUB_ENV
           fi
 
+      - name: Validate Firebase release configuration
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          test -n "$FIREBASE_API_KEY" || { echo "Missing FIREBASE_API_KEY repository secret"; exit 1; }
+          test -n "$FIREBASE_PROJECT_ID" || { echo "Missing FIREBASE_PROJECT_ID repository secret"; exit 1; }
+
       - name: Assemble signed release APK
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         run: |
           cd native
           ./gradlew :app:assembleRelease --no-daemon \
+            -PfirebaseApiKey="$FIREBASE_API_KEY" \
+            -PfirebaseProjectId="$FIREBASE_PROJECT_ID" \
             -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
             -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
             -Pandroid.injected.signing.key.alias=$KEY_ALIAS \

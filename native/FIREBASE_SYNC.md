@@ -89,3 +89,33 @@ Test the Android build with two devices or emulators:
 8. Verify that both devices use the same sync-group ID but different anonymous Firebase UIDs.
 9. Confirm that the GROQ API key is absent from the Firestore snapshot.
 10. Review Firestore Rules logs and remove any development-only broad rules before release.
+
+## Automated releases
+
+The repository already contains a GitHub Actions release workflow at `.github/workflows/release.yml`. Native desktop and Android jobs now build the commit associated with the release ref instead of checking out a hard-coded branch.
+
+The recommended release process is:
+
+```bash
+git checkout main
+git pull origin main
+git tag app-v0.1.1
+git push origin app-v0.1.1
+```
+
+The tag starts the workflow. It builds the Windows installer, Linux package, Android release APK, and web bundle, then attaches the artifacts to a GitHub Release.
+
+Configure these repository secrets before creating a release:
+
+| Secret | Purpose |
+|---|---|
+| `FIREBASE_API_KEY` | Firebase project API key passed to the Android build |
+| `FIREBASE_PROJECT_ID` | Firebase project ID passed to the Android build |
+| `BASE64_KEYSTORE` | Base64-encoded production Android signing keystore |
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_ALIAS` | Android signing key alias |
+| `KEY_PASSWORD` | Android signing key password |
+
+If the signing secrets are not configured, the workflow generates a temporary CI keystore. That is acceptable for an installable test APK but not for production distribution, because replacing an Android signing key prevents normal app upgrades.
+
+The release job fails before the Android build if the Firebase API key or project ID is missing. This prevents publishing an APK that silently falls back to local-only synchronization.
