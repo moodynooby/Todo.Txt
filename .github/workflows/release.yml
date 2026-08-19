@@ -1,0 +1,198 @@
+# Cross-platform release workflow for Todo.Txt.
+# Triggered by a tag prefixed with "app-v" (e.g. app-v0.1.0) or "v" (web app).
+#
+# Jobs:
+#   build-windows  — Desktop MSI installer (Windows x64)
+#   build-linux    — Desktop AppImage + .deb (Ubuntu x64)
+#   build-android  — Universal debug APK (signed via Gradle default keystore when ready)
+#                    switch to a release keystore + signing config when ready)
+#   build-web      — Web app static bundle
+#   release        — Collects all artifacts into a GitHub Release
+name: Release
+
+on:
+  push:
+    branches: [main, "native/kotlin-compose"]
+    tags:
+      - "v*"
+      - "app-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Optional release tag (e.g. app-v0.1.0)"
+        required: false
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------- Desktop — Windows (MSI) ----------------
+  build-windows:
+    name: Desktop — Windows
+    runs-on: windows-latest
+    if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: native/kotlin-compose
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Package MSI installer
+        shell: pwsh
+        run: |
+          cd native
+          $env:ANDROID_HOME = ""
+          ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Get-ChildItem native/app/build/compose/binaries/main-release/msi/*.msi |
+            Copy-Item -Destination out/
+          Get-ChildItem out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-txt-windows
+          path: out/*.msi
+          if-no-files-found: error
+
+  # ---------------- Desktop — Linux (AppImage + deb) ----------------
+  build-linux:
+    name: Desktop — Linux
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: native/kotlin-compose
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Package AppImage + deb
+        run: |
+          cd native
+          ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p out
+          cp native/app/build/compose/binaries/main-release/appimage/*.AppImage out/ 2>/dev/null || true
+          cp native/app/build/compose/binaries/main-release/deb/*.deb out/ 2>/dev/null || true
+          ls -la out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-txt-linux
+          path: out/*
+          if-no-files-found: error
+
+  # ---------------- Android (universal APK) ----------------
+  build-android:
+    name: Android — APK
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: native/kotlin-compose
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Enable KVM for emulator-less builds
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | \
+            sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Assemble universal APK
+        run: |
+          cd native
+          export ANDROID_HOME=$HOME/android-sdk
+          ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p out
+          cp native/app/build/outputs/apk/release/*.apk out/ 2>/dev/null || \
+            cp native/app/build/outputs/apk/debug/*.apk out/
+          ls -la out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-txt-android
+          path: out/*.apk
+          if-no-files-found: error
+
+  # ---------------- Web app static bundle ----------------
+  build-web:
+    name: Web — static bundle
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Zip distribution
+        run: zip -r web-dist.zip dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-txt-web
+          path: web-dist.zip
+          if-no-files-found: error
+
+  # ---------------- Assemble GitHub Release ----------------
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-linux, build-android, build-web]
+    if: always() && needs.build-windows.result == 'success' && needs.build-linux.result == 'success' && needs.build-android.result == 'success' && needs.build-web.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: todo-txt-*
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -laR artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+          files: |
+            artifacts/*.msi
+            artifacts/*.AppImage
+            artifacts/*.deb
+            artifacts/*.apk
+            artifacts/web-dist.zip
+          fail_on_unmatched_files: false
