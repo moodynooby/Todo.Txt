@@ -50,13 +50,13 @@ jobs:
           java-version: 17
 
       - name: Package MSI installer
-        shell: pwsh
+        shell: cmd
         run: |
           cd native
-          # Android SDK is not needed for desktop packaging; keep the runner's
-          # SDK variables intact (an empty value breaks AGP configuration).
-          $env:JAVA_HOME = $env:JAVA_HOME_17_X64
-          ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon
+          rem Set JAVA_HOME to the JDK 17 installed by setup-java
+          for /f "delims=" %%i in ('where java') do set JAVA_BIN=%%i
+          set "JAVA_HOME=%JAVA_BIN:bin\java.exe=%"
+          gradlew.bat :app:packageReleaseDistributionForCurrentOS --no-daemon
 
       - name: Collect artifacts
         shell: pwsh
