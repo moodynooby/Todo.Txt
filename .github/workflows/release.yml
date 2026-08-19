@@ -3,7 +3,7 @@
 #
 # Jobs:
 #   build-windows  — Desktop MSI installer (Windows x64)
-#   build-linux    — Desktop AppImage + .deb (Ubuntu x64)
+#   build-linux    — Desktop .deb installer (Ubuntu x64)
 #   build-android  — Universal release APK
 #   build-web      — Web app static bundle
 #   release        — Collects all artifacts into a GitHub Release
@@ -53,8 +53,9 @@ jobs:
         shell: pwsh
         run: |
           cd native
-          $env:ANDROID_HOME = ""
-          $env:ANDROID_SDK_ROOT = ""
+          # Android SDK is not needed for desktop packaging; keep the runner's
+          # SDK variables intact (an empty value breaks AGP configuration).
+          $env:JAVA_HOME = $env:JAVA_HOME_17_X64
           ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon
 
       - name: Collect artifacts
@@ -86,23 +87,23 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Package AppImage + deb
+      - name: Package .deb installer
         run: |
+          # jpackage needs binutils (objcopy) and fakeroot on Linux
+          sudo apt-get install -y binutils fakeroot >/dev/null
           cd native
           ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon
 
       - name: Collect artifacts
         run: |
           mkdir -p out
-          shopt -s globstar nullglob
-          cp native/app/build/compose/binaries/**/main-release/appimage/*.AppImage out/ 2>/dev/null || true
-          cp native/app/build/compose/binaries/**/main-release/deb/*.deb out/ 2>/dev/null || true
-          ls -la out/ || { echo "no artifacts"; exit 1; }
+          cp native/app/build/compose/binaries/main-release/deb/*.deb out/ 2>/dev/null || { echo "no deb"; exit 1; }
+          ls -la out/
 
       - uses: actions/upload-artifact@v4
         with:
           name: todo-txt-linux
-          path: out/*
+          path: out/*.deb
           if-no-files-found: error
 
   # ---------------- Android (APK) ----------------
@@ -201,7 +202,6 @@ jobs:
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
           files: |
             artifacts/*.msi
-            artifacts/*.AppImage
             artifacts/*.deb
             artifacts/*.apk
             artifacts/web-dist.zip

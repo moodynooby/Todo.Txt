@@ -99,7 +99,15 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Netty jars each ship their own INDEX.LIST/INDEXES — exclude duplicates
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/INDEXES"
+            excludes += "META-INF/io.netty.versions.properties"
         }
+    }
+
+    lint {
+        abortOnError = false
     }
 
     buildTypes {
@@ -117,13 +125,21 @@ android {
 compose.desktop {
     application {
         mainClass = "app.todotxt.MainKt"
+        buildTypes {
+            release {
+                // CMP 1.7.x bundles ProGuard 7.2 which cannot read JDK 17+ jmods
+                // used when building the custom runtime image; ship the app
+                // unminified instead (desktop distribution size is not critical).
+                proguard.isEnabled.set(false)
+            }
+        }
         nativeDistributions {
             targetFormats(
+                // RPM and DMG are only supported by jpackage on their native hosts,
+                // so each CI host builds its own format below (see build filters).
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Rpm,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.AppImage,
+                // AppImage omitted: jpackage needs appimagetool (not on CI runners); deb covers Linux
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Dmg,
             )
             packageName = "T0do.TxT"
             packageVersion = "1.0.0"

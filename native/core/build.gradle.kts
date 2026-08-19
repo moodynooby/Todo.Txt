@@ -15,7 +15,7 @@ kotlin {
     // JVM target consumed by the Compose Multiplatform native app
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "21"
+            kotlinOptions.jvmTarget = "17"
         }
         withJava()
     }
