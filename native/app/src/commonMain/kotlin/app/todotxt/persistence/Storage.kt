@@ -15,6 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -34,6 +35,7 @@ object Storage {
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val _loaded = MutableStateFlow(false)
 
     // In-memory authoritative state, populated from disk at launch.
     private val _content = MutableStateFlow("")
@@ -69,7 +71,12 @@ object Storage {
             // Arm due-date reminders on launch so overdue tasks nudge
             // immediately (web: fire on every parse while the app is open).
             DueReminderManager.scheduleDueReminders(TodoParser.parseTodoContent(_content.value))
+            _loaded.value = true
         }
+    }
+
+    suspend fun awaitLoaded() {
+        while (!_loaded.value) delay(10)
     }
 
     fun setContent(value: String) {
@@ -80,10 +87,23 @@ object Storage {
         DueReminderManager.scheduleDueReminders(TodoParser.parseTodoContent(value))
     }
 
+    fun replaceNotes(value: List<Note>) {
+        _notes.value = value
+        scope.launch { PlatformStorage.writeString("notes.json", json.encodeToString(value)) }
+    }
+
     fun updateNotes(transform: (List<Note>) -> List<Note>) {
         _notes.value = transform(_notes.value)
         scope.launch {
             PlatformStorage.writeString("notes.json", json.encodeToString(_notes.value))
+        }
+    }
+
+    fun replaceHabits(value: List<Habit>) {
+        _habits.value = value
+        scope.launch {
+            PlatformStorage.writeString("habits.json", json.encodeToString(value))
+            ReminderManager.scheduleReminders(value)
         }
     }
 
@@ -93,6 +113,11 @@ object Storage {
             PlatformStorage.writeString("habits.json", json.encodeToString(_habits.value))
             ReminderManager.scheduleReminders(_habits.value)
         }
+    }
+
+    fun replaceTimers(value: List<TimerState>) {
+        _timers.value = value
+        scope.launch { PlatformStorage.writeString("timer.json", json.encodeToString(value)) }
     }
 
     fun updateTimers(transform: (List<TimerState>) -> List<TimerState>) {
@@ -109,11 +134,21 @@ object Storage {
         }
     }
 
+    fun replaceSettings(value: AppSettings) {
+        _settings.value = value
+        scope.launch { PlatformStorage.writeString("settings.json", json.encodeToString(value)) }
+    }
+
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
         _settings.value = transform(_settings.value)
         scope.launch {
             PlatformStorage.writeString("settings.json", json.encodeToString(_settings.value))
         }
+    }
+
+    fun replaceDrawings(value: List<Drawing>) {
+        _drawings.value = value
+        scope.launch { PlatformStorage.writeString("drawings.json", json.encodeToString(value)) }
     }
 
     fun updateDrawings(transform: (List<Drawing>) -> List<Drawing>) {

@@ -38,6 +38,7 @@ import kotlinx.serialization.json.Json
 import app.todotxt.core.Habit
 import app.todotxt.core.HabitColor
 import app.todotxt.persistence.Storage
+import app.todotxt.sync.FirebaseSyncManager
 
 /**
  * QR-based P2P Sync with continuous WebSocket sync.
@@ -80,7 +81,8 @@ object P2pSyncManager {
         stopServer()
         val deviceId = PlatformDeviceId.deviceId
         val ipAddress = getLocalIpAddress()
-        val qrData = "http://$ipAddress:$SYNC_PORT/sync?device=$deviceId"
+        val groupId = FirebaseSyncManager.ensureSyncGroupId()
+        val qrData = "http://$ipAddress:$SYNC_PORT/sync?device=$deviceId&group=$groupId"
 
         server = embeddedServer(Netty, port = SYNC_PORT) {
             install(ContentNegotiation) { json(json) }
@@ -158,6 +160,7 @@ object P2pSyncManager {
 
     /** Connect to a peer via their QR URL — bidirectional sync */
     fun connectToPeer(qrUrl: String) {
+        queryParameter(qrUrl, "group")?.let { FirebaseSyncManager.setSyncGroupId(it) }
         syncJob?.cancel()
         syncJob = scope.launch {
             try {
@@ -227,6 +230,14 @@ object P2pSyncManager {
                 println("[P2pSync] Failed: ${e.message}")
             }
         }
+    }
+
+    private fun queryParameter(url: String, name: String): String? {
+        val query = url.substringAfter('?', "")
+        return query.split('&')
+            .firstOrNull { it.substringBefore('=') == name }
+            ?.substringAfter('=', "")
+            ?.takeIf { it.isNotBlank() }
     }
 
     /** Generate QR code as pixel array */

@@ -84,6 +84,11 @@ kotlin {
     }
 }
 
+val firebaseApiKey = providers.gradleProperty("firebaseApiKey").orElse("").get()
+val firebaseProjectId = providers.gradleProperty("firebaseProjectId").orElse("").get()
+
+fun String.asBuildConfigLiteral(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
 android {
     namespace = "app.todotxt"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -94,6 +99,12 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "FIREBASE_API_KEY", firebaseApiKey.asBuildConfigLiteral())
+        buildConfigField("String", "FIREBASE_PROJECT_ID", firebaseProjectId.asBuildConfigLiteral())
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     packaging {
