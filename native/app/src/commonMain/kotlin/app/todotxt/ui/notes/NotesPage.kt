@@ -1,6 +1,7 @@
 package app.todotxt.ui.notes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,14 +18,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -51,6 +55,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.IdUtils
 import app.todotxt.domain.Note
@@ -196,7 +201,7 @@ fun NotesPage(notes: List<Note>) {
             }
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
+                columns = GridCells.Adaptive(minSize = 260.dp),
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(4.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -258,71 +263,112 @@ private fun NoteCard(
         val hex = note.color.hex.removePrefix("#")
         Color(hex.toLong(16) or 0xFF000000)
     }
+    var menuOpen by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onEdit),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = color),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Column(Modifier.padding(10.dp)) {
-            Row(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.Top,
+            ) {
                 Text(
-                    note.title,
+                    text = note.title.ifBlank { "Untitled note" },
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
+                    overflow = TextOverflow.Clip,
                 )
-                IconButton(
-                    onClick = onEdit,
-                    modifier = Modifier.size(28.dp),
-                ) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurface)
-                }
-                IconButton(
-                    onClick = { Storage.updateNotes { list ->
-                        list.map { if (it.id == note.id) it.copy(pinned = !it.pinned) else it }
-                    } },
-                    modifier = Modifier.size(28.dp),
-                ) {
-                    Icon(
-                        if (note.pinned) Icons.Filled.Star else Icons.Filled.Star,
-                        contentDescription = "Pin",
-                        tint = if (note.pinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        Storage.updateNotes { list ->
-                            if (note.archived) {
-                                list.map { if (it.id == note.id) it.copy(archived = false) else it }
-                            } else {
-                                list.map { if (it.id == note.id) it.copy(archived = true, pinned = false) else it }
-                            }
-                        }
-                    },
-                    modifier = Modifier.size(28.dp),
-                ) {
-                    Icon(
-                        if (note.archived) Icons.Filled.Refresh else Icons.Filled.CheckCircle,
-                        contentDescription = if (note.archived) "Restore" else "Archive",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        Storage.updateNotes { list -> list.filter { it.id != note.id } }
-                    },
-                    modifier = Modifier.size(28.dp),
-                ) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Box {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "Note actions")
+                    }
+                    DropdownMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit note") },
+                            leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                onEdit()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(if (note.pinned) "Unpin note" else "Pin note") },
+                            leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                Storage.updateNotes { list ->
+                                    list.map { if (it.id == note.id) it.copy(pinned = !it.pinned) else it }
+                                }
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(if (note.archived) "Restore note" else "Archive note") },
+                            leadingIcon = {
+                                Icon(
+                                    if (note.archived) Icons.Filled.Unarchive else Icons.Filled.Archive,
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                Storage.updateNotes { list ->
+                                    list.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false) else it }
+                                }
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete note", color = MaterialTheme.colorScheme.error) },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                            },
+                            onClick = {
+                                menuOpen = false
+                                confirmDelete = true
+                            },
+                        )
+                    }
                 }
             }
             Text(
                 text = renderMarkdown(note.content),
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 6.dp),
+                maxLines = 6,
+                overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete note?") },
+            text = { Text("This removes the note permanently.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        Storage.updateNotes { list -> list.filter { it.id != note.id } }
+                        confirmDelete = false
+                    },
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

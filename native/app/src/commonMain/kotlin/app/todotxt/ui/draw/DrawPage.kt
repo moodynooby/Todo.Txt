@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,7 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 
@@ -84,6 +91,7 @@ fun DrawPage() {
     val color = remember { mutableStateOf(Color.Black) }
     val thickness = remember { mutableStateOf(4f) }
     val tool = remember { mutableStateOf(DrawTool.PEN) }
+    var toolMenuOpen by remember { mutableStateOf(false) }
 
     fun snapshot() {
         val drawing = Drawing(
@@ -128,44 +136,74 @@ fun DrawPage() {
             modifier = Modifier.padding(bottom = 8.dp),
         )
 
-        // Tool row
+        // On mobile, drawing tools collapse into one labeled selector so the action row never clips.
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            toolRowButton(tool, DrawTool.PEN, Icons.Filled.Edit, "Pen")
-            toolRowButton(tool, DrawTool.LINE, Icons.Filled.Clear, "Line")
-            toolRowButton(tool, DrawTool.RECT, Icons.Filled.Share, "Rect")
-            toolRowButton(tool, DrawTool.CIRCLE, Icons.Filled.Star, "Circle")
-            toolRowButton(tool, DrawTool.TRIANGLE, Icons.Filled.Clear, "Tri")
-            toolRowButton(tool, DrawTool.ARROW, Icons.Filled.Clear, "Arrow")
-            Spacer(modifier = Modifier.fillMaxWidth().height(30.dp))
-            IconButton(onClick = {
-                history.removeLastOrNull()?.let { redoStack.add(it) }
-                snapshot()
-            }, enabled = history.isNotEmpty()) {
-                Icon(Icons.Filled.Refresh, contentDescription = "Undo")
+            Box(modifier = Modifier.weight(1f)) {
+                Button(
+                    onClick = { toolMenuOpen = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("  Tool: ${tool.value.name.lowercase().replaceFirstChar { it.uppercase() }}")
+                }
+                DropdownMenu(
+                    expanded = toolMenuOpen,
+                    onDismissRequest = { toolMenuOpen = false },
+                ) {
+                    DrawTool.entries.forEach { target ->
+                        DropdownMenuItem(
+                            text = { Text(target.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                            onClick = {
+                                tool.value = target
+                                toolMenuOpen = false
+                            },
+                        )
+                    }
+                }
             }
-            IconButton(onClick = {
-                redoStack.removeLastOrNull()?.let { history.add(it) }
-                snapshot()
-            }, enabled = redoStack.isNotEmpty()) {
-                Text("↷", modifier = Modifier.size(20.dp))
+            IconButton(
+                onClick = {
+                    history.removeLastOrNull()?.let { redoStack.add(it) }
+                    snapshot()
+                },
+                enabled = history.isNotEmpty(),
+            ) {
+                Icon(Icons.Filled.Undo, contentDescription = "Undo last stroke")
             }
-            IconButton(onClick = { history.clear(); redoStack.clear(); pending.value = null; snapshot() }) {
-                Icon(Icons.Filled.Clear, contentDescription = "Clear")
+            IconButton(
+                onClick = {
+                    redoStack.removeLastOrNull()?.let { history.add(it) }
+                    snapshot()
+                },
+                enabled = redoStack.isNotEmpty(),
+            ) {
+                Icon(Icons.Filled.Redo, contentDescription = "Redo last stroke")
             }
-            Button(onClick = { snapshot() }) {
-                Text("Save")
+            IconButton(
+                onClick = { history.clear(); redoStack.clear(); pending.value = null; snapshot() },
+            ) {
+                Icon(Icons.Filled.Clear, contentDescription = "Clear drawing")
             }
         }
-
-        // Color + width row
-        Row(
+        Button(
+            onClick = { snapshot() },
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+        ) {
+            Text("Save drawing")
+        }
+
+        // Palette scrolls horizontally; the stroke slider gets its own row instead of competing for width.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             palette.forEach { paletteColor ->
                 Box(
@@ -187,14 +225,19 @@ fun DrawPage() {
                         },
                 )
             }
-            Spacer(modifier = Modifier.fillMaxWidth().height(30.dp))
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Stroke", style = MaterialTheme.typography.labelLarge)
             Slider(
                 value = thickness.value,
                 onValueChange = { thickness.value = it },
                 valueRange = 2f..24f,
-                modifier = Modifier.weight(1f).width(180.dp).padding(horizontal = 8.dp),
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
             )
-            Text("%.0f".format(thickness.value))
+            Text("%.0f".format(thickness.value), modifier = Modifier.width(24.dp))
         }
 
         // Whiteboard canvas

@@ -30,6 +30,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
+                implementation(compose.materialIconsExtended)
                 implementation(compose.ui)
                 implementation(compose.components.resources)
                 implementation(compose.components.uiToolingPreview)
@@ -97,8 +98,8 @@ android {
         applicationId = "net.todotxt.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
         buildConfigField("String", "FIREBASE_API_KEY", firebaseApiKey.asBuildConfigLiteral())
         buildConfigField("String", "FIREBASE_PROJECT_ID", firebaseProjectId.asBuildConfigLiteral())
     }
@@ -153,7 +154,7 @@ compose.desktop {
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
             )
             packageName = "T0do.TxT"
-            packageVersion = "1.0.0"
+            packageVersion = "0.1.1"
 
             linux {
                 appCategory = "Office"

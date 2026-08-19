@@ -41,6 +41,8 @@ jobs:
     if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-java@v4
         with:
@@ -86,6 +88,8 @@ jobs:
     if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-java@v4
         with:
@@ -118,6 +122,8 @@ jobs:
     if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-java@v4
         with:

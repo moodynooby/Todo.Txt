@@ -41,10 +41,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -236,6 +239,8 @@ private fun HabitCard(
     val heatmap = remember(habit) { HabitUtils.getHeatmap(habit) }
     val today = remember { HabitUtils.today() }
     val doneToday = habit.completedDates.contains(today)
+    var menuOpen by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -245,10 +250,11 @@ private fun HabitCard(
         Column(Modifier.padding(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
                 Box(
                     Modifier
+                        .padding(top = 6.dp)
                         .size(14.dp)
                         .clip(CircleShape)
                         .background(Color(habit.color.red, habit.color.green, habit.color.blue)),
@@ -257,47 +263,65 @@ private fun HabitCard(
                     habit.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 8.dp).weight(1f),
+                    modifier = Modifier
+                        .padding(start = 8.dp, top = 2.dp)
+                        .weight(1f),
                 )
-                IconButton(
-                    onClick = {
-                        Storage.updateHabits { list ->
-                            if (habit.archived) {
-                                list.map { if (it.id == habit.id) it.copy(archived = false) else it }
-                            } else {
-                                list.map { if (it.id == habit.id) it.copy(archived = true) else it }
-                            }
-                        }
-                    },
-                    modifier = Modifier.size(28.dp),
-                ) {
-                    Icon(
-                        if (habit.archived) Icons.Filled.Refresh else Icons.Filled.Delete,
-                        contentDescription = if (habit.archived) "Restore" else "Archive",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
+                Box {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "Habit actions")
+                    }
+                    DropdownMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit habit") },
+                            leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                onEdit()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(if (habit.archived) "Restore habit" else "Archive habit") },
+                            leadingIcon = {
+                                Icon(
+                                    if (habit.archived) Icons.Filled.Unarchive else Icons.Filled.Archive,
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                Storage.updateHabits { list ->
+                                    list.map { if (it.id == habit.id) it.copy(archived = !it.archived) else it }
+                                }
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete habit", color = MaterialTheme.colorScheme.error) },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                            },
+                            onClick = {
+                                menuOpen = false
+                                confirmDelete = true
+                            },
+                        )
+                    }
                 }
-                IconButton(
-                    onClick = {
-                        Storage.updateHabits { list -> list.filter { it.id != habit.id } }
-                    },
-                    modifier = Modifier.size(28.dp),
-                ) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-                }
-                IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurface)
-                }
-                Button(
-                    onClick = { Storage.updateHabits { list ->
+            }
+
+            Button(
+                onClick = {
+                    Storage.updateHabits { list ->
                         list.map { if (it.id == habit.id) HabitUtils.toggleDate(it, today) else it }
-                    } },
-                    shape = RoundedCornerShape(28.dp),
-                    enabled = true,
-                    modifier = Modifier.padding(start = 8.dp),
-                ) {
-                    Text(if (doneToday) "Done ✓" else "Mark done")
-                }
+                    }
+                },
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            ) {
+                Text(if (doneToday) "Done ✓" else "Mark done")
             }
 
             Row(
@@ -310,12 +334,8 @@ private fun HabitCard(
                 Stat("28-day", "$rate%")
             }
 
-            // Per-habit reminder toggle — schedules an exact alarm on Android
-            // and a system notification on Desktop when the reminder is on.
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -335,6 +355,27 @@ private fun HabitCard(
 
             Heatmap(heatmap = heatmap, completed = habit.completedDates.toSet())
         }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete habit?") },
+            text = { Text("This removes the habit and its history. This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        Storage.updateHabits { list -> list.filter { it.id != habit.id } }
+                        confirmDelete = false
+                    },
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

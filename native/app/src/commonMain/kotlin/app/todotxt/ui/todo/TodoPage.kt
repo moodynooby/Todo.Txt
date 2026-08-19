@@ -5,13 +5,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -180,7 +183,13 @@ fun TodoPage(content: String) {
         }
 
         // Filter chips mirror the web filter bar (priority / project / context / due / done).
-        Row(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             FilterChip(
                 selected = filter == null,
                 onClick = { filter = null },
@@ -353,7 +362,7 @@ private fun filteredTasks(
 }
 
 @Composable
-private fun TodoList(
+private fun ColumnScope.TodoList(
     parsed: ParsedTodoContent,
     tasks: List<app.todotxt.domain.Task>,
     selectedIds: Set<Int>,
@@ -376,7 +385,10 @@ private fun TodoList(
         Storage.setContent(reordered.joinToString("\n"))
     }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier.weight(1f).fillMaxWidth(),
+        contentPadding = PaddingValues(bottom = 12.dp),
+    ) {
         itemsIndexed(tasks) { index, task ->
             // UX upgrade: swipe gestures as a native affordance — drag right
             // to complete, drag left to reopen, each reversible via Undo.
@@ -484,13 +496,19 @@ private fun TaskRow(
                 Text(
                     task.text,
                     style = MaterialTheme.typography.bodyLarge,
+                    softWrap = true,
                     color = if (task.completed) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     } else {
                         MaterialTheme.colorScheme.onSurface
                     },
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     task.priority?.let {
                         FilterChip(
                             selected = false,

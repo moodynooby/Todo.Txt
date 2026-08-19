@@ -1,0 +1,10 @@
+package app.todotxt.update
+
+import java.awt.Desktop
+import java.net.URI
+
+actual fun openReleaseUrl(url: String): Boolean = runCatching {
+    if (!Desktop.isDesktopSupported()) return false
+    Desktop.getDesktop().browse(URI(url))
+    true
+}.getOrDefault(false)
