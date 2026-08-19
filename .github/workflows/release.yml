@@ -140,10 +140,37 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Assemble release APK
+      - name: Prepare signing keystore
+        run: |
+          if [ -n "${{ secrets.BASE64_KEYSTORE }}" ]; then
+            echo "${{ secrets.BASE64_KEYSTORE }}" | base64 -d > ~/release-keystore.jks
+            echo "KEYSTORE_PATH=$HOME/release-keystore.jks" >> $GITHUB_ENV
+            echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+            echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+          else
+            # No user keystore configured: generate a CI-only keystore so the
+            # release APK is signed and installable. Do NOT use this for Play
+            # Store distribution (replacing the key breaks upgrades).
+            echo "todo-ci-pass" | keytool -genkeypair -v \
+              -keystore ~/ci-keystore.jks -alias todotxt-ci \
+              -keypass todo-ci-pass -storepass todo-ci-pass \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=TodoTxt CI, OU=Dev, O=moodynooby, L=Online, ST=Online, C=US" 2>/dev/null
+            echo "KEYSTORE_PATH=$HOME/ci-keystore.jks" >> $GITHUB_ENV
+            echo "KEYSTORE_PASSWORD=todo-ci-pass" >> $GITHUB_ENV
+            echo "KEY_ALIAS=todotxt-ci" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=todo-ci-pass" >> $GITHUB_ENV
+          fi
+
+      - name: Assemble signed release APK
         run: |
           cd native
-          ./gradlew :app:assembleRelease --no-daemon
+          ./gradlew :app:assembleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
 
       - name: Collect artifacts
         run: |
