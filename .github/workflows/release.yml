@@ -63,7 +63,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
           Write-Output (Get-Location)
-          Get-ChildItem -Recurse -Path . -Filter *.msi -ErrorAction SilentlyContinue | ForEach-Object {
+          Get-ChildItem -Recurse -Path native/app/build/compose/binaries -Filter *.msi -ErrorAction SilentlyContinue | ForEach-Object {
             Write-Output "MSI: $($_.FullName)"
             Copy-Item $_.FullName out/
           }
