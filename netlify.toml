@@ -1,6 +1,12 @@
 [build]
-  command = "npm install && npm run build"
+  command = "pnpm install --frozen-lockfile && pnpm run build"
   publish = "dist"
+
+# NOTE on the pnpm-only build command: the repo is a pnpm workspace
+# (pnpm-workspace.yaml) with a file: dep on the Kotlin-compiled
+# @todotxt/core bundle. npm cannot read the pnpm lockfile and its
+# `npm install` re-resolves into a broken tree (stale package-lock.json
+# + file: workspace dep), so build strictly with pnpm.
 
 # SPA: every path falls back to index.html (the app has no URL-based router,
 # but the service worker / PWA share target hits `/`, so keep it explicit).
