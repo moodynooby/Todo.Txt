@@ -1,0 +1,245 @@
+# Cross-platform release workflow for Todo.Txt.
+# Triggered by a tag prefixed with "app-v" (e.g. app-v0.1.0) or "v" (web app).
+#
+# Jobs:
+#   build-windows  — Desktop MSI installer (Windows x64)
+#   build-linux    — Desktop .deb installer (Ubuntu x64)
+#   build-android  — Universal release APK
+#   build-web      — Web app static bundle
+#   release        — Collects all artifacts into a GitHub Release
+#
+# Note: desktop release packaging runs under JDK 17 because the ProGuard
+# version bundled with Compose Multiplatform 1.7.x cannot read Java 21 class
+# files. Sources still compile on JDK 21 via the Gradle toolchain.
+name: Release
+
+on:
+  push:
+    branches: [main, "native/kotlin-compose"]
+    tags:
+      - "v*"
+      - "app-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Optional release tag (e.g. app-v0.1.0)"
+        required: false
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------- Desktop — Windows (MSI) ----------------
+  build-windows:
+    name: Desktop — Windows
+    runs-on: windows-latest
+    if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: native/kotlin-compose
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Package MSI installer
+        shell: cmd
+        run: |
+          cd native
+          rem Set JAVA_HOME to the JDK 17 installed by setup-java
+          for /f "delims=" %%i in ('where java') do set JAVA_BIN=%%i
+          set "JAVA_HOME=%JAVA_BIN:bin\java.exe=%"
+          call gradlew.bat :app:packageReleaseDistributionForCurrentOS --no-daemon
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Write-Output (Get-Location)
+          Get-ChildItem -Recurse -Path native/app/build/compose/binaries -Filter *.msi -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Output "MSI: $($_.FullName)"
+            Copy-Item $_.FullName out/
+          }
+          if ((Get-ChildItem out).Count -eq 0) {
+            Write-Output "Available build dirs:"
+            Get-ChildItem -Recurse -Directory -Path native -Filter build -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { Write-Output $_.FullName }
+            Write-Error "No MSI found"
+            exit 1
+          }
+          Get-ChildItem out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-txt-windows
+          path: out/*.msi
+          if-no-files-found: error
+
+  # ---------------- Desktop — Linux (AppImage + deb) ----------------
+  build-linux:
+    name: Desktop — Linux
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: native/kotlin-compose
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Package .deb installer
+        run: |
+          # jpackage needs binutils (objcopy) and fakeroot on Linux
+          sudo apt-get install -y binutils fakeroot >/dev/null
+          cd native
+          ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p out
+          cp native/app/build/compose/binaries/main-release/deb/*.deb out/ 2>/dev/null || { echo "no deb"; exit 1; }
+          ls -la out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-txt-linux
+          path: out/*.deb
+          if-no-files-found: error
+
+  # ---------------- Android (APK) ----------------
+  build-android:
+    name: Android — APK
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: native/kotlin-compose
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | \
+            sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare signing keystore
+        run: |
+          if [ -n "${{ secrets.BASE64_KEYSTORE }}" ]; then
+            echo "${{ secrets.BASE64_KEYSTORE }}" | base64 -d > ~/release-keystore.jks
+            echo "KEYSTORE_PATH=$HOME/release-keystore.jks" >> $GITHUB_ENV
+            echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+            echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+          else
+            # No user keystore configured: generate a CI-only keystore so the
+            # release APK is signed and installable. Do NOT use this for Play
+            # Store distribution (replacing the key breaks upgrades).
+            echo "todo-ci-pass" | keytool -genkeypair -v \
+              -keystore ~/ci-keystore.jks -alias todotxt-ci \
+              -keypass todo-ci-pass -storepass todo-ci-pass \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=TodoTxt CI, OU=Dev, O=moodynooby, L=Online, ST=Online, C=US" 2>/dev/null
+            echo "KEYSTORE_PATH=$HOME/ci-keystore.jks" >> $GITHUB_ENV
+            echo "KEYSTORE_PASSWORD=todo-ci-pass" >> $GITHUB_ENV
+            echo "KEY_ALIAS=todotxt-ci" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=todo-ci-pass" >> $GITHUB_ENV
+          fi
+
+      - name: Assemble signed release APK
+        run: |
+          cd native
+          ./gradlew :app:assembleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p out
+          cp native/app/build/outputs/apk/release/*.apk out/ 2>/dev/null || \
+            cp native/app/build/outputs/apk/debug/*.apk out/
+          ls -la out/ || { echo "no apk"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-txt-android
+          path: out/*.apk
+          if-no-files-found: error
+
+  # ---------------- Web app static bundle ----------------
+  build-web:
+    name: Web — static bundle
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - name: Zip distribution
+        run: zip -r web-dist.zip dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-txt-web
+          path: web-dist.zip
+          if-no-files-found: error
+
+  # ---------------- Assemble GitHub Release ----------------
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-linux, build-android, build-web]
+    if: always() && needs.build-windows.result == 'success' && needs.build-linux.result == 'success' && needs.build-android.result == 'success' && needs.build-web.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: todo-txt-*
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -laR artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+          files: |
+            artifacts/*.msi
+            artifacts/*.deb
+            artifacts/*.apk
+            artifacts/web-dist.zip
+          fail_on_unmatched_files: false
