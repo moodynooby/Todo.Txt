@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseTodoContent, parseTodoLine } from "./todoParser";
 
 describe("todo.txt parser — F7 datetime format", () => {
@@ -9,9 +9,18 @@ describe("todo.txt parser — F7 datetime format", () => {
 	});
 
 	it("still parses the `due:today@HH:MM` relative form", () => {
-		const task = parseTodoLine("-[ ] Review PR due:today@17:00", 0);
-		expect(task.due).toBe("2026-08-16"); // anchored in the frozen "today"
-		expect(task.dueTime).toBe("17:00");
+		// Freeze "today" to a fixed date — the relative `today@HH:MM` form
+		// resolves against the ambient clock, so without a fixed date this
+		// test only passed on the exact day it was written.
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-08-16T12:00:00Z"));
+		try {
+			const task = parseTodoLine("-[ ] Review PR due:today@17:00", 0);
+			expect(task.due).toBe("2026-08-16"); // anchored in the frozen "today"
+			expect(task.dueTime).toBe("17:00");
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("drops the deprecated fallback path for invalid due values", () => {

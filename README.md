@@ -183,6 +183,25 @@ Todo.Txt/
 - Committing `npm-package/`, `build/`, `kotlin-js-store/yarn.lock`, or any
   other reproducible artifacts to git
 
+## Deploy the web app (Netlify)
+
+The web app deploys to Netlify with zero extra configuration beyond the
+included `netlify.toml` (base dir `.`, build command
+`npm install && npm run build`, publish dir `dist`, SPA fallback redirect,
+and long-lived cache headers for hashed assets).
+
+1. On [Netlify](https://app.netlify.com) choose "Add new site → Import an
+   existing project", connect the `moodynooby/Todo.Txt` repository, and pick
+   the `main` branch.
+2. Netlify reads `netlify.toml` automatically — no manual settings needed.
+3. Every push to `main` redeploys automatically; the site URL is
+   `https://todotxt.netlify.app/`.
+
+If you want a deterministic package manager, set the Netlify environment
+variable `NETLIFY_USE_PNPM=true` (the lockfile is pnpm). The production build
+includes the PWA service worker, so the app installs offline on all
+platforms.
+
 ## Links
 
 - [Todo.txt philosophy](https://github.com/todotxt/todo.txt)

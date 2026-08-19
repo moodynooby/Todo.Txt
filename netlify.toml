@@ -1,0 +1,42 @@
+[build]
+  command = "pnpm install --frozen-lockfile && pnpm run build"
+  publish = "dist"
+
+# NOTE on the pnpm-only build command: the repo is a pnpm workspace
+# (pnpm-workspace.yaml) with a file: dep on the Kotlin-compiled
+# @todotxt/core bundle. npm cannot read the pnpm lockfile and its
+# `npm install` re-resolves into a broken tree (stale package-lock.json
+# + file: workspace dep), so build strictly with pnpm.
+
+# SPA: every path falls back to index.html (the app has no URL-based router,
+# but the service worker / PWA share target hits `/`, so keep it explicit).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Long-lived cache for hashed static assets; the rest gets a short TTL.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Pre-compressed service worker and manifest speed up first load.
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = false
+  minify = false
+
+[build.processing.js]
+  bundle = false
+  minify = false
+
+[build.processing.html]
+  pretty_urls = true
