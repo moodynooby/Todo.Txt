@@ -4,10 +4,13 @@
 # Jobs:
 #   build-windows  — Desktop MSI installer (Windows x64)
 #   build-linux    — Desktop AppImage + .deb (Ubuntu x64)
-#   build-android  — Universal debug APK (signed via Gradle default keystore when ready)
-#                    switch to a release keystore + signing config when ready)
+#   build-android  — Universal release APK
 #   build-web      — Web app static bundle
 #   release        — Collects all artifacts into a GitHub Release
+#
+# Note: desktop release packaging runs under JDK 17 because the ProGuard
+# version bundled with Compose Multiplatform 1.7.x cannot read Java 21 class
+# files. Sources still compile on JDK 21 via the Gradle toolchain.
 name: Release
 
 on:
@@ -44,21 +47,22 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 17
 
       - name: Package MSI installer
         shell: pwsh
         run: |
           cd native
           $env:ANDROID_HOME = ""
+          $env:ANDROID_SDK_ROOT = ""
           ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon
 
       - name: Collect artifacts
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
-          Get-ChildItem native/app/build/compose/binaries/main-release/msi/*.msi |
-            Copy-Item -Destination out/
+          $found = Get-ChildItem -Recurse -Path native/app/build/compose/binaries -Filter *.msi | Select-Object -First 1
+          if ($found) { Copy-Item $found.FullName out/ } else { Write-Error "No MSI found"; exit 1 }
           Get-ChildItem out
 
       - uses: actions/upload-artifact@v4
@@ -80,7 +84,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 17
 
       - name: Package AppImage + deb
         run: |
@@ -90,9 +94,10 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir -p out
-          cp native/app/build/compose/binaries/main-release/appimage/*.AppImage out/ 2>/dev/null || true
-          cp native/app/build/compose/binaries/main-release/deb/*.deb out/ 2>/dev/null || true
-          ls -la out/
+          shopt -s globstar nullglob
+          cp native/app/build/compose/binaries/**/main-release/appimage/*.AppImage out/ 2>/dev/null || true
+          cp native/app/build/compose/binaries/**/main-release/deb/*.deb out/ 2>/dev/null || true
+          ls -la out/ || { echo "no artifacts"; exit 1; }
 
       - uses: actions/upload-artifact@v4
         with:
@@ -100,7 +105,7 @@ jobs:
           path: out/*
           if-no-files-found: error
 
-  # ---------------- Android (universal APK) ----------------
+  # ---------------- Android (APK) ----------------
   build-android:
     name: Android — APK
     runs-on: ubuntu-latest
@@ -115,17 +120,19 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Enable KVM for emulator-less builds
+      - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | \
             sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Assemble universal APK
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Assemble release APK
         run: |
           cd native
-          export ANDROID_HOME=$HOME/android-sdk
           ./gradlew :app:assembleRelease --no-daemon
 
       - name: Collect artifacts
@@ -133,7 +140,7 @@ jobs:
           mkdir -p out
           cp native/app/build/outputs/apk/release/*.apk out/ 2>/dev/null || \
             cp native/app/build/outputs/apk/debug/*.apk out/
-          ls -la out/
+          ls -la out/ || { echo "no apk"; exit 1; }
 
       - uses: actions/upload-artifact@v4
         with:
@@ -153,11 +160,14 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Build
-        run: npm run build
+        run: pnpm build
 
       - name: Zip distribution
         run: zip -r web-dist.zip dist
