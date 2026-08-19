@@ -56,7 +56,7 @@ jobs:
           rem Set JAVA_HOME to the JDK 17 installed by setup-java
           for /f "delims=" %%i in ('where java') do set JAVA_BIN=%%i
           set "JAVA_HOME=%JAVA_BIN:bin\java.exe=%"
-          call .\gradlew.bat :app:packageReleaseDistributionForCurrentOS --no-daemon
+          call gradlew.bat :app:packageReleaseDistributionForCurrentOS --no-daemon
 
       - name: Collect artifacts
         shell: pwsh
