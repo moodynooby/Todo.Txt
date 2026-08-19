@@ -1,0 +1,8 @@
+{
+  "name": "@todotxt/core",
+  "version": "1.0.0",
+  "description": "Todo.Txt shared core logic compiled from Kotlin to JavaScript",
+  "main": "core.js",
+  "files": ["core.js", "kotlin-*.js", "kotlinx-*.js"],
+  "license": "MIT"
+}
