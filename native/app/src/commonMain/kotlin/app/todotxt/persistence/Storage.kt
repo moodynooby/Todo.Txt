@@ -61,6 +61,9 @@ object Storage {
 
     fun load() {
         scope.launch {
+            if (localStateIsCorrupt()) {
+                BackupManager.restoreLatestIfAvailable()
+            }
             _content.value = PlatformStorage.readString("todo.txt") ?: ""
             _notes.value = readNotesFile()
             _habits.value = readHabitsFile()
@@ -72,6 +75,7 @@ object Storage {
             // immediately (web: fire on every parse while the app is open).
             DueReminderManager.scheduleDueReminders(TodoParser.parseTodoContent(_content.value))
             _loaded.value = true
+            BackupManager.schedule("startup")
         }
     }
 
@@ -82,6 +86,7 @@ object Storage {
     fun setContent(value: String) {
         _content.value = value
         scope.launch { PlatformStorage.writeString("todo.txt", value) }
+        BackupManager.schedule("content")
         // Due-date reminders (web `useDueRemindersNative` parity): re-arm on
         // every document change so the OS nudge reflects the latest content.
         DueReminderManager.scheduleDueReminders(TodoParser.parseTodoContent(value))
@@ -90,6 +95,7 @@ object Storage {
     fun replaceNotes(value: List<Note>) {
         _notes.value = value
         scope.launch { PlatformStorage.writeString("notes.json", json.encodeToString(value)) }
+        BackupManager.schedule("notes")
     }
 
     fun updateNotes(transform: (List<Note>) -> List<Note>) {
@@ -97,6 +103,7 @@ object Storage {
         scope.launch {
             PlatformStorage.writeString("notes.json", json.encodeToString(_notes.value))
         }
+        BackupManager.schedule("notes")
     }
 
     fun replaceHabits(value: List<Habit>) {
@@ -105,6 +112,7 @@ object Storage {
             PlatformStorage.writeString("habits.json", json.encodeToString(value))
             ReminderManager.scheduleReminders(value)
         }
+        BackupManager.schedule("habits")
     }
 
     fun updateHabits(transform: (List<Habit>) -> List<Habit>) {
@@ -113,11 +121,13 @@ object Storage {
             PlatformStorage.writeString("habits.json", json.encodeToString(_habits.value))
             ReminderManager.scheduleReminders(_habits.value)
         }
+        BackupManager.schedule("habits")
     }
 
     fun replaceTimers(value: List<TimerState>) {
         _timers.value = value
         scope.launch { PlatformStorage.writeString("timer.json", json.encodeToString(value)) }
+        BackupManager.schedule("timers")
     }
 
     fun updateTimers(transform: (List<TimerState>) -> List<TimerState>) {
@@ -125,6 +135,7 @@ object Storage {
         scope.launch {
             PlatformStorage.writeString("timer.json", json.encodeToString(_timers.value))
         }
+        BackupManager.schedule("timers")
     }
 
     fun updateGroq(transform: (GroqSettings) -> GroqSettings) {
@@ -137,6 +148,7 @@ object Storage {
     fun replaceSettings(value: AppSettings) {
         _settings.value = value
         scope.launch { PlatformStorage.writeString("settings.json", json.encodeToString(value)) }
+        BackupManager.schedule("settings")
     }
 
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
@@ -144,17 +156,56 @@ object Storage {
         scope.launch {
             PlatformStorage.writeString("settings.json", json.encodeToString(_settings.value))
         }
+        BackupManager.schedule("settings")
     }
 
     fun replaceDrawings(value: List<Drawing>) {
         _drawings.value = value
         scope.launch { PlatformStorage.writeString("drawings.json", json.encodeToString(value)) }
+        BackupManager.schedule("drawings")
     }
 
     fun updateDrawings(transform: (List<Drawing>) -> List<Drawing>) {
         _drawings.value = transform(_drawings.value)
         scope.launch {
             PlatformStorage.writeString("drawings.json", json.encodeToString(_drawings.value))
+        }
+        BackupManager.schedule("drawings")
+    }
+
+    internal fun restoreFromBackup(snapshot: BackupSnapshot) {
+        _content.value = snapshot.content
+        _notes.value = snapshot.notes
+        _habits.value = snapshot.habits
+        _timers.value = snapshot.timers
+        _settings.value = snapshot.settings
+        _drawings.value = snapshot.drawings
+        PlatformStorage.writeString("todo.txt", snapshot.content)
+        PlatformStorage.writeString("notes.json", json.encodeToString(snapshot.notes))
+        PlatformStorage.writeString("habits.json", json.encodeToString(snapshot.habits))
+        PlatformStorage.writeString("timer.json", json.encodeToString(snapshot.timers))
+        PlatformStorage.writeString("settings.json", json.encodeToString(snapshot.settings))
+        PlatformStorage.writeString("drawings.json", json.encodeToString(snapshot.drawings))
+        DueReminderManager.scheduleDueReminders(TodoParser.parseTodoContent(snapshot.content))
+        ReminderManager.scheduleReminders(snapshot.habits)
+    }
+
+    private fun localStateIsCorrupt(): Boolean {
+        val expectedFiles = listOf("todo.txt", "notes.json", "habits.json", "timer.json", "settings.json", "drawings.json")
+        val presentFiles = expectedFiles.map { name -> PlatformStorage.readString(name) != null }
+        val hasAnyPrimaryFile = presentFiles.any { it }
+        val hasMissingPrimaryFile = presentFiles.any { !it }
+        if (hasAnyPrimaryFile && hasMissingPrimaryFile && BackupManager.hasValidBackup()) return true
+
+        return listOf(
+            "notes.json" to { value: String -> json.decodeFromString<List<Note>>(value) },
+            "habits.json" to { value: String -> json.decodeFromString<List<Habit>>(value) },
+            "timer.json" to { value: String -> json.decodeFromString<List<TimerState>>(value) },
+            "settings.json" to { value: String -> json.decodeFromString<AppSettings>(value) },
+            "drawings.json" to { value: String -> json.decodeFromString<List<Drawing>>(value) },
+        ).any { (name, decoder) ->
+            val raw = PlatformStorage.readString(name)?.takeIf { it.isNotBlank() && it != "null" }
+            raw != null && runCatching { decoder(raw) }.isFailure
         }
     }
 

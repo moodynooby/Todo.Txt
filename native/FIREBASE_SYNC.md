@@ -119,3 +119,29 @@ Configure these repository secrets before creating a release:
 If the signing secrets are not configured, the workflow generates a temporary CI keystore. That is acceptable for an installable test APK but not for production distribution, because replacing an Android signing key prevents normal app upgrades.
 
 The release job fails before the Android build if the Firebase API key or project ID is missing. This prevents publishing an APK that silently falls back to local-only synchronization.
+
+## Local backup and Firebase failure recovery
+
+Firebase is not the only copy of the user's data. The native app now keeps three rotating snapshots in platform-private storage:
+
+```text
+local_backup_0.json
+local_backup_1.json
+local_backup_2.json
+```
+
+A snapshot is scheduled after local changes and after startup. Writes are debounced for 300 milliseconds so a burst of edits does not create unnecessary disk activity. Each snapshot contains the synced application state, a schema version, a timestamp, a reason, and a deterministic checksum.
+
+The recovery behavior is:
+
+| Failure | Result |
+|---|---|
+| Firebase is offline | Local data remains usable; the Firebase worker retries later |
+| Network changes | Pending Firebase work is retried; local snapshots remain available |
+| App is closed or restarted | The latest local files and backup snapshots remain on the device |
+| A local JSON file is missing | The newest valid backup is restored at startup |
+| A local JSON file is corrupted | The newest checksum-valid backup is restored at startup |
+| A remote snapshot is applied | A local backup is created before the remote state is written |
+| A backup slot is corrupted | That slot is ignored and an older valid slot is used |
+
+The backup is intended to prevent data loss caused by synchronization failure. It is not a cloud backup: uninstalling the application or losing the physical device can still remove private app storage. A future version can add an explicit encrypted export to the user’s document provider or cloud drive.

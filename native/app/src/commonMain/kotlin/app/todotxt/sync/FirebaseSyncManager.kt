@@ -6,6 +6,7 @@ import app.todotxt.domain.Habit
 import app.todotxt.domain.Note
 import app.todotxt.domain.TimerState
 import app.todotxt.persistence.AppSettings
+import app.todotxt.persistence.BackupManager
 import app.todotxt.persistence.PlatformStorage
 import app.todotxt.persistence.Storage
 import app.todotxt.service.PlatformDeviceId
@@ -147,6 +148,7 @@ object FirebaseSyncManager {
         if (remote != null && remote.updatedAt > readLocalUpdatedAt()) {
             applyingRemote = true
             try {
+                BackupManager.createNow("before_remote_apply")
                 applySnapshot(remote)
                 writeLocalUpdatedAt(remote.updatedAt)
                 lastFingerprint = json.encodeToString(snapshot(remote.updatedAt))
