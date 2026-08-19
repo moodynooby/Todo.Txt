@@ -114,6 +114,26 @@ cd ~/Todo.Txt && npm install    # web app picks up the fresh bundle
 the resulting bundle (`build/js/packages/todotxt-native-core/`) into
 `core/npm-package/` with the correct `@todotxt/core` package.json.
 
+## Cross-platform releases (GitHub Actions)
+
+`.github/workflows/release.yml` builds installers for every platform in
+parallel and assembles them into a GitHub Release.
+
+| Job | Host | Artifact |
+|---|---|---|
+| Desktop — Windows | `windows-latest` (JDK 17) | MSI installer |
+| Desktop — Linux | `ubuntu-latest` (JDK 17) | `.deb` package |
+| Android — APK | `ubuntu-latest` | Universal release APK |
+| Web — static bundle | `ubuntu-latest` | `web-dist.zip` (PWA-ready) |
+
+To trigger a release, either push a tag matching `app-v*` / `v*` on any branch,
+or run it manually from the Actions tab ("Release" workflow → Run workflow).
+All assets land on a GitHub Release named after the tag/ref. Requirements met
+on CI: full Gradle wrapper (including `gradlew.bat`), `icon.ico` for jpackage,
+`binutils` + `fakeroot` for Linux packaging, pnpm for the web app, and ProGuard
+disabled for desktop release packaging (the bundled ProGuard 7.x cannot read
+JDK 17+ jmods — desktop distributions ship unminified instead).
+
 ## Quality gates (run before committing)
 
 | Check | Command |
