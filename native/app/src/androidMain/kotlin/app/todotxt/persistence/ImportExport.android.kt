@@ -46,6 +46,9 @@ internal object LauncherBridge {
     var context: Context? = null
     var openDocument: ((String) -> Unit)? = null
     var shareIntent: ((Intent) -> Unit)? = null
+    var openBackupDocument: (() -> Unit)? = null
+    var shareBackupIntent: ((Intent) -> Unit)? = null
+    var importBackupPassphrase: String = ""
 }
 
 /** Drop-in composable registering the Android document-picker launchers. */
@@ -63,6 +66,16 @@ fun AndroidImportExportControls(
         if (uri != null) readUri(ctx.applicationContext, uri)?.let(onImported)
     }
 
+    val openBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            readUri(ctx.applicationContext, uri)?.let { raw ->
+                PortableBackup.decryptAndRestore(raw, LauncherBridge.importBackupPassphrase)
+            }
+        }
+    }
+
     val shareLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { onExportShared() }
@@ -73,6 +86,12 @@ fun AndroidImportExportControls(
         }
         LauncherBridge.shareIntent = { intent ->
             shareLauncher.launch(Intent.createChooser(intent, "Export todo.txt"))
+        }
+        LauncherBridge.openBackupDocument = {
+            openBackupLauncher.launch(arrayOf("application/octet-stream", "application/octet-stream"))
+        }
+        LauncherBridge.shareBackupIntent = { intent ->
+            shareLauncher.launch(Intent.createChooser(intent, "Save encrypted Todo.Txt backup"))
         }
     }
 }

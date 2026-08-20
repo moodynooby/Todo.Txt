@@ -17,17 +17,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import app.todotxt.persistence.BackupManager
+import app.todotxt.persistence.PortableBackup
+import app.todotxt.persistence.PortableBackupStatus
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -55,6 +60,8 @@ fun P2pSyncPage(
     var qrData by remember { mutableStateOf("") }
     var qrPixels by remember { mutableStateOf<IntArray?>(null) }
     var isServerRunning by remember { mutableStateOf(false) }
+    var backupPassphrase by remember { mutableStateOf("") }
+    val backupStatus by BackupManager.portableStatus.collectAsState()
 
     if (scanRequested) {
         // Show QR scanner (Android only — desktop callback is no-op)
@@ -236,6 +243,61 @@ fun P2pSyncPage(
         }
 
         Spacer(Modifier.height(24.dp))
+
+        Spacer(Modifier.height(20.dp))
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    "Encrypted recovery backup",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Save an encrypted copy outside the app so it can be restored after device loss or app removal. Keep the passphrase safe; it is not stored in Firebase.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = backupPassphrase,
+                    onValueChange = { backupPassphrase = it },
+                    label = { Text("Backup passphrase") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Button(
+                        onClick = { PortableBackup.export(backupPassphrase) },
+                        enabled = backupPassphrase.length >= 8,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Export backup")
+                    }
+                    TextButton(
+                        onClick = { PortableBackup.import(backupPassphrase) },
+                        enabled = backupPassphrase.length >= 8,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Restore backup")
+                    }
+                }
+                when (val status = backupStatus) {
+                    PortableBackupStatus.Exporting -> Text("Preparing encrypted backup…", style = MaterialTheme.typography.bodySmall)
+                    PortableBackupStatus.Importing -> Text("Choose the .tdb backup file…", style = MaterialTheme.typography.bodySmall)
+                    PortableBackupStatus.Completed -> Text("Backup operation completed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    is PortableBackupStatus.Failed -> Text(status.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    PortableBackupStatus.Idle -> Unit
+                }
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
 
         // Info
         Text(

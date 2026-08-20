@@ -145,3 +145,20 @@ The recovery behavior is:
 | A backup slot is corrupted | That slot is ignored and an older valid slot is used |
 
 The backup is intended to prevent data loss caused by synchronization failure. It is not a cloud backup: uninstalling the application or losing the physical device can still remove private app storage. A future version can add an explicit encrypted export to the user’s document provider or cloud drive.
+
+## Encrypted portable backup and restore
+
+The Sync screen now provides **Export backup** and **Restore backup** actions on Android. The export creates a `.tdb` file encrypted with AES-GCM. A passphrase-derived key is created with PBKDF2-HMAC-SHA256 and a random salt, so the backup can be stored in Google Drive, GitHub Releases, a USB drive, or any other user-controlled file location without putting the plaintext app data there.
+
+The passphrase is never sent to Firebase and is not stored in the app. Use at least eight characters, preferably a longer unique phrase. If the passphrase is lost, the encrypted backup cannot be restored.
+
+The Android flow is:
+
+| Action | Result |
+|---|---|
+| Export backup | Encrypts the full app snapshot and opens the Android share sheet to save or send the `.tdb` file |
+| Restore backup | Opens the Android document picker, decrypts the selected file, creates a local safety snapshot first, and replaces the current app state only after integrity checks pass |
+| Wrong passphrase or damaged file | Rejects the file and leaves current app data unchanged |
+| Device loss or app removal | Restore the `.tdb` file on a new installation using the same passphrase |
+
+The portable backup is intentionally separate from Firebase. Firebase remains the live synchronization relay, while the encrypted `.tdb` file is a user-controlled disaster-recovery copy. Automatic upload to Google Drive is not enabled because that would require a cloud account, provider permissions, and additional credential management. The Android share sheet lets the user choose where the encrypted file should be stored.

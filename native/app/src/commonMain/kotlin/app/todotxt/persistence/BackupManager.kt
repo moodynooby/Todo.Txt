@@ -11,6 +11,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -38,6 +41,9 @@ object BackupManager {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var pendingJob: Job? = null
 
+    private val _portableStatus = MutableStateFlow<PortableBackupStatus>(PortableBackupStatus.Idle)
+    val portableStatus: StateFlow<PortableBackupStatus> = _portableStatus.asStateFlow()
+
     /** Debounce bursts of local writes into one durable snapshot. */
     fun schedule(reason: String) {
         pendingJob?.cancel()
@@ -47,8 +53,7 @@ object BackupManager {
         }
     }
 
-    suspend fun createNow(reason: String = "manual") {
-        Storage.awaitLoaded()
+    fun createNow(reason: String = "manual") {
         val snapshot = BackupSnapshot(
             savedAt = System.currentTimeMillis(),
             content = Storage.content.value,
@@ -90,6 +95,38 @@ object BackupManager {
 
     fun hasValidBackup(): Boolean = (0 until SLOT_COUNT).any { readEnvelope(it) != null }
 
+    fun exportPortablePayload(): String {
+        val snapshot = BackupSnapshot(
+            savedAt = System.currentTimeMillis(),
+            content = Storage.content.value,
+            notes = Storage.notes.value,
+            habits = Storage.habits.value,
+            timers = Storage.timers.value,
+            settings = Storage.settings.value,
+            drawings = Storage.drawings.value,
+        )
+        return json.encodeToString(
+            PortableBackupDocument(
+                version = BACKUP_VERSION,
+                exportedAt = snapshot.savedAt,
+                snapshot = snapshot,
+            ),
+        )
+    }
+
+    fun restorePortablePayload(payload: String): Boolean = runCatching {
+        val document = json.decodeFromString<PortableBackupDocument>(payload)
+        require(document.version == BACKUP_VERSION) { "Unsupported backup version" }
+        createNow("before_portable_restore")
+        Storage.restoreFromBackup(document.snapshot)
+        schedule("after_portable_restore")
+        true
+    }.getOrElse { false }
+
+    internal fun setPortableStatus(status: PortableBackupStatus) {
+        _portableStatus.value = status
+    }
+
     private fun readEnvelope(slot: Int): BackupEnvelope? = runCatching {
         val raw = PlatformStorage.readString(slotName(slot))?.takeIf { it.isNotBlank() }
             ?: return null
@@ -123,6 +160,21 @@ data class BackupSnapshot(
     val settings: AppSettings = AppSettings(),
     val drawings: List<Drawing> = emptyList(),
 )
+
+@Serializable
+data class PortableBackupDocument(
+    val version: Int,
+    val exportedAt: Long,
+    val snapshot: BackupSnapshot,
+)
+
+sealed interface PortableBackupStatus {
+    data object Idle : PortableBackupStatus
+    data object Exporting : PortableBackupStatus
+    data object Importing : PortableBackupStatus
+    data object Completed : PortableBackupStatus
+    data class Failed(val message: String) : PortableBackupStatus
+}
 
 @Serializable
 private data class BackupEnvelope(
