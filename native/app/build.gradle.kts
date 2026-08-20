@@ -98,8 +98,8 @@ android {
         applicationId = "net.todotxt.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
         buildConfigField("String", "FIREBASE_API_KEY", firebaseApiKey.asBuildConfigLiteral())
         buildConfigField("String", "FIREBASE_PROJECT_ID", firebaseProjectId.asBuildConfigLiteral())
     }
@@ -154,7 +154,7 @@ compose.desktop {
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
             )
             packageName = "T0do.TxT"
-            packageVersion = "0.1.1"
+            packageVersion = "0.1.2"
 
             linux {
                 appCategory = "Office"
