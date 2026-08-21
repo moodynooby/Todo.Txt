@@ -6,6 +6,7 @@ import {
 	Stack,
 	Text,
 	TextInput,
+	Title,
 	UnstyledButton,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
@@ -122,6 +123,14 @@ const NotesPage = () => {
 				gap="sm"
 				align="center"
 			>
+				<Box w="100%" maw={600}>
+					<Text className="app-eyebrow" mb={2}>
+						Notes
+					</Text>
+					<Title order={3} className="app-display-title">
+						Your notebook
+					</Title>
+				</Box>
 				<TextInput
 					className="app-search-field"
 					maw={600}

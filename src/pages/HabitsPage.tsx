@@ -36,9 +36,10 @@ import {
 	Sprout,
 	Trash2,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import { useHabitsContext } from "@/context/HabitsContext";
-import ExactAlarmPermission from "@/features/habits/ExactAlarmPermission";
 import { showUndoToast } from "@/lib/undoToast";
 import { HABIT_COLORS, type HabitColor, type HabitDraft } from "@/types/habits";
 import {
@@ -89,10 +90,6 @@ export default function HabitsPage() {
 				.sort((a, b) => b.streak - a.streak)[0],
 		[habits],
 	);
-	// The exact-alarm permission card is only relevant on Android/Tauri builds;
-	// keep an explicit value reference so the import is never treated as unused
-	// by linters or typecheckers across different TypeScript/native builds.
-	const exactAlarmPermissionEntry = ExactAlarmPermission;
 	const weeklyCompletion = week.map((date) => {
 		const key = formatLocalDate(date);
 		const count = habits.filter((habit) =>
@@ -162,10 +159,11 @@ export default function HabitsPage() {
 							<ThemeIcon className="habits-mark" size={30}>
 								<Leaf size={16} />
 							</ThemeIcon>
-							<Text className="habits-eyebrow">YOUR DAILY PRACTICE</Text>
+							<Text className="app-eyebrow">Habits</Text>
 						</Group>
-						<Text className="habits-title">Make today count, softly.</Text>
-						<Text className="habits-subtitle">{friendlyDate(new Date())}</Text>
+						<Text className="habits-title app-display-title">
+							{friendlyDate(new Date())}
+						</Text>
 					</Box>
 					<Button
 						className="habits-add-button"
@@ -177,7 +175,6 @@ export default function HabitsPage() {
 				</header>
 
 				<SimpleGrid cols={{ base: 1, lg: 12 }} spacing="xl">
-					{React.createElement(exactAlarmPermissionEntry)}
 					<Paper className="today-panel" p="xl" withBorder>
 						<Box className="today-panel-art" />
 						<Group
@@ -187,8 +184,10 @@ export default function HabitsPage() {
 							className="today-panel-heading"
 						>
 							<Box>
-								<Text className="habits-kicker">TODAY’S RITUAL</Text>
-								<Text className="today-panel-title">A few small promises.</Text>
+								<Text className="app-eyebrow">Today</Text>
+								<Text className="today-panel-title app-display-title">
+									Today’s habits
+								</Text>
 							</Box>
 							<RingProgress
 								size={82}
@@ -208,18 +207,17 @@ export default function HabitsPage() {
 						</Group>
 
 						{habits.length === 0 ? (
-							<Stack align="center" gap="sm" className="habits-empty">
-								<ThemeIcon variant="light" color="green" size={44}>
-									<Sprout size={22} />
-								</ThemeIcon>
-								<Text fw={700}>Start with one small promise.</Text>
-								<Text c="dimmed" size="sm" ta="center">
-									Choose something you want to notice every day.
-								</Text>
-								<Button variant="subtle" color="dark" onClick={openNewHabit}>
-									Plant your first habit
-								</Button>
-							</Stack>
+							<EmptyState
+								icon={<Sprout size={22} />}
+								title="No habits yet"
+								description="Add a small daily practice to start building streaks."
+								className="habits-empty"
+								action={
+									<Button variant="subtle" color="dark" onClick={openNewHabit}>
+										Add your first habit
+									</Button>
+								}
+							/>
 						) : (
 							<Stack gap="sm">
 								{habits.map((habit, index) => {
@@ -348,9 +346,9 @@ export default function HabitsPage() {
 					<Paper className="insight-panel" p="xl" withBorder>
 						<Group justify="space-between" mb="lg">
 							<Box>
-								<Text className="habits-kicker">YOUR MOMENTUM</Text>
-								<Text className="insight-panel-title">
-									The rhythm is building.
+								<Text className="app-eyebrow">Momentum</Text>
+								<Text className="insight-panel-title app-display-title">
+									Longest streak
 								</Text>
 							</Box>
 							<ThemeIcon variant="light" color="orange" size={36}>
@@ -376,16 +374,15 @@ export default function HabitsPage() {
 								</Box>
 								<Divider my="lg" />
 								<Text size="sm" c="dimmed">
-									Your strongest current practice is{" "}
+									Strongest practice:{" "}
 									<Text span fw={700} c="dark">
 										{strongestHabit.habit.name}
 									</Text>
-									. Keep protecting the tiny repeatable action.
 								</Text>
 							</>
 						) : (
 							<Text c="dimmed" size="sm">
-								Your first check-in will begin a story worth noticing.
+								Complete a habit to start a streak.
 							</Text>
 						)}
 						<Box className="habit-garden-mini" mt="xl">
@@ -400,9 +397,9 @@ export default function HabitsPage() {
 					<Paper className="analytics-panel" p="xl" withBorder>
 						<Group justify="space-between" align="end" mb="xl">
 							<Box>
-								<Text className="habits-kicker">WEEKLY CHECK-IN</Text>
-								<Text className="analytics-title">
-									A view of your recent rhythm.
+								<Text className="app-eyebrow">Last 7 days</Text>
+								<Text className="analytics-title app-display-title">
+									Weekly completion
 								</Text>
 							</Box>
 							<Badge className="week-badge" variant="light">
@@ -436,11 +433,11 @@ export default function HabitsPage() {
 					</Paper>
 
 					<Paper className="consistency-panel" p="xl" withBorder>
-						<Text className="habits-kicker" mb="sm">
-							CONSISTENCY NOTE
+						<Text className="app-eyebrow" mb="sm">
+							Consistency
 						</Text>
-						<Text className="consistency-title">
-							The details show the direction.
+						<Text className="consistency-title app-display-title">
+							28-day completion
 						</Text>
 						<Stack gap="md" mt="xl">
 							{habits.slice(0, 3).map((habit) => {
@@ -486,7 +483,8 @@ export default function HabitsPage() {
 			<Modal
 				opened={opened}
 				onClose={close}
-				title={<Text className="modal-title">Plant a new habit</Text>}
+				radius="lg"
+				title={<Text className="modal-title app-display-title">New habit</Text>}
 				centered
 			>
 				<Stack gap="lg">

@@ -1,1 +1,118 @@
-{"$schema":"../node_modules/@tauri-apps/cli/config.schema.json","productName":"Todo.Txt","version":"1.0.1","identifier":"net.todotxt.app","app":{"windows":[{"label":"main","create":true,"url":"index.html","dragDropEnabled":true,"center":false,"width":1280.0,"height":800.0,"minWidth":360.0,"minHeight":600.0,"resizable":true,"maximizable":true,"minimizable":true,"closable":true,"title":"Todo.Txt","fullscreen":false,"focus":true,"focusable":true,"transparent":false,"maximized":false,"visible":true,"decorations":true,"alwaysOnBottom":false,"alwaysOnTop":false,"visibleOnAllWorkspaces":false,"contentProtected":false,"skipTaskbar":false,"titleBarStyle":"Visible","hiddenTitle":false,"acceptFirstMouse":false,"shadow":true,"incognito":false,"zoomHotkeysEnabled":false,"browserExtensionsEnabled":false,"useHttpsScheme":false,"javascriptDisabled":false,"allowLinkPreview":true,"disableInputAccessoryView":false,"scrollBarStyle":"default","generalAutofillEnabled":true}],"security":{"csp":"default-src 'self'; img-src 'self' asset: https://asset.localhost; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost;","devCsp":"default-src 'self' http://localhost:5173; img-src 'self' asset: https://asset.localhost http://localhost:5173; style-src 'self' 'unsafe-inline' http://localhost:5173; script-src 'self' 'unsafe-eval' 'unsafe-inline' http://localhost:5173 ws://localhost:5173; connect-src ipc: http://ipc.localhost ws://localhost:5173 http://localhost:5173;","freezePrototype":false,"dangerousDisableAssetCspModification":false,"assetProtocol":{"scope":[],"enable":false},"pattern":{"use":"brownfield"},"capabilities":[]},"macOSPrivateApi":false,"withGlobalTauri":false,"enableGTKAppId":false},"build":{"devUrl":"http://localhost:5173/","frontendDist":"../dist","beforeDevCommand":"pnpm dev","beforeBuildCommand":"pnpm build","removeUnusedCommands":false,"additionalWatchFolders":[]},"bundle":{"active":true,"targets":"all","createUpdaterArtifacts":false,"icon":["icons/32x32.png","icons/128x128.png","icons/128x128@2x.png","icons/icon.icns","icons/icon.ico"],"useLocalToolsDir":false,"windows":{"digestAlgorithm":null,"certificateThumbprint":null,"timestampUrl":null,"tsp":false,"webviewInstallMode":{"type":"downloadBootstrapper","silent":true},"allowDowngrades":true,"minimumWebview2Version":null,"wix":null,"nsis":null,"signCommand":null},"linux":{"appimage":{"bundleMediaFramework":false,"files":{}},"deb":{"files":{}},"rpm":{"release":"1","epoch":0,"files":{}}},"macOS":{"files":{},"minimumSystemVersion":"10.13","hardenedRuntime":true,"dmg":{"windowSize":{"width":660,"height":400},"appPosition":{"x":180,"y":170},"applicationFolderPosition":{"x":480,"y":170}}},"iOS":{"minimumSystemVersion":"14.0"},"android":{"minSdkVersion":24,"autoIncrementVersionCode":false,"debugApplicationIdSuffix":".debug"}},"plugins":{"deep-link":{"desktop":{"schemes":["todotxt"]}}}}
+{
+	"$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+	"productName": "Todo.Txt",
+	"version": "1.0.1",
+	"identifier": "net.todotxt.app",
+	"app": {
+		"windows": [
+			{
+				"label": "main",
+				"create": true,
+				"url": "index.html",
+				"dragDropEnabled": true,
+				"center": false,
+				"width": 1280.0,
+				"height": 800.0,
+				"minWidth": 360.0,
+				"minHeight": 600.0,
+				"resizable": true,
+				"maximizable": true,
+				"minimizable": true,
+				"closable": true,
+				"title": "Todo.Txt",
+				"fullscreen": false,
+				"focus": true,
+				"focusable": true,
+				"transparent": false,
+				"maximized": false,
+				"visible": true,
+				"decorations": true,
+				"alwaysOnBottom": false,
+				"alwaysOnTop": false,
+				"visibleOnAllWorkspaces": false,
+				"contentProtected": false,
+				"skipTaskbar": false,
+				"titleBarStyle": "Visible",
+				"hiddenTitle": false,
+				"acceptFirstMouse": false,
+				"shadow": true,
+				"incognito": false,
+				"zoomHotkeysEnabled": false,
+				"browserExtensionsEnabled": false,
+				"useHttpsScheme": false,
+				"javascriptDisabled": false,
+				"allowLinkPreview": true,
+				"disableInputAccessoryView": false,
+				"scrollBarStyle": "default",
+				"generalAutofillEnabled": true
+			}
+		],
+		"security": {
+			"csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost;",
+			"devCsp": "default-src 'self' http://localhost:5173; img-src 'self' asset: https://asset.localhost http://localhost:5173; style-src 'self' 'unsafe-inline' http://localhost:5173; script-src 'self' 'unsafe-eval' 'unsafe-inline' http://localhost:5173 ws://localhost:5173; connect-src ipc: http://ipc.localhost ws://localhost:5173 http://localhost:5173;",
+			"freezePrototype": false,
+			"dangerousDisableAssetCspModification": false,
+			"assetProtocol": { "scope": [], "enable": false },
+			"pattern": { "use": "brownfield" },
+			"capabilities": []
+		},
+		"macOSPrivateApi": false,
+		"withGlobalTauri": false,
+		"enableGTKAppId": false
+	},
+	"build": {
+		"devUrl": "http://localhost:5173/",
+		"frontendDist": "../dist",
+		"beforeDevCommand": "pnpm dev",
+		"beforeBuildCommand": "pnpm build",
+		"removeUnusedCommands": false,
+		"additionalWatchFolders": []
+	},
+	"bundle": {
+		"active": true,
+		"targets": "all",
+		"createUpdaterArtifacts": false,
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		],
+		"useLocalToolsDir": false,
+		"windows": {
+			"digestAlgorithm": null,
+			"certificateThumbprint": null,
+			"timestampUrl": null,
+			"tsp": false,
+			"webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
+			"allowDowngrades": true,
+			"minimumWebview2Version": null,
+			"wix": null,
+			"nsis": null,
+			"signCommand": null
+		},
+		"linux": {
+			"appimage": { "bundleMediaFramework": false, "files": {} },
+			"deb": { "files": {} },
+			"rpm": { "release": "1", "epoch": 0, "files": {} }
+		},
+		"macOS": {
+			"files": {},
+			"minimumSystemVersion": "10.13",
+			"hardenedRuntime": true,
+			"dmg": {
+				"windowSize": { "width": 660, "height": 400 },
+				"appPosition": { "x": 180, "y": 170 },
+				"applicationFolderPosition": { "x": 480, "y": 170 }
+			}
+		},
+		"iOS": { "minimumSystemVersion": "14.0" },
+		"android": {
+			"minSdkVersion": 24,
+			"autoIncrementVersionCode": false,
+			"debugApplicationIdSuffix": ".debug"
+		}
+	},
+	"plugins": { "deep-link": { "desktop": { "schemes": ["todotxt"] } } }
+}

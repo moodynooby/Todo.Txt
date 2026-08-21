@@ -4,7 +4,7 @@
 
 export interface ASTNode {
 	type: string;
-	value?: any;
+	value?: unknown;
 	children?: ASTNode[];
 }
 
@@ -189,7 +189,7 @@ export function parseTaskMetadata(text: string): ParsedTaskMetadata {
 
 	const recModeMatch = text.match(/\brec:(strict|workdays|completion)/i);
 	const recMode: RecurrenceRule["mode"] = recModeMatch
-		? (recModeMatch[1].toLowerCase() as any)
+		? (recModeMatch[1].toLowerCase() as RecurrenceRule["mode"])
 		: "strict";
 
 	if (text.includes("every")) {

@@ -100,8 +100,7 @@ interface SidebarSectionProps {
 	children: ReactNode;
 	isEmpty?: boolean;
 	emptyMessage?: string;
-	/** When true the section hides itself entirely (used while the document
-	 *  is empty, so guidance concentrates in the smart TipsPanel). */
+	/** When true the section hides itself entirely while the document is empty. */
 	hideWhenEmpty?: boolean;
 }
 

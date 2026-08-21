@@ -59,7 +59,7 @@ const TodoPage = ({
 		onFilterChange,
 	});
 
-	/* Playfulness layer: rhythm dots, empty-state art, and the pet companion */
+	/* Playfulness layer: empty-state art and the pet companion */
 	const taskCount = taskData.tasks.length;
 	const doneCount = taskData.tasks.filter((t) => t.completed).length;
 	const mood = useTaskActivity(editor, taskCount, doneCount);
@@ -185,8 +185,6 @@ const TodoPage = ({
 					playLayer={
 						<EditorPlay
 							mood={mood}
-							taskCount={taskCount}
-							doneCount={doneCount}
 							isEmpty={isEmpty}
 							onPetNudge={handlePetNudge}
 							contentStyle={{

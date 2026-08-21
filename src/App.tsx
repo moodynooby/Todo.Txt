@@ -17,6 +17,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import ShortcutsCheatsheet, {
 	OPEN_SHORTCUTS_EVENT,
 } from "@/components/ShortcutsCheatsheet";
+import ViewLoading from "@/components/ViewLoading";
 import { AuthProvider } from "@/context/AuthContext";
 import { HabitsProvider } from "@/context/HabitsContext";
 import { NotesProvider, readNotesBackup } from "@/context/NotesContext";
@@ -269,26 +270,28 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 							accept=".txt,.md,.html"
 							onChange={handleFileChange}
 						/>
-						{viewMode === "excalidraw" && (
-							<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
-								<ExcalidrawPage
-									initialData={excalidrawData}
-									onChange={(data) => setExcalidrawData(data)}
+						<Box className="app-view-frame app-view-enter">
+							{viewMode === "excalidraw" && (
+								<Suspense fallback={<ViewLoading />}>
+									<ExcalidrawPage
+										initialData={excalidrawData}
+										onChange={(data) => setExcalidrawData(data)}
+									/>
+								</Suspense>
+							)}
+							{viewMode === "notes" && <NotesPage />}
+							{viewMode === "habits" && <HabitsPage />}
+							{viewMode === "todo" && (
+								<TodoPage
+									taskData={taskData}
+									activeFilter={activeFilter}
+									onFilterChange={onFilterChange}
+									onSave={handleSave}
+									onOpen={handleOpenRepo}
+									onAiTools={handleAiTools}
 								/>
-							</Suspense>
-						)}
-						{viewMode === "notes" && <NotesPage />}
-						{viewMode === "habits" && <HabitsPage />}
-						{viewMode === "todo" && (
-							<TodoPage
-								taskData={taskData}
-								activeFilter={activeFilter}
-								onFilterChange={onFilterChange}
-								onSave={handleSave}
-								onOpen={handleOpenRepo}
-								onAiTools={handleAiTools}
-							/>
-						)}
+							)}
+						</Box>
 					</ErrorBoundary>
 
 					{/* M3 bottom navigation — mobile only, clears with safe-area inset */}

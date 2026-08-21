@@ -8,7 +8,6 @@ import {
 	Rows3,
 	Search,
 	SunMoon,
-	Wifi,
 } from "lucide-react";
 import { useMemo } from "react";
 import { useViewContext } from "@/context/ViewContext";
@@ -88,13 +87,6 @@ const CommandPalette = ({
 				keywords: "sketch excalidraw canvas",
 				onClick: () => setView("excalidraw"),
 				leftSection: <Brush size={18} />,
-			},
-			{
-				id: "view-sync",
-				label: "Go to Sync",
-				keywords: "p2p devices backup",
-				onClick: () => setView("sync"),
-				leftSection: <Wifi size={18} />,
 			},
 			{
 				id: "theme-toggle",

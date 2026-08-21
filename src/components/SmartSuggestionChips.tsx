@@ -1,5 +1,4 @@
 import {
-	Badge,
 	Button,
 	Code,
 	Group,
@@ -9,7 +8,7 @@ import {
 	Tooltip,
 } from "@mantine/core";
 import type { Editor as TipTapEditor } from "@tiptap/core";
-import { CalendarClock, Repeat2, Sparkles } from "lucide-react";
+import { CalendarClock, Repeat2 } from "lucide-react";
 import { useState } from "react";
 import {
 	parseRecurringScheduleExpression,
@@ -34,13 +33,11 @@ type Preview =
 			kind: "relative";
 			value: string;
 			date: Date;
-			ast: unknown;
 	  }
 	| {
 			kind: "recurrence";
 			value: string;
 			rule: RecurrenceRule;
-			ast: unknown;
 	  }
 	| {
 			kind: "error";
@@ -105,12 +102,12 @@ function insertSuggestion(editor: TipTapEditor, value: string) {
 function parseSuggestion(value: string): Preview {
 	const relative = parseRelativeDateExpression(value);
 	if (relative) {
-		return { kind: "relative", value, ...relative };
+		return { kind: "relative", value, date: relative.date };
 	}
 
 	const recurring = parseRecurringScheduleExpression(value);
 	if (recurring) {
-		return { kind: "recurrence", value, ...recurring };
+		return { kind: "recurrence", value, rule: recurring.rule };
 	}
 
 	const metadata = parseTaskMetadata(value);
@@ -119,7 +116,6 @@ function parseSuggestion(value: string): Preview {
 			kind: "recurrence",
 			value,
 			rule: metadata.recurrence,
-			ast: { type: "RecurrenceExpr", value: metadata.recurrence },
 		};
 	}
 
@@ -179,15 +175,11 @@ function PreviewContent({ preview }: { preview: Preview }) {
 			<Stack gap={4}>
 				<Group gap="xs" wrap="nowrap">
 					<CalendarClock size={15} />
-					<Text size="xs" fw={700} tt="uppercase">
-						Parsed due date
-					</Text>
+					<Text fw={700}>{formatDate(preview.date)}</Text>
 				</Group>
-				<Text fw={700}>{formatDate(preview.date)}</Text>
 				<Text size="xs" c="dimmed">
-					The chip inserted <Code>{preview.value}</Code>.
+					Due date inserted as <Code>{preview.value}</Code>.
 				</Text>
-				<Code block>{JSON.stringify(preview.ast, null, 2)}</Code>
 			</Stack>
 		);
 	}
@@ -197,21 +189,11 @@ function PreviewContent({ preview }: { preview: Preview }) {
 			<Stack gap={4}>
 				<Group gap="xs" wrap="nowrap">
 					<Repeat2 size={15} />
-					<Text size="xs" fw={700} tt="uppercase">
-						Parsed recurrence
-					</Text>
-				</Group>
-				<Text fw={700}>{describeRecurrence(preview.rule)}</Text>
-				<Group gap="xs">
-					<Badge variant="light">{preview.rule.mode}</Badge>
-					{preview.rule.time && (
-						<Badge variant="light">{preview.rule.time}</Badge>
-					)}
+					<Text fw={700}>{describeRecurrence(preview.rule)}</Text>
 				</Group>
 				<Text size="xs" c="dimmed">
-					The chip inserted <Code>{preview.value}</Code>.
+					Recurrence inserted as <Code>{preview.value}</Code>.
 				</Text>
-				<Code block>{JSON.stringify(preview.ast, null, 2)}</Code>
 			</Stack>
 		);
 	}
@@ -237,17 +219,6 @@ export default function SmartSuggestionChips({
 				padding: "2px 4px",
 			}}
 		>
-			<Group gap={4} wrap="nowrap" c="dimmed">
-				<Sparkles size={14} aria-hidden="true" />
-				<Text
-					size="xs"
-					fw={700}
-					tt="uppercase"
-					style={{ letterSpacing: "0.06em" }}
-				>
-					Smart
-				</Text>
-			</Group>
 			{SUGGESTIONS.map((suggestion) => {
 				const isPreviewOpen = preview?.value === suggestion.value;
 				return (

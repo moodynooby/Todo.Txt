@@ -11,6 +11,7 @@ interface EmptyStateProps {
 	title: string;
 	description?: string;
 	action?: React.ReactNode;
+	className?: string;
 }
 
 export function EmptyState({
@@ -18,10 +19,11 @@ export function EmptyState({
 	title,
 	description,
 	action,
+	className,
 }: EmptyStateProps) {
 	return (
 		<Stack
-			className="app-empty-state app-surface-muted"
+			className={`app-empty-state app-surface-muted${className ? ` ${className}` : ""}`}
 			align="center"
 			justify="center"
 			py={60}

@@ -18,13 +18,7 @@ export const defaults: PersistedState = {
 	sidebarCollapsed: false,
 	density: "comfortable",
 	sidebar: {
-		expandedSections: [
-			"priorities",
-			"projects",
-			"contexts",
-			"dueDates",
-			"tips",
-		],
+		expandedSections: ["priorities", "projects", "contexts", "dueDates"],
 		search: "",
 		showCompleted: false,
 	},

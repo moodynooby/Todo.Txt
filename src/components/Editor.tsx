@@ -23,7 +23,7 @@ import type { SaveFormat } from "@/lib/documentExport";
  *
  * - Adaptive icon-first toolbar (collapses on narrow screens)
  * - Warm cycling placeholder instead of a static void
- * - Pet companion strip, task-rhythm dots, and line/copy animations
+ * - Pet companion strip and line/copy animations
  *   live in the `EditorPlay` wrapper layer, so the TipTap content stays pure.
  */
 
@@ -200,9 +200,9 @@ export function Editor({
 							<RichTextEditor.Control
 								onClick={onAdvancedTools}
 								active={false}
-								aria-label="Advanced task tools"
+								aria-label="Task dependencies"
 							>
-								<Tooltip label="Advanced task tools" position="top" withArrow>
+								<Tooltip label="Task dependencies" position="top" withArrow>
 									<GitBranch size={16} />
 								</Tooltip>
 							</RichTextEditor.Control>
