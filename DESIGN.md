@@ -97,6 +97,14 @@ Expressive design isolates moments of emphasis. The Todo workspace has exactly t
 
 On narrow viewports (<640px), the editor toolbar collapses to the essentials; rich formatting remains reachable through keyboard shortcuts. On desktop the full control group is available.
 
+### One Help Surface
+
+All guidance lives in the help cheatsheet (`?`, header button, command palette): a keyboard map plus a todo.txt syntax reference. Workspaces stay free of ambient tips, persistent guide panels, and developer-facing parse output. Contextual hints are limited to input placeholders and control tooltips.
+
+### Workspace Headers
+
+Every content workspace opens with the same optional header pattern: an `.app-eyebrow` orientation label above an `.app-display-title`. The Todo workspace omits it by design — its hero is the quick-add bar, and the app wordmark already anchors the view.
+
 ## Shared Layout Primitives
 
 The following classes are the common visual vocabulary. They are intentionally CSS-only so existing feature components can adopt them without acquiring new state or behavior.

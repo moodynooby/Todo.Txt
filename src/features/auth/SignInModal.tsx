@@ -160,6 +160,7 @@ const SignInModal = ({ opened, onClose }: SignInModalProps) => {
 			onClose={handleClose}
 			title="Sign in"
 			centered
+			radius="lg"
 			size="sm"
 		>
 			{showForgotPassword ? (

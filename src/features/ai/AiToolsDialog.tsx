@@ -147,6 +147,7 @@ const AiToolsDialog = ({
 		<Modal
 			opened={isOpen}
 			onClose={handleClose}
+			radius="lg"
 			title={
 				<Group gap="xs">
 					<Sparkles size={20} />

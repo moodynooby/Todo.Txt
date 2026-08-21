@@ -1,6 +1,6 @@
-import { ActionIcon, Group, Paper, TextInput, Tooltip } from "@mantine/core";
+import { ActionIcon, Group, Paper, TextInput } from "@mantine/core";
 import type { Editor as TipTapEditor } from "@tiptap/core";
-import { Plus, Tag } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 /**
@@ -63,21 +63,6 @@ export const QuickAddBar = ({ editor }: QuickAddBarProps) => {
 					radius="xl"
 					style={{ flex: 1, minWidth: 0 }}
 				/>
-				<Tooltip
-					label="Insert tags (+project @context (A) due:date) directly in the text"
-					position="top"
-					withArrow
-				>
-					<ActionIcon
-						variant="light"
-						color="evergreen"
-						radius="xl"
-						size="lg"
-						aria-label="Tag help"
-					>
-						<Tag size={15} />
-					</ActionIcon>
-				</Tooltip>
 				<ActionIcon
 					className="app-floating-action-primary"
 					variant="filled"

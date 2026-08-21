@@ -1,4 +1,5 @@
 import { MantineProvider as MantineProviderBase } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import type { ReactNode } from "react";
 import { m3Theme } from "@/theme/m3Theme";
 
@@ -18,6 +19,7 @@ interface MantineProviderProps {
 export const MantineProvider = ({ children }: MantineProviderProps) => {
 	return (
 		<MantineProviderBase theme={m3Theme} defaultColorScheme="light">
+			<Notifications position="top-right" limit={2} />
 			{children}
 		</MantineProviderBase>
 	);

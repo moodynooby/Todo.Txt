@@ -12,7 +12,12 @@ import {
 } from "react";
 import AppHeader from "@/components/AppHeader/AppHeader";
 import BottomNav from "@/components/AppHeader/BottomNav";
+import CommandPalette from "@/components/CommandPalette";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import ShortcutsCheatsheet, {
+	OPEN_SHORTCUTS_EVENT,
+} from "@/components/ShortcutsCheatsheet";
+import ViewLoading from "@/components/ViewLoading";
 import { AuthProvider } from "@/context/AuthContext";
 import { HabitsProvider } from "@/context/HabitsContext";
 import { NotesProvider, readNotesBackup } from "@/context/NotesContext";
@@ -57,6 +62,12 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 	);
 	const [groqApiKey, setGroqApiKey] = useState("");
 	const [aiToolsOpen, setAiToolsOpen] = useState(false);
+	const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+	/* Density preference drives a root attribute consumed by App.css. */
+	useEffect(() => {
+		document.documentElement.dataset.density = viewState.density;
+	}, [viewState.density]);
 
 	const handleRemoteExcalidraw = useCallback((data: ExcalidrawData | null) => {
 		setExcalidrawData(data);
@@ -93,6 +104,44 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 	};
 
 	const deferredRteContent = useDeferredValue(content);
+
+	/* Global hotkeys: `?` opens the cheatsheet (outside of typing surfaces),
+	 * Ctrl/Cmd+O opens a todo.txt file — the binding the editor tooltip
+	 * has always promised. */
+	useEffect(() => {
+		const isTypingTarget = (target: EventTarget | null): boolean => {
+			if (!(target instanceof HTMLElement)) return false;
+			return (
+				target.tagName === "INPUT" ||
+				target.tagName === "TEXTAREA" ||
+				target.tagName === "SELECT" ||
+				target.isContentEditable
+			);
+		};
+		const onKeyDown = (e: KeyboardEvent): void => {
+			if (
+				e.key === "?" &&
+				!e.ctrlKey &&
+				!e.metaKey &&
+				!isTypingTarget(e.target)
+			) {
+				e.preventDefault();
+				setShortcutsOpen(true);
+				return;
+			}
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "o") {
+				e.preventDefault();
+				fileInputRef.current?.click();
+			}
+		};
+		const openShortcuts = (): void => setShortcutsOpen(true);
+		window.addEventListener("keydown", onKeyDown);
+		window.addEventListener(OPEN_SHORTCUTS_EVENT, openShortcuts);
+		return () => {
+			window.removeEventListener("keydown", onKeyDown);
+			window.removeEventListener(OPEN_SHORTCUTS_EVENT, openShortcuts);
+		};
+	}, []);
 
 	const taskData: ParsedTodoContent = useMemo(
 		() => parseTodoContent(deferredRteContent),
@@ -152,6 +201,11 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 				<AppShell.Header>
 					<AppHeader />
 				</AppShell.Header>
+				<CommandPalette
+					taskData={taskData}
+					activeFilter={activeFilter}
+					onFilterChange={onFilterChange}
+				/>
 
 				<AppShell.Main
 					pos="relative"
@@ -164,6 +218,12 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 					}}
 				>
 					<ErrorBoundary>
+						<ShortcutsCheatsheet
+							opened={shortcutsOpen}
+							onClose={() => {
+								setShortcutsOpen(false);
+							}}
+						/>
 						<AiToolsDialog
 							isOpen={aiToolsOpen}
 							onClose={() => {
@@ -192,27 +252,28 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 							accept=".txt,.md,.html"
 							onChange={handleFileChange}
 						/>
-						{viewMode === "excalidraw" && (
-							<Suspense fallback={<Box p="md">Loading Excalidraw...</Box>}>
-								<ExcalidrawPage
-									initialData={excalidrawData}
-									onChange={(data) => setExcalidrawData(data)}
+						<Box className="app-view-frame app-view-enter">
+							{viewMode === "excalidraw" && (
+								<Suspense fallback={<ViewLoading />}>
+									<ExcalidrawPage
+										initialData={excalidrawData}
+										onChange={(data) => setExcalidrawData(data)}
+									/>
+								</Suspense>
+							)}
+							{viewMode === "notes" && <NotesPage />}
+							{viewMode === "habits" && <HabitsPage />}
+							{viewMode === "todo" && (
+								<TodoPage
+									taskData={taskData}
+									activeFilter={activeFilter}
+									onFilterChange={onFilterChange}
+									onSave={handleSave}
+									onOpen={handleOpenRepo}
+									onAiTools={handleAiTools}
 								/>
-							</Suspense>
-						)}
-			{viewMode === "notes" && <NotesPage />}
-			{viewMode === "habits" && <HabitsPage />}
-			{viewMode === "sync" && <P2pSyncPage />}
-						{viewMode === "todo" && (
-							<TodoPage
-								taskData={taskData}
-								activeFilter={activeFilter}
-								onFilterChange={onFilterChange}
-								onSave={handleSave}
-								onOpen={handleOpenRepo}
-								onAiTools={handleAiTools}
-							/>
-						)}
+							)}
+						</Box>
 					</ErrorBoundary>
 
 					{/* M3 bottom navigation — mobile only, clears with safe-area inset */}

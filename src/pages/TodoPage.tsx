@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import AdvancedToolsDialog from "@/components/AdvancedToolsDialog";
 import { Editor } from "@/components/Editor";
 import EditorPlay from "@/components/Editor/EditorPlay";
+import { QuickAddBar } from "@/components/QuickAddBar";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { useTodoContext } from "@/context/TodoContext";
 import { useViewContext } from "@/context/ViewContext";
@@ -58,7 +59,7 @@ const TodoPage = ({
 		onFilterChange,
 	});
 
-	/* Playfulness layer: rhythm dots, empty-state art, and the pet companion */
+	/* Playfulness layer: empty-state art and the pet companion */
 	const taskCount = taskData.tasks.length;
 	const doneCount = taskData.tasks.filter((t) => t.completed).length;
 	const mood = useTaskActivity(editor, taskCount, doneCount);
@@ -139,7 +140,9 @@ const TodoPage = ({
 				onClose={closeDrawer}
 				title="Filters"
 				padding={0}
-				size="100%"
+				position="bottom"
+				size="82%"
+				radius="xxl"
 				zIndex={200}
 			>
 				<Sidebar
@@ -156,9 +159,15 @@ const TodoPage = ({
 				direction="column"
 				style={{ flex: 1, minWidth: 0, overflow: "hidden" }}
 			>
-				{/* Single writing surface — todos are created by typing a new
-						line directly in the editor, no separate quick-add input.
-						The play layer adds rhythm dots, empty-state art, and the pet. */}
+				{/* Hero moment: the quick-add bar is the fastest path to a new
+					todo (DESIGN.md). Typing directly in the editor remains the
+					power path — both write to the same document. */}
+				<QuickAddBar editor={editor} />
+
+				{/* Single writing surface — the quick-add bar above is the
+						guided path; typing directly in the editor is the power
+						path. The play layer adds rhythm dots, empty-state art,
+						and the pet. */}
 				<Editor
 					editor={editor}
 					toolbarVariant="full"
@@ -176,8 +185,6 @@ const TodoPage = ({
 					playLayer={
 						<EditorPlay
 							mood={mood}
-							taskCount={taskCount}
-							doneCount={doneCount}
 							isEmpty={isEmpty}
 							onPetNudge={handlePetNudge}
 							contentStyle={{
@@ -230,7 +237,8 @@ const TodoPage = ({
 				taskData={taskData}
 			/>
 
-			{/* Mobile: bottom-sheet filter FAB (secondary control) */}
+			{/* Mobile: bottom-sheet filter FAB (secondary control), lifted
+					above the bottom navigation bar and its safe-area inset */}
 			{isMobile && (
 				<ActionIcon
 					className="app-floating-action todo-filter-action"
@@ -241,7 +249,7 @@ const TodoPage = ({
 					aria-label="Open Filters"
 					style={{
 						position: "fixed",
-						bottom: "20px",
+						bottom: "calc(76px + env(safe-area-inset-bottom))",
 						right: "20px",
 						zIndex: 100,
 					}}

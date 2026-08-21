@@ -2,6 +2,7 @@ import { Box, Paper, Text } from "@mantine/core";
 import { Pencil } from "lucide-react";
 import type { PetMood } from "@/hooks/useEditorPlay";
 import { useWarmPlaceholder } from "@/hooks/useEditorPlay";
+import CelebrationBurst from "./CelebrationBurst";
 import PetStrip from "./PetStrip";
 
 /**
@@ -16,8 +17,6 @@ import PetStrip from "./PetStrip";
 
 type EditorPlayProps = {
 	mood: PetMood;
-	taskCount: number;
-	doneCount: number;
 	isEmpty: boolean;
 	contentStyle: React.CSSProperties;
 	onPetNudge: () => void;
@@ -26,8 +25,6 @@ type EditorPlayProps = {
 
 export default function EditorPlay({
 	mood,
-	taskCount,
-	doneCount,
 	isEmpty,
 	contentStyle,
 	onPetNudge,
@@ -45,34 +42,6 @@ export default function EditorPlay({
 				minHeight: 0,
 			}}
 		>
-			{/* Task-rhythm strip — one capsule per task; filled = completed.
-			    Appears only when there is something to celebrate. */}
-			{taskCount > 0 && (
-				<Box
-					className="task-rhythm-strip"
-					style={{
-						display: "flex",
-						gap: 4,
-						padding: "6px 20px 0",
-						flexWrap: "wrap",
-					}}
-				>
-					{Array.from({ length: taskCount }).map((_, dotIndex) => (
-						<Paper
-							key={`dot-${taskCount}-${doneCount}-${dotIndex}`}
-							radius="xl"
-							withBorder
-							className={
-								dotIndex < doneCount
-									? "task-rhythm-dot task-rhythm-done"
-									: "task-rhythm-dot"
-							}
-							style={{ width: 14, height: 7 }}
-						/>
-					))}
-				</Box>
-			)}
-
 			<Paper
 				radius="lg"
 				shadow="sm"
@@ -112,12 +81,10 @@ export default function EditorPlay({
 				)}
 			</Paper>
 
-			<PetStrip
-				mood={mood}
-				taskCount={taskCount}
-				doneCount={doneCount}
-				onNudge={onPetNudge}
-			/>
+			<PetStrip mood={mood} onNudge={onPetNudge} />
+
+			{/* All-done moment: a brief, reduced-motion-aware confetti burst */}
+			<CelebrationBurst active={mood === "cheer"} />
 		</Box>
 	);
 }

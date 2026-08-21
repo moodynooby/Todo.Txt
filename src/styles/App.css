@@ -411,6 +411,73 @@ body {
 	min-height: 100%;
 }
 
+/* Density preference (ViewContext, persisted) — compact tightens the
+ * writing surface so more tasks fit; comfortable is the default voice. */
+html[data-density="compact"] .tiptap-container {
+	padding: 10px 14px;
+}
+
+html[data-density="compact"] .tiptap-container .ProseMirror {
+	font-size: 0.9375rem;
+	line-height: 1.45;
+}
+
+/* ------------------------------------------------------------------ */
+/* Celebration burst — one-shot confetti for the "all done" moment.    */
+/* Skipped under prefers-reduced-motion (component + CSS both guard).  */
+/* ------------------------------------------------------------------ */
+
+.celebration-burst {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	z-index: 4;
+}
+
+.celebration-particle {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+	opacity: 0;
+	animation: celebration-fly 900ms var(--m3-ease-effects) forwards;
+}
+
+.celebration-particle:nth-child(3n) {
+	background: var(--mantine-color-evergreen-6);
+}
+
+.celebration-particle:nth-child(3n + 1) {
+	background: var(--mantine-color-terracotta-5);
+}
+
+.celebration-particle:nth-child(3n + 2) {
+	background: var(--mantine-color-honey-4);
+}
+
+@keyframes celebration-fly {
+	0% {
+		transform: translate(-50%, -50%) rotate(0deg) translateX(0);
+		opacity: 1;
+	}
+	100% {
+		transform: translate(-50%, -50%) rotate(var(--angle))
+			translateX(var(--distance));
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.celebration-particle {
+		display: none;
+	}
+}
+
 /* M3-style task checkboxes: rounded, tappable, evergreen when checked */
 .tiptap-container ul:has(li > input[type="checkbox"]) {
 	list-style: none;
@@ -577,35 +644,19 @@ body {
 	border-radius: var(--m3-radius-pill);
 }
 
-.habits-eyebrow,
-.habits-kicker {
-	font-size: 11px;
-	font-weight: 800;
-	letter-spacing: 0.14em;
-	color: var(--mantine-color-evergreen-6);
-	text-transform: uppercase;
-}
-
+/* Display titles: family/weight come from .app-display-title; these add size */
 .habits-title,
 .today-panel-title,
 .insight-panel-title,
 .analytics-title,
 .consistency-title,
 .modal-title {
-	font-family: ZillaSlab, Georgia, serif;
 	font-weight: 500;
-	letter-spacing: -0.025em;
 }
 
 .habits-title {
 	font-size: clamp(30px, 4vw, 48px);
 	line-height: 1.06;
-}
-
-.habits-subtitle {
-	margin-top: 7px;
-	font-size: 14px;
-	color: var(--app-ink-muted);
 }
 
 .habits-add-button {
@@ -984,9 +1035,7 @@ body {
 		);
 }
 
-:root[data-mantine-color-scheme="dark"] .app-eyebrow,
-:root[data-mantine-color-scheme="dark"] .habits-eyebrow,
-:root[data-mantine-color-scheme="dark"] .habits-kicker {
+:root[data-mantine-color-scheme="dark"] .app-eyebrow {
 	color: var(--mantine-color-evergreen-3);
 }
 
@@ -1164,17 +1213,6 @@ body {
 	}
 }
 
-@keyframes pet-fade-in {
-	from {
-		opacity: 0;
-		transform: translateY(3px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
 .pet-strip {
 	background: var(--app-surface-raised) !important;
 	border: 1px solid var(--app-border-strong);
@@ -1197,21 +1235,6 @@ body {
 	animation: pet-fade-in 400ms var(--m3-ease-effects);
 	user-select: none;
 	pointer-events: none;
-}
-
-/* Task-rhythm strip: a heartbeat of capsules per task */
-.task-rhythm-dot {
-	background: var(--app-surface-muted);
-	border-color: var(--app-border);
-	transition:
-		background-color 200ms var(--m3-ease-effects),
-		border-color 200ms var(--m3-ease-effects),
-		transform 200ms var(--m3-ease-spatial-fast);
-}
-
-.task-rhythm-done {
-	background: var(--mantine-color-evergreen-4);
-	border-color: var(--mantine-color-evergreen-5);
 }
 
 /* Line settle: new lines spring in like a card laid on a desk */
@@ -1288,4 +1311,80 @@ body {
 	);
 	border-color: var(--mantine-color-evergreen-5);
 	color: var(--mantine-color-evergreen-9);
+}
+
+/* ------------------------------------------------------------------ */
+/* Perceived-performance primitives: view frame, enter fade, skeleton  */
+/* ------------------------------------------------------------------ */
+
+/* Layout-only wrapper for the active workspace view; keeps flex/height
+   behavior identical to the previous direct children of AppShell.Main. */
+.app-view-frame {
+	height: 100%;
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Entrance fade applied on every view mount (view switches). Opacity and
+   a small translate only, so it stays on the compositor. */
+.app-view-enter {
+	animation: app-view-enter 160ms var(--m3-ease-effects) both;
+}
+
+@keyframes app-view-enter {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* Lazy-view placeholder mirroring a toolbar-over-canvas workspace. */
+.app-view-loading {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	padding: 24px;
+	background: var(--app-canvas);
+}
+
+.app-view-loading-toolbar {
+	width: min(480px, 80%);
+	height: 40px;
+	border-radius: var(--m3-radius-control);
+	background: var(--app-surface-muted);
+	animation: app-skeleton-pulse 1.1s var(--m3-ease-effects) infinite alternate;
+}
+
+.app-view-loading-canvas {
+	width: 100%;
+	flex: 1;
+	border-radius: var(--m3-radius-surface);
+	background: var(--app-surface-raised);
+	box-shadow: var(--app-shadow-card);
+	animation: app-skeleton-pulse 1.1s var(--m3-ease-effects) infinite alternate;
+}
+
+@keyframes app-skeleton-pulse {
+	from {
+		opacity: 0.55;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.app-view-enter,
+	.app-view-loading-toolbar,
+	.app-view-loading-canvas {
+		animation: none;
+	}
 }

@@ -9,34 +9,8 @@
  */
 
 import { Image, Paper, Tooltip } from "@mantine/core";
-import BroomIcon from "@/assets/3dicons-broom-dynamic-color.webp";
-import NotebookIcon from "@/assets/3dicons-notebook-dynamic-color.webp";
-import DrawingIcon from "@/assets/3dicons-painting-kit-dynamic-color.webp";
-import TicIcon from "@/assets/3dicons-tick-dynamic-color.webp";
 import { useViewContext } from "@/context/ViewContext";
-
-const TABS = [
-	{
-		value: "todo",
-		label: "Todo list",
-		src: TicIcon,
-	},
-	{
-		value: "habits",
-		label: "Habits",
-		src: BroomIcon,
-	},
-	{
-		value: "notes",
-		label: "Notes",
-		src: NotebookIcon,
-	},
-	{
-		value: "excalidraw",
-		label: "Drawing canvas",
-		src: DrawingIcon,
-	},
-];
+import { VIEW_TABS } from "./viewTabs";
 
 const ViewSwitcher3D = () => {
 	const { state: viewState, dispatchView } = useViewContext();
@@ -58,7 +32,7 @@ const ViewSwitcher3D = () => {
 				flexShrink: 0,
 			}}
 		>
-			{TABS.map((tab) => {
+			{VIEW_TABS.map((tab) => {
 				const active = tab.value === viewMode;
 				return (
 					<button

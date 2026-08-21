@@ -1,10 +1,6 @@
 import { Image, Paper, Text } from "@mantine/core";
-import BroomIcon from "@/assets/3dicons-broom-dynamic-color.webp";
-import NotebookIcon from "@/assets/3dicons-notebook-dynamic-color.webp";
-import DrawingIcon from "@/assets/3dicons-painting-kit-dynamic-color.webp";
-import TicIcon from "@/assets/3dicons-tick-dynamic-color.webp";
 import { useViewContext } from "@/context/ViewContext";
-import { Wifi } from "lucide-react";
+import { VIEW_TABS } from "./viewTabs";
 
 /**
  * M3 Expressive bottom navigation — mobile only (`visibleFrom` hidden below).
@@ -14,34 +10,6 @@ import { Wifi } from "lucide-react";
  * icon + label rows. On desktop the header segmented switcher takes over, so
  * this component renders nothing above `md`.
  */
-
-const TABS = [
-	{
-		value: "todo",
-		label: "Todo",
-		icon: TicIcon,
-	},
-	{
-		value: "habits",
-		label: "Habits",
-		icon: BroomIcon,
-	},
-	{
-		value: "notes",
-		label: "Notes",
-		icon: NotebookIcon,
-	},
-	{
-		value: "excalidraw",
-		label: "Draw",
-		icon: DrawingIcon,
-	},
-	{
-		value: "sync",
-		label: "Sync",
-		icon: Wifi,
-	},
-];
 
 const BottomNav = () => {
 	const { state: viewState, dispatchView } = useViewContext();
@@ -65,10 +33,10 @@ const BottomNav = () => {
 				zIndex: 150,
 				borderTop: "1px solid var(--app-border)",
 				display: "grid",
-				gridTemplateColumns: `repeat(${TABS.length}, 1fr)`,
+				gridTemplateColumns: `repeat(${VIEW_TABS.length}, 1fr)`,
 			}}
 		>
-			{TABS.map((tab) => {
+			{VIEW_TABS.map((tab) => {
 				const active = tab.value === viewMode;
 				return (
 					<button
@@ -110,7 +78,7 @@ const BottomNav = () => {
 							}}
 						>
 							<Image
-								src={tab.icon}
+								src={tab.src}
 								w={26}
 								h={26}
 								alt={tab.label}

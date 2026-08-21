@@ -104,13 +104,6 @@
 	color: var(--note-textarea-color);
 }
 
-.notes-empty-state {
-	max-width: 380px;
-	margin: 52px auto;
-	border: 1px dashed var(--app-border-strong);
-	border-radius: var(--m3-radius-surface);
-}
-
 @media (prefers-reduced-motion: reduce) {
 	.NotesPage-noteCard {
 		transition: none;

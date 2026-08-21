@@ -25,7 +25,6 @@ import {
 	SearchInput,
 	SidebarSection,
 } from "./SidebarParts";
-import TipsPanel from "./TipsPanel";
 
 /** Due-date filter label that surfaces exact times when tasks carry them. */
 const dueLabel = (due: string, items: { dueTime?: string }[]): string => {
@@ -284,18 +283,6 @@ const Sidebar = ({
 							onClick={() => handleFilterClick("due", due)}
 						/>
 					))}
-				</SidebarSection>
-
-				{/* Persistent, scrollable help — always reachable so users can
-					return to the guide at any time. */}
-				<SidebarSection
-					title="Guide"
-					id="tips"
-					expandedSections={expandedSections}
-					onToggle={toggleSection}
-					isEmpty={false}
-				>
-					<TipsPanel />
 				</SidebarSection>
 			</ScrollArea>
 		</Paper>

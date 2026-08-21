@@ -51,6 +51,12 @@ const manifest = {
 	},
 };
 
+// The Tauri CLI exports TAURI_ENV_* for beforeBuild/beforeDev commands. The
+// service worker is web-host only: inside Tauri the custom protocol already
+// serves assets from disk, so precaching ~10 MB on every launch is pure
+// startup overhead with no offline benefit.
+const isTauri = Boolean(process.env.TAURI_ENV_PLATFORM);
+
 export default defineConfig({
 	resolve: {
 		alias: {
@@ -59,14 +65,18 @@ export default defineConfig({
 	},
 	plugins: [
 		react(),
-		VitePWA({
-			registerType: "autoUpdate",
-			includeAssets: ["**/*.{png,svg,ttf}"],
-			manifest,
-			workbox: {
-				globPatterns: ["**/*.{js,css,html,ico,png,svg,ttf}"],
-			},
-		}),
+		...(isTauri
+			? []
+			: [
+					VitePWA({
+						registerType: "autoUpdate",
+						includeAssets: ["**/*.{png,svg,ttf}"],
+						manifest,
+						workbox: {
+							globPatterns: ["**/*.{js,css,html,ico,png,svg,ttf}"],
+						},
+					}),
+				]),
 	],
 	publicDir: "public",
 	server: {

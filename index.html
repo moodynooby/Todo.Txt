@@ -12,9 +12,73 @@
     <link rel="apple-touch-icon" sizes="512x512" href="/icon512_rounded.png" />
     <title>T0do.TxT</title>
     <link rel="icon" href="/todotxt2.svg" />
+    <style>
+      /* Pre-app splash: paints before any JS/CSS bundles load so launch
+         feels instant. Colors mirror the light-scheme app canvas
+         (--app-canvas #f7f5ef) and the brand mark (todotxt2.svg). */
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f7f5ef;
+        opacity: 1;
+        transition: opacity 180ms ease-out;
+      }
+      #splash.splash-hide {
+        opacity: 0;
+      }
+      .splash-mark {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 96px;
+        height: 96px;
+        border-radius: 24px;
+        background: #b2f2bb;
+        border: 3px solid #2f9e44;
+        color: #1e1e1e;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-weight: 800;
+        font-size: 22px;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        animation: splash-in 320ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+      }
+      @keyframes splash-in {
+        from {
+          transform: scale(0.9);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .splash-mark {
+          animation: none;
+        }
+        #splash {
+          transition: none;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="splash" role="presentation">
+      <div class="splash-mark">t0do<br />.TxT</div>
+    </div>
+    <script>
+      setTimeout(() => {
+        var s = document.getElementById("splash");
+        if (s) s.remove();
+      }, 4000);
+    </script>
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

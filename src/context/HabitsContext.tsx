@@ -35,7 +35,8 @@ export type HabitsAction =
 	  }
 	| { type: "TOGGLE_COMPLETION"; payload: { id: string; date: string } }
 	| { type: "ARCHIVE_HABIT"; payload: string }
-	| { type: "DELETE_HABIT"; payload: string };
+	| { type: "DELETE_HABIT"; payload: string }
+	| { type: "RESTORE_HABIT"; payload: Habit };
 
 export function habitsReducer(
 	state: HabitsState,
@@ -89,6 +90,22 @@ export function habitsReducer(
 				...state,
 				habits: state.habits.filter((habit) => habit.id !== action.payload),
 			};
+		case "RESTORE_HABIT": {
+			/* Undo path for DELETE_HABIT: re-insert the full habit (same id,
+			 * completion history intact) at its original position. */
+			if (state.habits.some((habit) => habit.id === action.payload.id)) {
+				return state;
+			}
+			const idx = state.habits.findIndex(
+				(habit) => habit.createdAt > action.payload.createdAt,
+			);
+			if (idx < 0) {
+				return { ...state, habits: [...state.habits, action.payload] };
+			}
+			const habits = [...state.habits];
+			habits.splice(idx, 0, action.payload);
+			return { ...state, habits };
+		}
 		default:
 			return state;
 	}
