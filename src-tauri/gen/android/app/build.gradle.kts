@@ -1,7 +1,9 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     id("rust")
 }
 
@@ -48,22 +50,27 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.toVersion(25)
-        targetCompatibility = JavaVersion.toVersion(25)
-    }
-    
-    // Built-in Kotlin configuration in AGP 9.x
-    kotlin {
-        jvmToolchain(25)
+        sourceCompatibility = JavaVersion.toVersion(17)
+        targetCompatibility = JavaVersion.toVersion(17)
     }
 
     buildFeatures {
         buildConfig = true
     }
+
+    lint {
+        checkReleaseBuilds = false
+    }
 }
 
 rust {
     rootDirRel = "../../../"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
 }
 
 dependencies {

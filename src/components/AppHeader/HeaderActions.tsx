@@ -5,8 +5,17 @@ import {
 	useComputedColorScheme,
 	useMantineColorScheme,
 } from "@mantine/core";
-import { Download, Maximize, Minimize, Moon, Sun } from "lucide-react";
+import {
+	Download,
+	Keyboard,
+	Maximize,
+	Minimize,
+	Moon,
+	Rows3,
+	Sun,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useViewContext } from "@/context/ViewContext";
 import { toggleFullscreen } from "@/lib/fullscreen";
 import ConnectionButton from "./ConnectionButton";
 
@@ -18,6 +27,7 @@ interface BeforeInstallPromptEvent extends Event {
 const HeaderActions = () => {
 	const { setColorScheme } = useMantineColorScheme();
 	const computedColorScheme = useComputedColorScheme("light");
+	const { state: viewState, dispatchView } = useViewContext();
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [deferredPrompt, setDeferredPrompt] =
 		useState<BeforeInstallPromptEvent | null>(null);
@@ -94,6 +104,47 @@ const HeaderActions = () => {
 					aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
 				>
 					{isDark ? <Sun size={20} /> : <Moon size={20} />}
+				</ActionIcon>
+			</Tooltip>
+
+			<Tooltip
+				label={
+					viewState.density === "compact"
+						? "Comfortable density"
+						: "Compact density"
+				}
+				position="bottom"
+			>
+				<ActionIcon
+					variant="subtle"
+					size="lg"
+					visibleFrom="sm"
+					onClick={() =>
+						dispatchView({
+							type: "SET_DENSITY",
+							payload:
+								viewState.density === "compact" ? "comfortable" : "compact",
+						})
+					}
+					aria-label={
+						viewState.density === "compact"
+							? "Switch to comfortable density"
+							: "Switch to compact density"
+					}
+				>
+					<Rows3 size={20} />
+				</ActionIcon>
+			</Tooltip>
+
+			<Tooltip label="Keyboard shortcuts (?)" position="bottom">
+				<ActionIcon
+					variant="subtle"
+					size="lg"
+					visibleFrom="sm"
+					onClick={() => window.dispatchEvent(new Event("open-shortcuts"))}
+					aria-label="Keyboard shortcuts"
+				>
+					<Keyboard size={20} />
 				</ActionIcon>
 			</Tooltip>
 

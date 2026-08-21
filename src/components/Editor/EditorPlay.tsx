@@ -2,6 +2,7 @@ import { Box, Paper, Text } from "@mantine/core";
 import { Pencil } from "lucide-react";
 import type { PetMood } from "@/hooks/useEditorPlay";
 import { useWarmPlaceholder } from "@/hooks/useEditorPlay";
+import CelebrationBurst from "./CelebrationBurst";
 import PetStrip from "./PetStrip";
 
 /**
@@ -118,6 +119,9 @@ export default function EditorPlay({
 				doneCount={doneCount}
 				onNudge={onPetNudge}
 			/>
+
+			{/* All-done moment: a brief, reduced-motion-aware confetti burst */}
+			<CelebrationBurst active={mood === "cheer"} />
 		</Box>
 	);
 }

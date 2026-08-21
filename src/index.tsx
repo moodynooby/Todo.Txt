@@ -1,4 +1,6 @@
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
+import "@mantine/spotlight/styles.css";
 import "@mantine/tiptap/styles.css";
 import ReactDOM from "react-dom/client";
 import { ErrorBoundary } from "@/components/ErrorBoundary";

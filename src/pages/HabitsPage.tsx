@@ -39,6 +39,7 @@ import {
 import React, { useMemo, useState } from "react";
 import { useHabitsContext } from "@/context/HabitsContext";
 import ExactAlarmPermission from "@/features/habits/ExactAlarmPermission";
+import { showUndoToast } from "@/lib/undoToast";
 import { HABIT_COLORS, type HabitColor, type HabitDraft } from "@/types/habits";
 import {
 	formatLocalDate,
@@ -314,12 +315,24 @@ export default function HabitsPage() {
 													<Menu.Item
 														color="red"
 														leftSection={<Trash2 size={14} />}
-														onClick={() =>
+														onClick={() => {
+															const removed = state.habits.find(
+																(h) => h.id === habit.id,
+															);
 															dispatchHabits({
 																type: "DELETE_HABIT",
 																payload: habit.id,
-															})
-														}
+															});
+															if (!removed) return;
+															showUndoToast({
+																message: `Habit "${removed.name}" deleted`,
+																onUndo: () =>
+																	dispatchHabits({
+																		type: "RESTORE_HABIT",
+																		payload: removed,
+																	}),
+															});
+														}}
 													>
 														Delete habit
 													</Menu.Item>

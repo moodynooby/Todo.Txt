@@ -411,6 +411,77 @@ body {
 	min-height: 100%;
 }
 
+/* Density preference (ViewContext, persisted) — compact tightens the
+ * writing surface so more tasks fit; comfortable is the default voice. */
+html[data-density="compact"] .tiptap-container {
+	padding: 10px 14px;
+}
+
+html[data-density="compact"] .tiptap-container .ProseMirror {
+	font-size: 0.9375rem;
+	line-height: 1.45;
+}
+
+html[data-density="compact"] .task-rhythm-strip {
+	padding-top: 4px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Celebration burst — one-shot confetti for the "all done" moment.    */
+/* Skipped under prefers-reduced-motion (component + CSS both guard).  */
+/* ------------------------------------------------------------------ */
+
+.celebration-burst {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	z-index: 4;
+}
+
+.celebration-particle {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+	opacity: 0;
+	animation: celebration-fly 900ms var(--m3-ease-effects) forwards;
+}
+
+.celebration-particle:nth-child(3n) {
+	background: var(--mantine-color-evergreen-6);
+}
+
+.celebration-particle:nth-child(3n + 1) {
+	background: var(--mantine-color-terracotta-5);
+}
+
+.celebration-particle:nth-child(3n + 2) {
+	background: var(--mantine-color-honey-4);
+}
+
+@keyframes celebration-fly {
+	0% {
+		transform: translate(-50%, -50%) rotate(0deg) translateX(0);
+		opacity: 1;
+	}
+	100% {
+		transform: translate(-50%, -50%) rotate(var(--angle))
+			translateX(var(--distance));
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.celebration-particle {
+		display: none;
+	}
+}
+
 /* M3-style task checkboxes: rounded, tappable, evergreen when checked */
 .tiptap-container ul:has(li > input[type="checkbox"]) {
 	list-style: none;

@@ -11,9 +11,11 @@ import {
 import { useDebouncedValue } from "@mantine/hooks";
 import { ChevronDown, ChevronRight, Plus, Search, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import { createNote, useNotesContext } from "@/context/NotesContext";
 import NoteCard from "@/features/notes/NoteCard";
 import SectionHeading from "@/features/notes/SectionHeading";
+import { showUndoToast } from "@/lib/undoToast";
 import type { NoteColor } from "@/types/notes";
 import "./NotesPage.css";
 
@@ -72,8 +74,20 @@ const NotesPage = () => {
 	);
 
 	const handleDeleteNote = useCallback(
-		(id: string) => dispatchNotes({ type: "DELETE_NOTE", payload: id }),
-		[dispatchNotes],
+		(id: string) => {
+			const removed = notes.find((n) => n.id === id);
+			dispatchNotes({ type: "DELETE_NOTE", payload: id });
+			if (!removed) return;
+			showUndoToast({
+				message: "Note deleted",
+				onUndo: () =>
+					dispatchNotes({
+						type: "UPSERT_NOTE",
+						payload: { ...removed, updatedAt: Date.now() },
+					}),
+			});
+		},
+		[dispatchNotes, notes],
 	);
 
 	const handleArchiveNote = useCallback(
@@ -188,29 +202,21 @@ const NotesPage = () => {
 					</div>
 				)}
 
-				{!hasContent && !hasArchived && (
-					<Stack
-						className="notes-empty-state app-surface-muted"
-						align="center"
-						justify="center"
-						py={60}
-						px={20}
-						c="dimmed"
-						gap="sm"
-					>
-						{debouncedSearch ? (
-							<>
-								<Search size={40} />
-								<Text size="sm">No notes match your search</Text>
-							</>
-						) : (
-							<>
-								<Plus size={40} />
-								<Text size="sm">No notes yet. Tap + to create one!</Text>
-							</>
-						)}
-					</Stack>
-				)}
+				{!hasContent &&
+					!hasArchived &&
+					(debouncedSearch ? (
+						<EmptyState
+							icon={<Search size={22} />}
+							title="No notes match your search"
+							description={`Nothing found for “${debouncedSearch}”.`}
+						/>
+					) : (
+						<EmptyState
+							icon={<Plus size={22} />}
+							title="No notes yet"
+							description="Tap + to capture your first thought."
+						/>
+					))}
 
 				{hasArchived && (
 					<Box mt="md" pt="xs">
