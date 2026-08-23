@@ -11,6 +11,9 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import app.todotxt.TodoTxtApp
 import app.todotxt.domain.Habit
 import app.todotxt.domain.Task
@@ -271,14 +274,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
     }
 
     private fun refreshWidgets(context: Context) {
-        runCatching {
-            val manager = AppWidgetManager.getInstance(context)
-            val ids = manager.getAppWidgetIds(
-                ComponentName(context, "app.todotxt.widget.HabitsWidgetReceiver"),
-            )
-            context.sendBroadcast(Intent("android.appwidget.action.APPWIDGET_UPDATE").apply {
-                putExtra("appWidgetIds", ids)
-            })
+        // Delegate to the single widget refresh path.
+        CoroutineScope(Dispatchers.Default).launch {
+            app.todotxt.widget.WidgetRefresher.refreshAll(context)
         }
     }
 }

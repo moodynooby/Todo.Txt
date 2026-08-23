@@ -34,15 +34,19 @@ class MainActivity : ComponentActivity() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(NotificationManager::class.java)
+            // Must match ReminderManager.CHANNEL_ID — the channel every
+            // reminder notification actually posts to.
             val channel = NotificationChannel(
-                "todos",
+                "habit_reminders",
                 "Todos & Habits",
                 NotificationManager.IMPORTANCE_HIGH,
             ).apply {
                 description = "Reminders for todos and habit check-ins"
             }
-            val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
+            // Remove the orphaned pre-0.1.2 channel nothing posts to.
+            manager.deleteNotificationChannel("todos")
         }
     }
 }

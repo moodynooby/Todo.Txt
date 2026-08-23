@@ -49,9 +49,6 @@ kotlin {
                 implementation(libs.ktor.client.websockets)
                 implementation(libs.zxing)
 
-                implementation(libs.androidx.lifecycle.viewmodel)
-                implementation(libs.androidx.lifecycle.runtime.compose)
-                implementation(libs.kermit)
                 api(project(":core"))
                 // Tier 2: Tiptap-like rich editor (Excalidraw-like vector tools are
                 // implemented natively in DrawPage — see that file).
@@ -68,7 +65,6 @@ kotlin {
             dependencies {
                 implementation(compose.preview)
                 implementation(libs.androidx.activity.compose)
-                implementation(libs.androidx.work.runtime)
                 implementation(libs.androidx.glance.appwidget)
                 implementation(libs.androidx.glance.material3)
                 implementation(libs.camerax)

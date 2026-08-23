@@ -27,14 +27,15 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import app.todotxt.MainActivity
-import app.todotxt.domain.HabitUtils
+import app.todotxt.core.WidgetData
 import app.todotxt.persistence.Storage
 
 class HabitsWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             val habits by Storage.habits.collectAsState()
-            val activeHabits = habits.filter { !it.archived }
+            val payload = WidgetData.project(tasks = emptyList(), habits = habits)
+            val activeHabits = payload.habits
 
             Column(
                 modifier = GlanceModifier
@@ -56,7 +57,7 @@ class HabitsWidget : GlanceAppWidget() {
                 } else {
                     LazyColumn {
                         items(activeHabits) { habit ->
-                            val streak = HabitUtils.getHabitStreak(habit)
+                            val streak = habit.streak
                             Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp)) {
                                 Text(text = habit.name, modifier = GlanceModifier.defaultWeight())
                                 Text(

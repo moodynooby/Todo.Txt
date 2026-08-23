@@ -48,6 +48,61 @@
         </receiver>
 
         <receiver
+            android:name=".widget.HabitMomentumWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/momentum_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.HabitHeatmapWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/heatmap_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.HabitQuickCheckWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quickcheck_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.HabitStreaksWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/streaks_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.HabitWeekGridWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/weekgrid_widget_info" />
+        </receiver>
+
+        <receiver
             android:name=".service.HabitAlarmReceiver"
             android:exported="false" />
 
@@ -58,7 +113,16 @@
         <receiver
             android:name=".service.NotificationActionReceiver"
             android:exported="false" />
-            <provider
+
+        <receiver
+            android:name=".service.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"

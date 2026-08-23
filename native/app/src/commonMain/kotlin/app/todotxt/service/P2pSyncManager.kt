@@ -36,7 +36,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import app.todotxt.core.Habit
-import app.todotxt.core.HabitColor
+import app.todotxt.core.HabitMerge
 import app.todotxt.persistence.Storage
 import app.todotxt.sync.FirebaseSyncManager
 
@@ -265,24 +265,7 @@ object P2pSyncManager {
     /** Merge remote habits into local storage using LWW + date union */
     private fun mergeHabits(remote: SyncPayload) {
         val local = Storage.habits.value
-        val merged = local.associateBy { it.id }.toMutableMap()
-
-        remote.habits.forEach { remoteHabit ->
-            val localHabit = merged[remoteHabit.id]
-            if (localHabit == null) {
-                merged[remoteHabit.id] = remoteHabit
-            } else {
-                // Union completed dates, use newer updatedAt as base
-                val mergedDates = (localHabit.completedDates + remoteHabit.completedDates).distinct()
-                val base = if (remoteHabit.updatedAt >= localHabit.updatedAt) remoteHabit else localHabit
-                merged[remoteHabit.id] = base.copy(
-                    completedDates = mergedDates,
-                    updatedAt = maxOf(localHabit.updatedAt, remoteHabit.updatedAt)
-                )
-            }
-        }
-
-        Storage.updateHabits { _ -> merged.values.toList() }
+        Storage.updateHabits { _ -> HabitMerge.merge(local, remote.habits) }
     }
 }
 

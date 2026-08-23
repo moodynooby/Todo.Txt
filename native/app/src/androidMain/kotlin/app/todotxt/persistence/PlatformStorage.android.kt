@@ -1,7 +1,6 @@
 package app.todotxt.persistence
 
 import android.content.Context
-import androidx.startup.Initializer
 import java.io.File
 
 /** Android: files stored under the app's private filesDir. */
