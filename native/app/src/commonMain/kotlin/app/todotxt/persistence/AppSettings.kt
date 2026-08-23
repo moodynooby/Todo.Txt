@@ -10,5 +10,4 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
 @Serializable
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val lastUsedVersion: Int = 0,
 )

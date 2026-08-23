@@ -11,63 +11,13 @@ import {
 	Text,
 } from "@mantine/core";
 import { useMemo } from "react";
-import type { ParsedTodoContent, Task } from "@/types/todo";
-import {
-	DependencyGraph,
-	type DependencyGraphNode,
-	parseTaskMetadata,
-} from "@/utils/advancedParser";
+import { buildDependencyReport } from "@/lib/taskDependencies";
+import type { ParsedTodoContent } from "@/types/todo";
 
 interface AdvancedToolsDialogProps {
 	opened: boolean;
 	onClose: () => void;
 	taskData: ParsedTodoContent;
-}
-
-interface DependencyReport {
-	graph: DependencyGraph;
-	nodes: DependencyGraphNode[];
-	cycles: { hasCycle: boolean; cyclePath: string[] };
-	statuses: Map<string, "active" | "blocked" | "completed">;
-	missingReferences: string[];
-}
-
-function buildDependencyReport(tasks: Task[]): DependencyReport {
-	const graph = new DependencyGraph();
-	const nodes: DependencyGraphNode[] = [];
-	const knownIds = new Set<string>();
-
-	for (const task of tasks) {
-		const metadata = parseTaskMetadata(task.raw || task.text);
-		const id = metadata.id ?? `line-${task.id + 1}`;
-		knownIds.add(id);
-		nodes.push({
-			id,
-			taskText: task.text,
-			completed: task.completed,
-			after: metadata.after,
-			blocks: metadata.blocks,
-			status: task.completed ? "completed" : "active",
-		});
-	}
-
-	for (const node of nodes) graph.addNode(node);
-
-	const missingReferences = Array.from(
-		new Set(
-			nodes
-				.flatMap((node) => [...node.after, ...node.blocks])
-				.filter((id) => !knownIds.has(id)),
-		),
-	);
-
-	return {
-		graph,
-		nodes,
-		cycles: graph.detectCycles(),
-		statuses: graph.propagateStatus(),
-		missingReferences,
-	};
 }
 
 export default function AdvancedToolsDialog({

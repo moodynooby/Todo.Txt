@@ -36,7 +36,6 @@ fun main() = application {
         menu = {
             Item("Show Window", onClick = { isOpen = true })
             Separator()
-            Item("Quick Add Todo", onClick = { isOpen = true /* Focus add field logic */ })
             Item("Quit", onClick = ::exitApplication)
         }
     )
@@ -52,9 +51,6 @@ fun main() = application {
                 Menu("File", mnemonic = 'F') {
                     Item("Hide", onClick = { isOpen = false })
                     Item("Quit", onClick = ::exitApplication)
-                }
-                Menu("Help", mnemonic = 'H') {
-                    Item("About T0do.TxT", onClick = {})
                 }
             }
             AppRoot(Modifier.fillMaxSize())

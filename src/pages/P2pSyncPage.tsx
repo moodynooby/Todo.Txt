@@ -1,11 +1,10 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
-// @ts-expect-error — Kotlin/JS compiled module (no TypeScript declarations yet)
-import { mergeHabitsJs } from "@todotxt/core";
 import { ArrowLeft, RefreshCw, Wifi } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHabitsContext } from "@/context/HabitsContext";
 import { useViewContext } from "@/context/ViewContext";
-import type { Habit, HabitColor } from "@/types/habits";
+import { mergeHabits } from "@/lib/core";
+import type { Habit } from "@/types/habits";
 
 /**
  * P2P Sync page for the web app.
@@ -26,41 +25,6 @@ interface SyncPayload {
 	timestamp: number;
 	habits: Habit[];
 }
-
-/* Web stores colors as hex; the Kotlin HabitColor enum serializes by name.
- * Order matches HABIT_COLORS / core HabitColor exactly. */
-const HEX_TO_CORE: Record<HabitColor, string> = {
-	"#2f6f61": "EVERGREEN",
-	"#d9784f": "TERRACOTTA",
-	"#748f6c": "MOSS",
-	"#9f6a4d": "CLAY",
-	"#536d8d": "SLATE",
-	"#9a7fbd": "LILAC",
-};
-
-const CORE_TO_HEX: Record<string, HabitColor> = Object.fromEntries(
-	Object.entries(HEX_TO_CORE).map(([hex, name]) => [name, hex as HabitColor]),
-);
-
-/** Web habit -> JSON the Kotlin decoder accepts (color as enum name). */
-const toCoreHabit = (h: Habit): object => ({
-	...h,
-	color: HEX_TO_CORE[h.color],
-});
-
-/** Core habit JSON -> web habit (color back to hex; keep valid entries only). */
-const fromCoreHabit = (raw: unknown): Habit | null => {
-	if (typeof raw !== "object" || raw === null) return null;
-	const h = raw as Record<string, unknown>;
-	const hex =
-		CORE_TO_HEX[String(h.color)] ??
-		(HABIT_IS_HEX(h.color) ? (h.color as HabitColor) : null);
-	if (!hex || typeof h.id !== "string") return null;
-	return { ...(h as unknown as Habit), color: hex };
-};
-
-const HABIT_IS_HEX = (c: unknown): boolean =>
-	typeof c === "string" && c.startsWith("#");
 
 export default function P2pSyncPage() {
 	const [status, setStatus] = useState<
@@ -94,7 +58,7 @@ export default function P2pSyncPage() {
 					JSON.stringify({
 						deviceId: `web-${Date.now().toString(36)}`,
 						timestamp: Date.now(),
-						habits: habitsRef.current.map(toCoreHabit),
+						habits: habitsRef.current,
 					}),
 				);
 			};
@@ -104,15 +68,13 @@ export default function P2pSyncPage() {
 					const payload: SyncPayload & { habits: unknown[] } = JSON.parse(
 						event.data,
 					);
-					const remoteJson = JSON.stringify(payload.habits);
-					const localJson = JSON.stringify(habitsRef.current.map(toCoreHabit));
-					const merged: unknown[] = JSON.parse(
-						mergeHabitsJs(localJson, remoteJson),
+					const next = mergeHabits(
+						habitsRef.current,
+						payload.habits as Habit[],
 					);
-					const next = merged
-						.map(fromCoreHabit)
-						.filter((h): h is Habit => h !== null);
-					if (next.length === 0) throw new Error("empty merge result");
+					if (next.length === 0 && habitsRef.current.length === 0) {
+						throw new Error("empty merge result");
+					}
 					habitsRef.current = next;
 					dispatchHabits({ type: "SET_HABITS", payload: next });
 				} catch (e) {

@@ -11,11 +11,10 @@ import type { Editor as TipTapEditor } from "@tiptap/core";
 import { CalendarClock, Repeat2 } from "lucide-react";
 import { useState } from "react";
 import {
-	parseRecurringScheduleExpression,
-	parseRelativeDateExpression,
+	parseSchedulingPhrase,
 	parseTaskMetadata,
 	type RecurrenceRule,
-} from "@/utils/advancedParser";
+} from "@/lib/core";
 
 interface SmartSuggestionChipsProps {
 	editor: TipTapEditor;
@@ -32,7 +31,7 @@ type Preview =
 	| {
 			kind: "relative";
 			value: string;
-			date: Date;
+			date: string;
 	  }
 	| {
 			kind: "recurrence";
@@ -100,16 +99,15 @@ function insertSuggestion(editor: TipTapEditor, value: string) {
 }
 
 function parseSuggestion(value: string): Preview {
-	const relative = parseRelativeDateExpression(value);
-	if (relative) {
-		return { kind: "relative", value, date: relative.date };
+	const phrase = parseSchedulingPhrase(value);
+	if (phrase.kind === "relative") {
+		return { kind: "relative", value, date: phrase.date };
+	}
+	if (phrase.kind === "recurrence") {
+		return { kind: "recurrence", value, rule: phrase.rule };
 	}
 
-	const recurring = parseRecurringScheduleExpression(value);
-	if (recurring) {
-		return { kind: "recurrence", value, rule: recurring.rule };
-	}
-
+	// Bare modes like `rec:workdays` are metadata, not full phrases.
 	const metadata = parseTaskMetadata(value);
 	if (metadata.recurrence) {
 		return {
@@ -122,17 +120,17 @@ function parseSuggestion(value: string): Preview {
 	return {
 		kind: "error",
 		value,
-		message: "This shortcut could not be parsed.",
+		message: phrase.message,
 	};
 }
 
-function formatDate(date: Date) {
+function formatDate(date: string) {
 	return new Intl.DateTimeFormat(undefined, {
 		weekday: "short",
 		year: "numeric",
 		month: "short",
 		day: "numeric",
-	}).format(date);
+	}).format(new Date(`${date}T00:00:00`));
 }
 
 function formatOrdinal(value: number) {

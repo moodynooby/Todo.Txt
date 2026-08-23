@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -48,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.todotxt.persistence.Storage
 import app.todotxt.persistence.ThemeMode
-import app.todotxt.platform.initFullscreenHost
 import app.todotxt.theme.FieldNotesTheme
 import app.todotxt.ui.ai.AiPage
 import app.todotxt.ui.draw.DrawPage
@@ -96,7 +96,6 @@ private val secondaryWorkspaces = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppRoot(modifier: Modifier = Modifier) {
-    initFullscreenHost()
     val settings by Storage.settings.collectAsState()
     val darkTheme = when (settings.themeMode) {
         ThemeMode.LIGHT -> false
@@ -272,7 +271,7 @@ private fun MobileNavigationBar(
             onClick = onMore,
             icon = {
                 Icon(
-                    NativeActionIcons.More,
+                    Icons.Filled.MoreVert,
                     contentDescription = "More tools",
                     modifier = Modifier.size(24.dp),
                 )

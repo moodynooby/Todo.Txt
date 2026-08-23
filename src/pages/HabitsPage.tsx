@@ -40,15 +40,19 @@ import type React from "react";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { useHabitsContext } from "@/context/HabitsContext";
+import { getCompletionRate, getHabitStreak } from "@/lib/core";
 import { showUndoToast } from "@/lib/undoToast";
-import { HABIT_COLORS, type HabitColor, type HabitDraft } from "@/types/habits";
 import {
-	formatLocalDate,
-	getCompletionRate,
-	getHabitStreak,
-	getLastDays,
-	isHabitCompleteOn,
-} from "@/utils/habitUtils";
+	HABIT_COLORS,
+	type Habit,
+	type HabitColor,
+	type HabitDraft,
+} from "@/types/habits";
+import { formatLocalDate, getLastDays } from "@/utils/dateUtils";
+
+/** A habit is complete on an ISO date when the date is in its history. */
+const isHabitCompleteOn = (habit: Habit, date: string): boolean =>
+	habit.completedDates.includes(date);
 
 const defaultDraft: HabitDraft = {
 	name: "",

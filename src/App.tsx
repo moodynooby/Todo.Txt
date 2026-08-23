@@ -28,6 +28,7 @@ import { useViewContext, ViewProvider } from "@/context/ViewContext";
 import AiToolsDialog from "@/features/ai/AiToolsDialog";
 import Timer from "@/features/timer/Timer";
 import { useDueReminders } from "@/hooks/useDueReminders";
+import { parseTodoContent } from "@/lib/core";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
 import { readHabitsBackup } from "@/lib/habitsBackup";
 import HabitsPage from "@/pages/HabitsPage";
@@ -35,7 +36,6 @@ import NotesPage from "@/pages/NotesPage";
 import TodoPage from "@/pages/TodoPage";
 import type { ExcalidrawData } from "@/types/sync";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
-import { parseTodoContent } from "@/utils/todoParser";
 
 /* Lazy-loaded because its @todotxt/core dependency would otherwise push
  * the index chunk past workbox's 2 MiB PWA precache limit. */

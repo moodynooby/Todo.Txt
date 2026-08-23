@@ -54,15 +54,7 @@ object BackupManager {
     }
 
     fun createNow(reason: String = "manual") {
-        val snapshot = BackupSnapshot(
-            savedAt = System.currentTimeMillis(),
-            content = Storage.content.value,
-            notes = Storage.notes.value,
-            habits = Storage.habits.value,
-            timers = Storage.timers.value,
-            settings = Storage.settings.value,
-            drawings = Storage.drawings.value,
-        )
+        val snapshot = captureLocal()
         val snapshotPayload = json.encodeToString(snapshot)
         val envelope = BackupEnvelope(
             version = BACKUP_VERSION,
@@ -96,15 +88,7 @@ object BackupManager {
     fun hasValidBackup(): Boolean = (0 until SLOT_COUNT).any { readEnvelope(it) != null }
 
     fun exportPortablePayload(): String {
-        val snapshot = BackupSnapshot(
-            savedAt = System.currentTimeMillis(),
-            content = Storage.content.value,
-            notes = Storage.notes.value,
-            habits = Storage.habits.value,
-            timers = Storage.timers.value,
-            settings = Storage.settings.value,
-            drawings = Storage.drawings.value,
-        )
+        val snapshot = captureLocal()
         return json.encodeToString(
             PortableBackupDocument(
                 version = BACKUP_VERSION,
@@ -126,6 +110,25 @@ object BackupManager {
     internal fun setPortableStatus(status: PortableBackupStatus) {
         _portableStatus.value = status
     }
+
+    /**
+     * Capture every persisted workspace into the shared snapshot bag. This is
+     * the single construction point for full-app snapshots — cloud sync and
+     * local/portable backups stamp their own timestamp field on top.
+     */
+    fun capture(savedAt: Long = 0L, updatedAt: Long = 0L): FullSnapshot = FullSnapshot(
+        savedAt = savedAt,
+        updatedAt = updatedAt,
+        content = Storage.content.value,
+        notes = Storage.notes.value,
+        habits = Storage.habits.value,
+        timers = Storage.timers.value,
+        settings = Storage.settings.value,
+        drawings = Storage.drawings.value,
+    )
+
+    /** Local-backup flavor: stamps [FullSnapshot.savedAt]. */
+    fun captureLocal(): FullSnapshot = capture(savedAt = System.currentTimeMillis())
 
     private fun readEnvelope(slot: Int): BackupEnvelope? = runCatching {
         val raw = PlatformStorage.readString(slotName(slot))?.takeIf { it.isNotBlank() }
@@ -150,9 +153,20 @@ object BackupManager {
     }
 }
 
+/**
+ * Every workspace in one serializable bag — the payload of local rotating
+ * backups, portable backups, and Firestore cloud snapshots alike (the former
+ * `BackupSnapshot` / private `SyncSnapshot` pair merged).
+ *
+ * Timestamp compat: cloud snapshots historically serialize `updatedAt`,
+ * backup files `savedAt`. Both remain — exactly one is meaningful per
+ * producer, the other decodes as 0 — so payloads written by older releases
+ * keep parsing on either wire.
+ */
 @Serializable
-data class BackupSnapshot(
-    val savedAt: Long,
+data class FullSnapshot(
+    val savedAt: Long = 0L,
+    val updatedAt: Long = 0L,
     val content: String,
     val notes: List<Note> = emptyList(),
     val habits: List<Habit> = emptyList(),
@@ -165,7 +179,7 @@ data class BackupSnapshot(
 data class PortableBackupDocument(
     val version: Int,
     val exportedAt: Long,
-    val snapshot: BackupSnapshot,
+    val snapshot: FullSnapshot,
 )
 
 sealed interface PortableBackupStatus {
@@ -182,5 +196,5 @@ private data class BackupEnvelope(
     val savedAt: Long,
     val reason: String,
     val checksum: String,
-    val snapshot: BackupSnapshot,
+    val snapshot: FullSnapshot,
 )

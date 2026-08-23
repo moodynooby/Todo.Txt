@@ -4,12 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NoteAlt
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Icon
@@ -72,16 +68,4 @@ fun WorkspaceDestinationIcon(workspace: Workspace, size: Dp = 26.dp) {
         }
         Icon(icon, contentDescription = workspace.title, modifier = Modifier.size(size))
     }
-}
-
-object NativeActionIcons {
-    val Tasks = Icons.Filled.Checklist
-    val Habits = Icons.Filled.CalendarMonth
-    val Notes = Icons.Filled.NoteAlt
-    val Draw = Icons.Filled.Draw
-    val Timer = Icons.Filled.Timer
-    val Ai = Icons.Filled.AutoAwesome
-    val Sync = Icons.Filled.Sync
-    val ScanQr = Icons.Filled.QrCodeScanner
-    val More = Icons.Filled.MoreVert
 }

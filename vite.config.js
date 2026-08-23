@@ -89,6 +89,20 @@ export default defineConfig({
 		assetsDir: "assets",
 		emptyOutDir: true,
 		cssCodeSplit: true,
+		rollupOptions: {
+			output: {
+				// The Kotlin/JS core bundle (~1 MB) is now used by the main app
+				// (parsing, streaks), not just the lazy sync page. Keep it in its
+				// own chunk so neither it nor index crosses workbox's 2 MiB
+				// per-file precache limit.
+				manualChunks(id) {
+					if (id.replaceAll("\\", "/").includes("/@todotxt/")) {
+						return "todotxt-core";
+					}
+					return undefined;
+				},
+			},
+		},
 	},
 	preview: {
 		port: 4173,

@@ -22,3 +22,15 @@ export const getYesterday = (now: Date = new Date()): string => {
 	d.setDate(d.getDate() - 1);
 	return formatDate(d);
 };
+
+/** A Date as device-local `YYYY-MM-DD` (same authoring convention as getToday). */
+export const formatLocalDate = (date: Date): string => formatDate(date);
+
+/** The last [count] local dates ending today, oldest first, midnight-clamped. */
+export const getLastDays = (count: number): Date[] =>
+	Array.from({ length: count }, (_, index) => {
+		const date = new Date();
+		date.setHours(0, 0, 0, 0);
+		date.setDate(date.getDate() - (count - 1 - index));
+		return date;
+	});

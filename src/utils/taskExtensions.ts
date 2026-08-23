@@ -7,9 +7,9 @@ import {
 	type Transaction,
 } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
+import { parseTodoLine } from "@/lib/core";
 import type { Filter } from "@/types/todo";
 import { getToday } from "./dateUtils";
-import { parseTodoLine } from "./todoParser";
 
 export interface TaskFilterStorage {
 	activeFilter: Filter | null;
@@ -114,6 +114,37 @@ interface TaskTaggingOptions {
 	onFilterClick?: (type: string, value: string) => void;
 }
 
+/**
+ * Absolute [start, end] spans of every guarded occurrence of a literal
+ * `+token` / `@token`. The token itself was extracted by the core parser;
+ * the left/right boundary guards here mirror its lookbehind and greedy
+ * `[\\w.-]*` tail so glued text (`me@work.com`, `a+project`) and prefixes
+ * (`@work` inside `@worker`) never highlight.
+ */
+function pushTokenSpans(
+	text: string,
+	blockPos: number,
+	token: string,
+): Array<[number, number]> {
+	const forbiddenBefore = token.startsWith("@") ? /[\w.]/ : /\w/;
+	const forbiddenAfter = /[\w.-]/;
+	const spans: Array<[number, number]> = [];
+	let cursor = text.indexOf(token);
+	while (cursor >= 0) {
+		const before = cursor > 0 ? text[cursor - 1] : "";
+		const afterIndex = cursor + token.length;
+		const after = afterIndex < text.length ? text[afterIndex] : "";
+		if (
+			(!before || !forbiddenBefore.test(before)) &&
+			(!after || !forbiddenAfter.test(after))
+		) {
+			spans.push([blockPos + cursor, blockPos + afterIndex]);
+		}
+		cursor = text.indexOf(token, cursor + 1);
+	}
+	return spans;
+}
+
 export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 	name: "taskTagging",
 
@@ -138,86 +169,91 @@ export const TaskTaggingExtension = Extension.create<TaskTaggingOptions>({
 								const text = node.text || "";
 								const blockPos = pos;
 
-								const projectRegex = /\+([\w-]+)/g;
-								let match = projectRegex.exec(text);
-								while (match !== null) {
-									const start = blockPos + match.index;
-									const end = start + match[0].length;
-									decos.push(
-										Decoration.inline(start, end, {
-											class: "tag-interactive tag-project",
-											"data-filter-type": "project",
-											"data-filter-value": match[1],
-										}),
+								// Tokens come from the shared core parser, so the chips can
+								// never drift from what the app actually treats as a token
+								// (letter-first projects/contexts, `due:+7d`, `T`-times…).
+								// Only the SPANS are located here, by literal search for
+								// the exact tokens the parser returned.
+								const task = parseTodoLine(text);
+
+								for (const project of task.projects ?? []) {
+									pushTokenSpans(text, blockPos, `+${project}`).forEach(
+										([start, end]) => {
+											decos.push(
+												Decoration.inline(start, end, {
+													class: "tag-interactive tag-project",
+													"data-filter-type": "project",
+													"data-filter-value": project,
+												}),
+											);
+										},
 									);
-									match = projectRegex.exec(text);
 								}
 
-								const contextRegex = /@([\w-]+)/g;
-								match = contextRegex.exec(text);
-								while (match !== null) {
-									const start = blockPos + match.index;
-									const end = start + match[0].length;
-									decos.push(
-										Decoration.inline(start, end, {
-											class: "tag-interactive tag-context",
-											"data-filter-type": "context",
-											"data-filter-value": match[1],
-										}),
+								for (const context of task.contexts ?? []) {
+									pushTokenSpans(text, blockPos, `@${context}`).forEach(
+										([start, end]) => {
+											decos.push(
+												Decoration.inline(start, end, {
+													class: "tag-interactive tag-context",
+													"data-filter-type": "context",
+													"data-filter-value": context,
+												}),
+											);
+										},
 									);
-									match = contextRegex.exec(text);
 								}
 
-								const priorityRegex = /\(([A-Z])\)/g;
-								match = priorityRegex.exec(text);
-								while (match !== null) {
-									const start = blockPos + match.index;
-									const end = start + match[0].length;
-									const priority = match[1];
-									decos.push(
-										Decoration.inline(start, end, {
-											class: `tag-interactive tag-priority tag-priority-${priority}`,
-											"data-filter-type": "priority",
-											"data-filter-value": priority,
-										}),
-									);
-									match = priorityRegex.exec(text);
-								}
-
-								/* `due:` with an optional clock-time suffix
-								 * (@HH:MM / THH:MM) — decoration covers the whole
-								 * token so the time reads as part of the chip. */
-								const dueRegex =
-									/due:([\w-]+(?:[@tT]\d{1,2}:\d{2}(?::\d{2})?))?/g;
-								match = dueRegex.exec(text);
-								while (match !== null) {
-									const start = blockPos + match.index;
-									const end = start + match[0].length;
-									const value = match[1].toLowerCase();
-
-									// Strip the time suffix for filter value so
-									// clicking the chip filters by the date bucket
-									const base = value.replace(
-										/[@tT]\d{1,2}:\d{2}(?::\d{2})?$/,
-										"",
-									);
-									const hasTime = base !== value;
-
-									let isOverdue = false;
-									if (base !== "today" && base !== "tomorrow") {
-										if (/^\d{4}-\d{2}-\d{2}$/.test(base)) {
-											isOverdue = base < today;
-										}
+								if (task.priority) {
+									const prioritySpan = text.indexOf(`(${task.priority})`);
+									if (prioritySpan >= 0) {
+										decos.push(
+											Decoration.inline(
+												blockPos + prioritySpan,
+												blockPos + prioritySpan + task.priority.length + 2,
+												{
+													class: `tag-interactive tag-priority tag-priority-${task.priority}`,
+													"data-filter-type": "priority",
+													"data-filter-value": task.priority,
+												},
+											),
+										);
 									}
+								}
 
-									decos.push(
-										Decoration.inline(start, end, {
-											class: `tag-interactive tag-due${isOverdue ? " tag-due-overdue" : ""}${hasTime ? " tag-due-timed" : ""}`,
-											"data-filter-type": "due",
-											"data-filter-value": base || "today",
-										}),
-									);
-									match = dueRegex.exec(text);
+								if (task.due) {
+									// Decorate the whole `due:…` token up to whitespace; the
+									// parser already validated the value inside it.
+									let cursor = text.indexOf("due:");
+									while (cursor >= 0) {
+										let end = cursor;
+										while (end < text.length && !/\s/.test(text[end])) {
+											end++;
+										}
+										if (end > cursor) {
+											const token = text.slice(cursor, end);
+											const base = token
+												.slice(4)
+												.replace(/[@tT]\d{1,2}:\d{2}(?::\d{2})?$/, "");
+											const hasTime = base !== token.slice(4);
+
+											let isOverdue = false;
+											if (base !== "today" && base !== "tomorrow") {
+												if (/^\d{4}-\d{2}-\d{2}$/.test(base)) {
+													isOverdue = base < today;
+												}
+											}
+
+											decos.push(
+												Decoration.inline(blockPos + cursor, blockPos + end, {
+													class: `tag-interactive tag-due${isOverdue ? " tag-due-overdue" : ""}${hasTime ? " tag-due-timed" : ""}`,
+													"data-filter-type": "due",
+													"data-filter-value": base.toLowerCase() || "today",
+												}),
+											);
+										}
+										cursor = text.indexOf("due:", cursor + 1);
+									}
 								}
 							}
 						});

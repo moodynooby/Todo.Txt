@@ -10,15 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import app.todotxt.domain.TimerState
 import app.todotxt.domain.IdUtils
+import app.todotxt.domain.TimerState
 import app.todotxt.persistence.Storage
 import app.todotxt.platform.playBeep
+import app.todotxt.ui.PageHeader
 import kotlinx.coroutines.delay
-import kotlin.math.floor
 
 @Composable
 fun TimerPage() {
@@ -28,16 +27,7 @@ fun TimerPage() {
     var durationDraft by remember { mutableStateOf("25") }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Timers",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-            )
+        PageHeader("Timers", modifier = Modifier.padding(bottom = 16.dp)) {
             IconButton(onClick = { showCreate = !showCreate }) {
                 Icon(if (showCreate) Icons.Filled.Close else Icons.Filled.Add, contentDescription = "Add Timer")
             }

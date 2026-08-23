@@ -173,7 +173,7 @@ object Storage {
         BackupManager.schedule("drawings")
     }
 
-    internal fun restoreFromBackup(snapshot: BackupSnapshot) {
+    internal fun restoreFromBackup(snapshot: FullSnapshot) {
         _content.value = snapshot.content
         _notes.value = snapshot.notes
         _habits.value = snapshot.habits

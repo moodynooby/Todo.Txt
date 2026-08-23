@@ -1,12 +1,11 @@
 package app.todotxt.ui.draw
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.border
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,10 +14,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Redo
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -46,21 +50,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Redo
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Undo
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
-
 import app.todotxt.domain.Drawing
 import app.todotxt.domain.DrawingPoint
 import app.todotxt.domain.DrawingStroke
 import app.todotxt.persistence.Storage
+import app.todotxt.ui.PageHeader
 
 /** Tool modes for the Excalidraw-style vector whiteboard. */
 enum class DrawTool { PEN, LINE, RECT, CIRCLE, TRIANGLE, ARROW }
@@ -129,12 +124,7 @@ fun DrawPage() {
     )
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text(
-            "Draw",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
+        PageHeader("Draw", modifier = Modifier.padding(bottom = 8.dp))
 
         // On mobile, drawing tools collapse into one labeled selector so the action row never clips.
         Row(

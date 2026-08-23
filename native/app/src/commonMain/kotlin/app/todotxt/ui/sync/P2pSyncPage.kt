@@ -2,6 +2,7 @@ package app.todotxt.ui.sync
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,11 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,20 +31,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import app.todotxt.persistence.BackupManager
-import app.todotxt.persistence.PortableBackup
-import app.todotxt.persistence.PortableBackupStatus
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.todotxt.persistence.BackupManager
+import app.todotxt.persistence.PortableBackup
+import app.todotxt.persistence.PortableBackupStatus
 import app.todotxt.service.P2pSyncManager
 import app.todotxt.service.PlatformDeviceId
-import androidx.compose.foundation.layout.Box
+import app.todotxt.ui.PageHeader
 
 /**
  * P2P Sync page — QR-based pairing + continuous WebSocket sync.
@@ -85,18 +85,13 @@ fun P2pSyncPage(
         verticalArrangement = Arrangement.Top
     ) {
         // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Filled.FavoriteBorder, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "P2P Sync",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        PageHeader(
+            title = "P2P Sync",
+            leading = {
+                Icon(Icons.Filled.FavoriteBorder, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+            },
+        )
 
         Spacer(Modifier.height(8.dp))
         Text(

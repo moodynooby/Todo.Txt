@@ -14,7 +14,7 @@ import {
 	TODO_DOC,
 } from "@/lib/syncPaths";
 import { readTodoBackup, writeTodoBackup } from "@/lib/todoBackup";
-import { useSyncedDocument } from "@/lib/useSyncedDocument";
+import { type AnyRecord, useSyncedDocument } from "@/lib/useSyncedDocument";
 import type { Habit } from "@/types/habits";
 import type { Note } from "@/types/notes";
 import type { ExcalidrawData } from "@/types/sync";
@@ -22,22 +22,106 @@ import type { ExcalidrawData } from "@/types/sync";
 /**
  * Feature adapters — the ONLY place where features meet the sync engine.
  *
- * Each adapter is a plain component/hook call that maps local state to the
- * generic `useSyncedDocument` primitive. Syncing a NEW feature (habits, ...)
- * means writing one block like the ones below — no touch to the engine, the
+ * Each adapter maps local state onto the generic `useSyncedDocument`
+ * primitive through a per-document CODEC. Syncing a NEW feature means
+ * writing one codec plus one hook call below — no touch to the engine, the
  * provider, or any other feature.
  */
 
-/** Todo document: local-first string sync (`todos/main`).
+/**
+ * Wire shape + normalization rules for one synced document.
  *
- *  Fix F1: the todo workspace was never registered with the sync engine —
- *  notes, habits, timers, excalidraw, and settings synced, but the product's
- *  namesake feature persisted only in React memory, and the one-time
- *  migration deleted its local backup. This adapter mirrors the notes
- *  pattern: localStorage backup on every change (via the shared `localKey`
- *  mechanism plus the canonical `todoBackup` reader) and a debounced
- *  content write through the single shared queue.
+ * Both consumers of a document's cloud form go through the same codec: the
+ * live-sync adapter (decode/afterRead/encode options) and startup
+ * reconciliation in `SyncContext.connect()` — so a pulled snapshot can never
+ * reach feature state by rules different from the ones live updates follow.
  */
+export interface SyncCodec<T> {
+	/** Firestore field carrying this document's value. */
+	valueKey: string;
+	/** Firestore fields -> local value. `undefined` = leave local state alone
+	 *  (never apply a malformed payload over good local data). */
+	decode: (record: AnyRecord) => T | undefined;
+	/** Local value -> Firestore fields. */
+	encode: (value: T) => AnyRecord;
+	/** Repair legacy/partial payloads right after decoding. */
+	afterRead?: (value: T) => T;
+}
+
+export const TODO_CODEC: SyncCodec<string> = {
+	valueKey: "content",
+	decode: (r) => (typeof r.content === "string" ? r.content : undefined),
+	encode: (content) => ({ content }),
+};
+
+export const NOTES_CODEC: SyncCodec<Note[]> = {
+	valueKey: "value",
+	decode: (r) => (Array.isArray(r.value) ? (r.value as Note[]) : undefined),
+	encode: (notes) => ({ value: notes }),
+};
+
+export const TIMERS_CODEC: SyncCodec<TimerState[]> = {
+	valueKey: "value",
+	// Timers arriving from another device are force-reset to idle so a frozen
+	// stopwatch can never be resumed on a different machine (per-device
+	// runtime state).
+	decode: (r) =>
+		Array.isArray(r.value) ? (r.value as TimerState[]) : undefined,
+	encode: (timers) => ({ value: timers }),
+	afterRead: (timers) =>
+		timers.map((t) => ({ ...t, isActive: false, startTime: null })),
+};
+
+export const HABITS_CODEC: SyncCodec<Habit[]> = {
+	valueKey: "habits",
+	decode: (r) =>
+		Array.isArray(r.habits) ? (r.habits as unknown as Habit[]) : undefined,
+	encode: (habits) => ({ habits }),
+	// The habits UI assumes `completedDates` is a string array and `archived`
+	// is a boolean — drop malformed entries and repair partial ones here so
+	// neither the live path nor reconciliation can crash the view.
+	afterRead: (habits) =>
+		habits
+			.filter(
+				(h): h is Habit =>
+					Boolean(h) && typeof h === "object" && typeof h.id === "string",
+			)
+			.map((habit) => ({
+				...habit,
+				completedDates: Array.isArray(habit.completedDates)
+					? habit.completedDates.filter(
+							(d): d is string => typeof d === "string",
+						)
+					: [],
+				archived: Boolean(habit.archived),
+			})),
+};
+
+export const EXCALIDRAW_CODEC: SyncCodec<ExcalidrawData | null> = {
+	valueKey: "data",
+	decode: (r) =>
+		"data" in r ? (r.data as ExcalidrawData | null | undefined) : undefined,
+	encode: (data) => ({ data }),
+};
+
+export const GROQ_CODEC: SyncCodec<string> = {
+	valueKey: "apiKey",
+	decode: (r) => ("apiKey" in r ? (r.apiKey as string | undefined) : undefined),
+	encode: (apiKey) => ({ apiKey }),
+};
+
+/** Run a raw cloud FIELD value (the shape startup reconciliation sees)
+ *  through a codec's full decode + afterRead chain. */
+export function normalizeFieldValue<T>(
+	codec: SyncCodec<T>,
+	raw: unknown,
+): T | undefined {
+	const decoded = codec.decode({ [codec.valueKey]: raw });
+	if (decoded === undefined) return undefined;
+	return codec.afterRead ? codec.afterRead(decoded) : decoded;
+}
+
+/** Todo document: local-first string sync (`todos/main`). */
 export function useSyncedTodo(): void {
 	const { state, dispatchTodo } = useTodoContext();
 	useSyncedDocument<string>({
@@ -48,19 +132,15 @@ export function useSyncedTodo(): void {
 				type: "SET_CONTENT",
 				payload: { content, timestamp: Date.now() },
 			}),
-		// Fix (regression): the adapter previously relied on the engine's
-		// default `localKey` mirror, which wrote `{ data, updatedAt }` — but
-		// the todo backup reader expects `{ content, updatedAt }`. After the
-		// first local edit the backup became unreadable, so a reload lost the
-		// editor content (and on some paths rendered the raw stored JSON).
-		// An explicit mirror keeps the shape identical to `todoBackup.ts`.
+		// The explicit mirror keeps the backup shape identical to
+		// `todoBackup.ts`; the engine default would write `{ data }`.
 		mirror: (content, syncedAt) =>
 			writeTodoBackup(
 				content,
 				typeof syncedAt === "number" ? syncedAt : undefined,
 			),
-		decode: (record) =>
-			typeof record.content === "string" ? record.content : undefined,
+		encode: TODO_CODEC.encode,
+		decode: TODO_CODEC.decode,
 	});
 }
 
@@ -81,16 +161,13 @@ export function useSyncedNotes(): void {
 		// now invoked on every change through the engine's mirror hook, so the
 		// offline startup seed is always current.
 		mirror: (notes) => writeNotesBackup(notes),
-		decode: (r) => (Array.isArray(r.value) ? (r.value as Note[]) : undefined),
+		encode: NOTES_CODEC.encode,
+		decode: NOTES_CODEC.decode,
 	});
 }
 
-/** Timers: idle-snapshot sync (`timers/main`).
- *
- *  - `beforeWrite`: running timers are dropped — runtime state is per-device.
- *  - `afterRead`: timers arriving from another device are force-reset to idle
- *    so a frozen stopwatch can never be resumed on a different machine.
- */
+/** Timers: idle-snapshot sync (`timers/main`). Running timers are dropped
+ *  on write — see TIMERS_CODEC.afterRead for the read-side reset. */
 export function useSyncedTimers(): void {
 	const { state, dispatchTimer } = useTimerContext();
 	useSyncedDocument<TimerState[]>({
@@ -99,8 +176,9 @@ export function useSyncedTimers(): void {
 		applyRemote: (timers) =>
 			dispatchTimer({ type: "SET_TIMERS", payload: timers }),
 		beforeWrite: (timers) => timers.filter((t) => !t.isActive && !t.startTime),
-		afterRead: (timers) =>
-			timers.map((t) => ({ ...t, isActive: false, startTime: null })),
+		encode: TIMERS_CODEC.encode,
+		decode: TIMERS_CODEC.decode,
+		afterRead: TIMERS_CODEC.afterRead,
 	});
 }
 
@@ -115,19 +193,9 @@ export function useSyncedHabits(): void {
 		// Fix F1 (habits leg): habits had a backup reader but no writer path
 		// at all; the mirror hook keeps the offline seed current on change.
 		mirror: (habits) => writeHabitsBackup(habits),
-		encode: (habits) => ({ habits }),
-		decode: (record) =>
-			Array.isArray(record.habits)
-				? (record.habits as unknown as Habit[])
-				: undefined,
-		afterRead: (habits) =>
-			habits.map((habit) => ({
-				...habit,
-				completedDates: Array.isArray(habit.completedDates)
-					? habit.completedDates
-					: [],
-				archived: Boolean(habit.archived),
-			})),
+		encode: HABITS_CODEC.encode,
+		decode: HABITS_CODEC.decode,
+		afterRead: HABITS_CODEC.afterRead,
 	});
 }
 
@@ -140,9 +208,8 @@ export function useSyncedExcalidraw(
 		path: EXCALIDRAW_DOC,
 		value: data,
 		applyRemote: onChange,
-		encode: (v) => ({ data: v }),
-		decode: (r) =>
-			"data" in r ? (r.data as ExcalidrawData | null | undefined) : undefined,
+		encode: EXCALIDRAW_CODEC.encode,
+		decode: EXCALIDRAW_CODEC.decode,
 	});
 }
 
@@ -154,9 +221,8 @@ export function useSyncedGroqApiKey(
 		path: GROQ_SETTINGS_DOC,
 		value: key,
 		applyRemote: onChange,
-		encode: (v) => ({ apiKey: v }),
-		decode: (r) =>
-			"apiKey" in r ? (r.apiKey as string | undefined) : undefined,
+		encode: GROQ_CODEC.encode,
+		decode: GROQ_CODEC.decode,
 	});
 }
 

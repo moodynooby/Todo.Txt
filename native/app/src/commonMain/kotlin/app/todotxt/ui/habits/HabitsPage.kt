@@ -1,24 +1,32 @@
 package app.todotxt.ui.habits
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -29,7 +37,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,29 +47,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Unarchive
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.TextButton
-import app.todotxt.service.AlarmPermissionManager
 import app.todotxt.domain.Habit
 import app.todotxt.domain.HabitColor
 import app.todotxt.domain.HabitUtils
 import app.todotxt.domain.IdUtils
 import app.todotxt.persistence.Storage
 import app.todotxt.persistence.exportTodoDocument
+import app.todotxt.service.AlarmPermissionManager
+import app.todotxt.ui.ColorSwatchRow
+import app.todotxt.ui.ConfirmDialog
+import app.todotxt.ui.PageHeader
+import app.todotxt.ui.SearchField
 
 /** Habits workspace — Field Notes Ritual daily check-ins. */
 @Composable
@@ -76,12 +71,7 @@ fun HabitsPage(habits: List<Habit>) {
     val alarmPermission = AlarmPermissionManager.rememberPermissionStatus()
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text(
-            "Habits",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
+        PageHeader("Habits", modifier = Modifier.padding(bottom = 8.dp))
 
         // Exact-alarm permission guide (web parity: ExactAlarmPermission.tsx).
         if (AlarmPermissionManager.requiresExactAlarmGrant() && !alarmPermission.value) {
@@ -120,19 +110,10 @@ fun HabitsPage(habits: List<Habit>) {
                 .padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            OutlinedTextField(
+            SearchField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search habits…") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Filled.Clear, contentDescription = "Clear search")
-                        }
-                    }
-                },
-                singleLine = true,
+                placeholder = "Search habits…",
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { exportMenuOpen = true }) {
@@ -358,23 +339,16 @@ private fun HabitCard(
     }
 
     if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete habit?") },
-            text = { Text("This removes the habit and its history. This action cannot be undone.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        Storage.updateHabits { list -> list.filter { it.id != habit.id } }
-                        confirmDelete = false
-                    },
-                ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
+        ConfirmDialog(
+            title = "Delete habit?",
+            text = "This removes the habit and its history. This action cannot be undone.",
+            confirmLabel = "Delete",
+            destructive = true,
+            onConfirm = {
+                Storage.updateHabits { list -> list.filter { it.id != habit.id } }
+                confirmDelete = false
             },
-            dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
-            },
+            onDismiss = { confirmDelete = false },
         )
     }
 }
@@ -398,26 +372,12 @@ private fun EditHabitDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    HabitColor.entries.forEach { c ->
-                        val swatch = Color(c.red, c.green, c.blue)
-                        Box(
-                            Modifier
-                                .size(26.dp)
-                                .clip(CircleShape)
-                                .background(swatch)
-                                .clickable { color = c },
-                        )
-                        if (c == color) {
-                            Box(
-                                Modifier
-                                    .size(30.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onSurface),
-                            )
-                        }
-                    }
-                }
+                ColorSwatchRow(
+                    colors = HabitColor.entries.map { Color(it.red, it.green, it.blue) },
+                    selectedIndex = HabitColor.entries.indexOf(color),
+                    onSelect = { color = HabitColor.entries[it] },
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             }
         },
         confirmButton = {

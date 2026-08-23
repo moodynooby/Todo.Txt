@@ -95,7 +95,10 @@ object SchedulingParser {
         RegexOption.IGNORE_CASE,
     )
 
-    private fun parseRecurringScheduleExpression(text: String): RecurrenceRule? {
+    private fun parseRecurringScheduleExpression(text: String): RecurrenceRule? =
+        parseRecurringScheduleExpressionInternal(text)
+
+    internal fun parseRecurringScheduleExpressionInternal(text: String): RecurrenceRule? {
         val match = RE_RECURRENCE.find(text.trim()) ?: return null
         val schedulePart = match.groupValues[1].trim()
         val timePart = match.groupValues[2].takeIf { it.isNotBlank() }

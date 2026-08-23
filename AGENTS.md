@@ -6,7 +6,7 @@ This repo ships **three surfaces** on `main`, all sharing one core:
 2. **Web app** (repo root — `src/`, `package.json`) — browser/PWA; also embeddable in the Tauri shell below. React 19 + Vite + TypeScript, Mantine 9 UI, TipTap 3 editor (Markdown ext), Excalidraw drawing, Firebase Auth + Firestore sync, GROQ AI (`@ai-sdk/groq`), PWA via vite-plugin-pwa.
 3. **Tauri shell (`src-tauri/`)** — optional Rust wrapper around the same web UI for desktop + an Android build (`tauri android`), with its own RemoteViews widget stack (Todo/Momentum/Streaks/Heatmap/Week-Grid) fed by the shared `WidgetData` JSON contract. Not built by default; no `@tauri-apps/*` npm deps are installed (add them back only when building this target).
 
-**Shared core (`native/core/`)**: a KMP module with JVM + JS/IR targets — habit merge (`HabitMerge`), streaks/heatmap math (`HabitUtils`), scheduling parsing, and the shared widget projection (`WidgetData`, consumed by BOTH Android widget stacks: native Glance widgets and the Tauri shell's RemoteViews providers). The web app consumes the Kotlin/JS bundle as a local dependency (`file:native/core/npm-package`). The bundle IS committed to git (Netlify has no Gradle toolchain and never regenerates it): after changing core code run `cd native && ./rebuild-npm-package.sh` and commit the regenerated `native/core/npm-package/` files.
+**Shared core (`native/core/`)**: a KMP module with JVM + JS/IR targets — todo.txt parsing (`TodoParser`), habit merge (`HabitMerge`), streaks/heatmap math (`HabitUtils`), scheduling + dependency-metadata grammar (`SchedulingParser`, `TaskMetadataParser`), and the shared widget projection (`WidgetData`, consumed by BOTH Android widget stacks: native Glance widgets and the Tauri shell's RemoteViews providers). The web consumes all of this through the typed bridge `src/lib/core.ts` (the only file allowed to import `@todotxt/core`; it converts JSON-string results into web types and maps hex ↔ Kotlin enum colors). The bundle IS committed to git (Netlify has no Gradle toolchain and never regenerates it): after changing core code run `cd native && ./rebuild-npm-package.sh`, then `pnpm install` at the root (pnpm copies `file:` deps into its store) and commit the regenerated `native/core/npm-package/` files.
 
 **Widgets**: seven Glance widgets ship in the native app (Todo, Habits list, Momentum, Heatmap, Quick-Check, Streaks, Week-Grid), all fed by `WidgetData.project(...)` — never compute streaks/rates/grid flags inline in a composable. All receivers are registered in `AndroidManifest.xml`; refresh goes through `WidgetRefresher` only (flow observer re-renders on data change). The Tauri shell's RemoteViews providers read the same JSON contract from `widget_data.json`.
 
@@ -39,10 +39,15 @@ This repo ships **three surfaces** on `main`, all sharing one core:
 ## Architecture
 
 - Entry: `src/index.tsx` → `src/context/MantineProvider.tsx` → `src/App.tsx` (provider tree + view switch: todo / notes / habits / excalidraw / sync). Path alias `@/` → `src/`.
-- **Sync**: `useSyncedDocument` (src/lib/useSyncedDocument.ts) is the ONLY sync API. To sync a new feature: add a doc path in `src/lib/syncPaths.ts` and a `useSyncedX` adapter in `src/lib/syncAdapters.ts` (mounted by `SyncFeatures`). Never import Firestore / build `doc(db, ...)` paths in feature code. Documents live at `users/{uid}/{collection}/{id}`; `updatedAt` (server timestamp) drives conflict resolution; writes are debounced (1s) and batched; features buffer to localStorage (`localKey`, shape `{data, updatedAt}`) for offline start.
-- Timers sync only idle snapshots: `beforeWrite` drops running timers, `afterRead` force-resets remote ones to idle (per-device runtime state).
+- **Core bridge**: parsing, habit stats, scheduling phrases, dependency metadata, and habit merging all come from `@todotxt/core` via `src/lib/core.ts`. Never reimplement token extraction, streak math, or the highlighter's regexes — consume parser output (the editor chips in `taskExtensions.ts` locate spans by literal search for parser-extracted tokens only).
+- **Sync**: `useSyncedDocument` (src/lib/useSyncedDocument.ts) is the ONLY sync API. To sync a new feature: add a doc path in `src/lib/syncPaths.ts`, a `SyncCodec` in `src/lib/syncAdapters.ts` (wire shape + decode/afterRead rules), and a `useSyncedX` adapter (mounted by `SyncFeatures`). Startup reconciliation in `SyncContext.connect()` runs through the same codecs (`normalizeFieldValue`) — there is exactly one set of normalization rules per document. Never import Firestore / build `doc(db, ...)` paths in feature code. Documents live at `users/{uid}/{collection}/{id}`; `updatedAt` (server timestamp) drives conflict resolution; writes are debounced (1s) and batched; features buffer to localStorage for offline start.
+- Timers sync only idle snapshots: `beforeWrite` drops running timers, `TIMERS_CODEC.afterRead` force-resets remote ones to idle (per-device runtime state).
 - GROQ API key is user-entered in-app (AI tools dialog) and synced at `settings/groq` — not an env var.
 - Firestore security rules (`firestore.rules`): each user may only read/write their own `users/{uid}/**`.
+
+**Native UI**: shared atoms live in `native/.../ui/Common.kt` — every page header is a `PageHeader`, searches use `SearchField`, color picking uses `ColorSwatchRow`, destructive confirms use `ConfirmDialog`. Full-app snapshots (cloud sync + local/portable backups) are one class, `persistence/BackupManager.kt`'s `FullSnapshot` (constructed only through `BackupManager.capture`), with dual timestamp fields kept for wire compatibility.
+
+**PWA chunking**: `vite.config.js` pins `@todotxt/core` into its own chunk via `manualChunks`; index must stay under workbox's 2 MiB per-file precache limit — check `npm run build` output if you add heavy imports to the main chunk.
 
 ## Design system
 
@@ -50,17 +55,10 @@ Read `DESIGN.md` before visual changes. Theme is Material 3 Expressive: semantic
 
 ## Refactor status (post-audit)
 
-Phase 1 — done:
-- Full Tauri shell tracked on `main`; `@todotxt/core` bundle committed with working `@JsExport` exports; dep path is repo-relative.
-- `core/WidgetData.kt`: single projection feeding every widget on both Android stacks (+ tests).
-- Seven Glance widgets registered + live-refreshed via `WidgetRefresher`; boot receiver re-arms alarms.
-- `HabitMerge` canonical in core (native P2P, web P2P view, JS exports all call it); parser accepts `due:+Nd`.
-- Web: Sync tab wired (lazy chunk), dead files/`qrcode` removed, biome ignores the generated core bundle.
-
-Deferred (do next, in this order):
-1. Route web parsing/streaks through `@todotxt/core` and delete `src/utils/todoParser.ts` / `advancedParser.ts` / `habitUtils.ts` duplicates (~630 LOC); fix highlighter regex drift by consuming parser output.
-2. Unify web sync normalization: startup reconciliation should reuse adapter `encode/decode/afterRead` instead of its own copy.
-3. Native UI atoms (search field ×3, page header ×8, swatch row, confirm dialog) and `SyncSnapshot` ≅ `BackupSnapshot` merge.
-4. Remaining native dead code (`Fullscreen`, `NativeActionIcons`, `lastUsedVersion`, desktop tray no-ops).
+The audit follow-ups are **COMPLETE** — do not redo any of this:
+1. Web parsing/streaks route through `@todotxt/core` via `src/lib/core.ts`; duplicates `src/utils/todoParser.ts` / `advancedParser.ts` / `habitUtils.ts` (+ tests) deleted (~630 LOC); the highlighter consumes parser output tokens instead of its own regexes.
+2. Web sync normalization is unified: per-document `SyncCodec`s + `normalizeFieldValue` in `src/lib/syncAdapters.ts`, and `SyncContext.connect()` startup reconciliation uses those same codecs.
+3. Native UI atoms live in `native/.../ui/Common.kt` (`PageHeader`, `SearchField`, `ColorSwatchRow`, `ConfirmDialog`); the former `SyncSnapshot`/`BackupSnapshot` merged into one `persistence/BackupManager.kt`'s `FullSnapshot` (constructed only via `BackupManager.capture`, dual timestamps kept for wire compatibility).
+4. Remaining native dead code removed: platform `Fullscreen` expect/actual (+ `AppRoot` call), `NativeActionIcons` object, `lastUsedVersion` from `AppSettings`, desktop tray no-ops in `Main.kt`.
 
 Doc style: write what code does, not how; explain non-obvious decisions; never restate code verbatim.

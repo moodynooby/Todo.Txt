@@ -15,7 +15,13 @@ import { getFirestoreDb, signOutUser } from "@/lib/firebase";
 import { getDocWithRetry } from "@/lib/firestoreClient";
 import { readHabitsBackupWithTs } from "@/lib/habitsBackup";
 import { readNotesBackupWithTs } from "@/lib/notesBackup";
-import { SyncFeatures } from "@/lib/syncAdapters";
+import {
+	HABITS_CODEC,
+	NOTES_CODEC,
+	normalizeFieldValue,
+	SyncFeatures,
+	TODO_CODEC,
+} from "@/lib/syncAdapters";
 import { clearOutbox } from "@/lib/syncOutbox";
 import { HABITS_DOC, NOTES_DOC, TODO_DOC } from "@/lib/syncPaths";
 import { decideReconcile } from "@/lib/syncReconcile";
@@ -26,10 +32,12 @@ import type { BackupData, ExcalidrawData, SyncStatus } from "@/types/sync";
 /**
  * SyncProvider — owns the *connection lifecycle only*.
  *
- * Feature syncing (notes, timers, excalidraw, groq, future habits) lives in
- * `useSyncedDocument` calls — this component no longer knows what features
- * exist. The two legacy special cases (content backup + migration) remain
- * here because they are about the auth/migration flow, not about features.
+ * Feature syncing (notes, timers, excalidraw, groq) lives in
+ * `useSyncedDocument` calls; the wire shapes and normalization rules for
+ * every document live in that module's codecs and are reused here verbatim,
+ * so a startup-pulled snapshot follows exactly the same rules as a live
+ * update. The two legacy special cases (content backup + migration) remain
+ * because they are about the auth/migration flow, not about features.
  */
 
 // Fix F1: all todo-backup access now routes through `src/lib/todoBackup.ts`
@@ -74,47 +82,13 @@ const readBackup = (): BackupData | null => readTodoBackup();
 // ---------------------------------------------------------------------------
 // Connect-time value normalization (regression fixes).
 //
-// The startup reconciliation pull path used to dispatch whatever Firestore
-// returned straight into feature state, bypassing the per-feature adapter
-// normalizers (`afterRead`). Raw habits missing `completedDates`/`archived`
-// crashed the habits view; a non-string todo value could have reached the
-// editor. These helpers apply the SAME rules the live-sync adapters do.
+// The startup reconciliation used to dispatch whatever Firestore returned
+// straight into feature state, bypassing the per-feature adapter rules — raw
+// habits missing `completedDates`/`archived` crashed the habits view; a
+// non-string todo value could have reached the editor. Reconciliation now
+// runs through the SAME codecs as live sync (normalizeFieldValue), so there
+// is exactly one set of rules per document.
 // ---------------------------------------------------------------------------
-
-function normalizeTodoValue(value: unknown): string {
-	return typeof value === "string" ? value : "";
-}
-
-function normalizeNotesValue(value: unknown): import("@/types/notes").Note[] {
-	return Array.isArray(value) ? (value as import("@/types/notes").Note[]) : [];
-}
-
-/** The same rules as the habits adapter's `afterRead` (syncAdapters.ts): the
- *  habits UI and utility functions assume `completedDates` is a string array
- *  and `archived` is a boolean — a raw remote array can break all of them. */
-function normalizeHabitsValue(
-	value: unknown,
-): import("@/types/habits").Habit[] {
-	if (!Array.isArray(value)) return [];
-	return value
-		.filter(
-			(h) =>
-				h && typeof h === "object" && "id" in (h as Record<string, unknown>),
-		)
-		.map((h) => {
-			const habit = h as Record<string, unknown> &
-				import("@/types/habits").Habit;
-			return {
-				...habit,
-				completedDates: Array.isArray(habit.completedDates)
-					? habit.completedDates.filter(
-							(d): d is string => typeof d === "string",
-						)
-					: [],
-				archived: Boolean(habit.archived),
-			} as import("@/types/habits").Habit;
-		});
-}
 
 /** Decide + apply a reconciliation for one document without blocking the
  *  others. A single document read failure must never hold up the whole
@@ -253,7 +227,7 @@ export function SyncProvider(props: SyncProviderProps) {
 			const habitsSeed = readHabitsBackupWithTs();
 			await Promise.all([
 				reconcileDocument(uid, TODO_DOC, {
-					valueKey: "content",
+					valueKey: TODO_CODEC.valueKey,
 					hasLocal: Boolean(localBackup),
 					seed: localBackup
 						? {
@@ -264,18 +238,20 @@ export function SyncProvider(props: SyncProviderProps) {
 							}
 						: null,
 					onPush: (value) => {
-						const content = normalizeTodoValue(value);
+						const content = normalizeFieldValue(TODO_CODEC, value);
+						if (content === undefined) return;
 						dispatchTodo({
 							type: "SET_CONTENT",
 							payload: { content, timestamp: Date.now() },
 						});
 						engine.enqueue({
 							path: TODO_DOC,
-							data: { content, updatedAt: Date.now() },
+							data: { ...TODO_CODEC.encode(content), updatedAt: Date.now() },
 						});
 					},
 					onPull: (value, snap) => {
-						const content = normalizeTodoValue(value);
+						const content = normalizeFieldValue(TODO_CODEC, value);
+						if (content === undefined) return;
 						dispatchTodo({
 							type: "SET_CONTENT",
 							payload: { content, timestamp: Date.now() },
@@ -292,7 +268,7 @@ export function SyncProvider(props: SyncProviderProps) {
 					},
 				}),
 				reconcileDocument(uid, NOTES_DOC, {
-					valueKey: "value",
+					valueKey: NOTES_CODEC.valueKey,
 					hasLocal: Boolean(notesSeed),
 					seed: notesSeed
 						? {
@@ -303,23 +279,23 @@ export function SyncProvider(props: SyncProviderProps) {
 							}
 						: null,
 					onPush: (value) => {
-						const notes = normalizeNotesValue(value);
+						const notes = normalizeFieldValue(NOTES_CODEC, value);
+						if (notes === undefined) return;
 						dispatchNotes({ type: "SET_NOTES", payload: notes });
 						engine.enqueue({
 							path: NOTES_DOC,
-							data: { value: notes, updatedAt: Date.now() },
+							data: { ...NOTES_CODEC.encode(notes), updatedAt: Date.now() },
 						});
 					},
 					onPull: (value) => {
-						dispatchNotes({
-							type: "SET_NOTES",
-							payload: normalizeNotesValue(value),
-						});
+						const notes = normalizeFieldValue(NOTES_CODEC, value);
+						if (notes === undefined) return;
+						dispatchNotes({ type: "SET_NOTES", payload: notes });
 					},
 					onMissingRemote: () => undefined,
 				}),
 				reconcileDocument(uid, HABITS_DOC, {
-					valueKey: "habits",
+					valueKey: HABITS_CODEC.valueKey,
 					hasLocal: Boolean(habitsSeed),
 					seed: habitsSeed
 						? {
@@ -330,22 +306,18 @@ export function SyncProvider(props: SyncProviderProps) {
 							}
 						: null,
 					onPush: (value) => {
-						const habits = normalizeHabitsValue(value);
+						const habits = normalizeFieldValue(HABITS_CODEC, value);
+						if (habits === undefined) return;
 						dispatchHabits({ type: "SET_HABITS", payload: habits });
 						engine.enqueue({
 							path: HABITS_DOC,
-							data: { habits, updatedAt: Date.now() },
+							data: { ...HABITS_CODEC.encode(habits), updatedAt: Date.now() },
 						});
 					},
 					onPull: (value) => {
-						// Fix (regression): pulled habits previously bypassed
-						// the adapter's `afterRead` normalization — missing
-						// `completedDates`/`archived` broke the habits view
-						// (habitUtils crash on malformed records).
-						dispatchHabits({
-							type: "SET_HABITS",
-							payload: normalizeHabitsValue(value),
-						});
+						const habits = normalizeFieldValue(HABITS_CODEC, value);
+						if (habits === undefined) return;
+						dispatchHabits({ type: "SET_HABITS", payload: habits });
 					},
 					onMissingRemote: () => undefined,
 				}),

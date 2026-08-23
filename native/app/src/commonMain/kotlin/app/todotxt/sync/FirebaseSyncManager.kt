@@ -1,12 +1,8 @@
 package app.todotxt.sync
 
-import app.todotxt.domain.Drawing
 import app.todotxt.domain.GroqSettings
-import app.todotxt.domain.Habit
-import app.todotxt.domain.Note
-import app.todotxt.domain.TimerState
-import app.todotxt.persistence.AppSettings
 import app.todotxt.persistence.BackupManager
+import app.todotxt.persistence.FullSnapshot
 import app.todotxt.persistence.PlatformStorage
 import app.todotxt.persistence.Storage
 import app.todotxt.service.PlatformDeviceId
@@ -223,7 +219,7 @@ object FirebaseSyncManager {
     private suspend fun uploadSnapshot(
         groupId: String,
         idToken: String,
-        snapshot: SyncSnapshot,
+        snapshot: FullSnapshot,
     ) {
         val path = documentPath(groupId, safeId(PlatformDeviceId.deviceId))
         val body = buildJsonObject {
@@ -246,7 +242,7 @@ object FirebaseSyncManager {
     private suspend fun downloadLatestSnapshot(
         groupId: String,
         idToken: String,
-    ): SyncSnapshot? {
+    ): FullSnapshot? {
         val response = client.get(collectionPath(groupId)) {
             headers.append("Authorization", "Bearer $idToken")
         }
@@ -261,22 +257,15 @@ object FirebaseSyncManager {
                 val fields = element.jsonObject["fields"]?.jsonObject ?: return@mapNotNull null
                 val payload = fields["payload"]?.jsonObject?.get("stringValue")
                     ?.jsonPrimitive?.content ?: return@mapNotNull null
-                runCatching { json.decodeFromString<SyncSnapshot>(payload) }.getOrNull()
+                runCatching { json.decodeFromString<FullSnapshot>(payload) }.getOrNull()
             }
             ?.maxByOrNull { it.updatedAt }
     }
 
-    private fun snapshot(updatedAt: Long): SyncSnapshot = SyncSnapshot(
-        updatedAt = updatedAt,
-        content = Storage.content.value,
-        notes = Storage.notes.value,
-        habits = Storage.habits.value,
-        timers = Storage.timers.value,
-        settings = Storage.settings.value,
-        drawings = Storage.drawings.value,
-    )
+    private fun snapshot(updatedAt: Long): FullSnapshot =
+        BackupManager.capture(updatedAt = updatedAt)
 
-    private fun applySnapshot(remote: SyncSnapshot) {
+    private fun applySnapshot(remote: FullSnapshot) {
         Storage.setContent(remote.content)
         Storage.replaceNotes(remote.notes)
         Storage.replaceHabits(remote.habits)
@@ -332,15 +321,4 @@ private data class FirebaseSession(
     val idToken: String,
     val refreshToken: String,
     val expiresAt: Long,
-)
-
-@Serializable
-private data class SyncSnapshot(
-    val updatedAt: Long,
-    val content: String,
-    val notes: List<Note> = emptyList(),
-    val habits: List<Habit> = emptyList(),
-    val timers: List<TimerState> = emptyList(),
-    val settings: AppSettings = AppSettings(),
-    val drawings: List<Drawing> = emptyList(),
 )

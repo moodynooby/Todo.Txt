@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,33 +18,27 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,21 +48,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.IdUtils
 import app.todotxt.domain.Note
 import app.todotxt.domain.NoteColor
 import app.todotxt.persistence.Storage
 import app.todotxt.persistence.exportTodoDocument
-import androidx.compose.ui.text.font.FontStyle
-import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
-import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import app.todotxt.ui.ConfirmDialog
+import app.todotxt.ui.PageHeader
+import app.todotxt.ui.SearchField
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 
 /** Notes workspace — colored cards with search, pin / archive / edit,
  * like the web board (NotesPage.tsx + NoteCard.tsx parity). */
@@ -84,12 +80,7 @@ fun NotesPage(notes: List<Note>) {
     var exportMenuOpen by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text(
-            "Notes",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
+        PageHeader("Notes", modifier = Modifier.padding(bottom = 8.dp))
 
         // Search + export, mirroring the web NotesPage search surface.
         Row(
@@ -98,19 +89,10 @@ fun NotesPage(notes: List<Note>) {
                 .padding(bottom = 8.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
-            OutlinedTextField(
+            SearchField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search notes…") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Filled.Clear, contentDescription = "Clear search")
-                        }
-                    }
-                },
-                singleLine = true,
+                placeholder = "Search notes…",
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { exportMenuOpen = true }) {
@@ -351,23 +333,16 @@ private fun NoteCard(
     }
 
     if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete note?") },
-            text = { Text("This removes the note permanently.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        Storage.updateNotes { list -> list.filter { it.id != note.id } }
-                        confirmDelete = false
-                    },
-                ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
+        ConfirmDialog(
+            title = "Delete note?",
+            text = "This removes the note permanently.",
+            confirmLabel = "Delete",
+            destructive = true,
+            onConfirm = {
+                Storage.updateNotes { list -> list.filter { it.id != note.id } }
+                confirmDelete = false
             },
-            dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
-            },
+            onDismiss = { confirmDelete = false },
         )
     }
 }
