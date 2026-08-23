@@ -4,20 +4,21 @@ A full-featured todo application built on the philosophy of
 [todo.txt](https://github.com/todotxt/todo.txt) — plain text, OS-agnostic,
 searchable, portable, lightweight, and easily manipulated.
 
-This repository ships **two applications** in the same repo: the native app
-is the frontrunner, and the web app shares logic with it through a common
-Kotlin Multiplatform core module.
+This repository ships **three surfaces** in the same repo: the native app is
+the frontrunner, the web app shares logic with it through a common Kotlin
+Multiplatform core module, and an optional Tauri shell wraps the web UI for
+desktop/Android with its own widget stack.
 
-| Product | Branch | Platform | Stack |
+| Product | Location | Platform | Stack |
 |---|---|---|---|
-| **Native app** | `native/kotlin-compose` | Android + Desktop (Windows / Linux) | Kotlin, Compose Multiplatform |
-| **Web app** | `main` | Browser / PWA | React 19 + Vite + TypeScript + Mantine |
-| **Shared core** | `native/core/` (both branches) | JVM + JS/IR | Kotlin Multiplatform |
+| **Native app** | `native/` | Android + Desktop (Windows / Linux) | Kotlin, Compose Multiplatform |
+| **Web app** | repo root (`src/`) | Browser / PWA | React 19 + Vite + TypeScript + Mantine |
+| **Tauri shell** | `src-tauri/` | Desktop + Android (optional build) | Rust + system webview (same web UI) |
+| **Shared core** | `native/core/` | JVM + JS/IR | Kotlin Multiplatform |
 
-The web app source lives at the **repo root** (`src/`, `package.json`,
-`vite.config.js`) on the `main` branch, while `native/` contains the Kotlin
-app. The `native/kotlin-compose` branch has the same web app source at the
-root plus the `native/` directory.
+All three consume the shared core: the native and Tauri widget stacks render
+the same `WidgetData` projection, habit merges go through one canonical
+`HabitMerge`, and the web app imports the compiled `@todotxt/core` bundle.
 
 ## Features
 
@@ -28,8 +29,10 @@ root plus the `native/` directory.
   (LWW-CRDT merge, scheduling parser) used identically by native and web
 - QR-based bidirectional P2P sync (LWW CRDT + continuous WebSocket), pairing
   Android, Desktop, and Web devices
-- Android: Glance habit widgets (Momentum, Heatmap, Quick-Check), notification
-  actions (Mark Done / Snooze), exact-alarm permission UX
+- Android: seven Glance widgets (Todo, Habits, Momentum, Heatmap, Quick-Check,
+  Streaks, Week-Grid) fed by one shared projection; the Tauri shell's
+  RemoteViews widgets read the same JSON contract. Notification actions
+  (Mark Done / Snooze), exact-alarm permission UX
 - Multi-timer support, Firebase Auth + Firestore cloud sync (web), AI tools
   via GROQ (user-supplied key)
 
@@ -99,15 +102,16 @@ calculation, and the scheduling parser — `CoreEntry.kt` (JS/IR) and `LwwMap`
 The web app consumes the Kotlin/JS bundle as a local package:
 
 ```json
-"@todotxt/core": "file:../Todo.Txt/native/core/npm-package"
+"@todotxt/core": "file:native/core/npm-package"
 ```
 
-`npm-package/` is **gitignored** — regenerate it after core changes with the
-included script (one command, deterministic):
+`npm-package/` **is committed to git** — Netlify (and fresh clones) have no
+Gradle toolchain, so the compiled bundle is treated as a source artifact.
+After changing core code, regenerate and commit it:
 
 ```bash
 cd native && ./rebuild-npm-package.sh
-cd ~/Todo.Txt && npm install    # web app picks up the fresh bundle
+git add native/core/npm-package && git commit   # required for deploys
 ```
 
 `./rebuild-npm-package.sh` runs `:core:jsBrowserProductionWebpack` and copies
@@ -163,13 +167,14 @@ When the secrets are present the workflow signs with your keystore instead.
 
 ```
 Todo.Txt/
-├── src/                     # Web app source (main branch)
+├── src/                     # Web app source (repo root, main)
 ├── package.json             # Web app manifest
+├── src-tauri/               # Optional Tauri shell (desktop + Android) wrapping the web UI
 ├── native/
 │   ├── app/                 # Compose Multiplatform app (android + desktop)
 │   ├── core/                # Shared KMP module: JVM + JS/IR targets
 │   │   ├── rebuild-npm-package.sh  # one-command JS bundle rebuild
-│   │   └── npm-package/     # (gitignored) JS bundle for the web app
+│   │   └── npm-package/     # committed JS bundle for the web app (Netlify can't rebuild it)
 │   ├── kotlin-js-store/     # (gitignored) yarn lockfile
 │   └── build/               # (gitignored) Gradle outputs
 ├── AGENTS.md, CI.md, DESIGN.md, ADVANCED_PARSER.md
@@ -179,9 +184,9 @@ Todo.Txt/
 ## Out of scope
 
 - iOS / macOS targets (Android + Desktop JVM only)
-- Tauri (removed; the web app is browser / PWA only)
-- Committing `npm-package/`, `build/`, `kotlin-js-store/yarn.lock`, or any
-  other reproducible artifacts to git
+- Committing `build/`, `kotlin-js-store/yarn.lock`, or any other reproducible
+  artifacts to git — the one exception is `native/core/npm-package/`, which
+  IS committed (see above: Netlify cannot run Gradle)
 
 ## Deploy the web app (Netlify)
 
