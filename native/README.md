@@ -41,7 +41,10 @@ cd native
 ./gradlew :app:test                   # Domain + habit utility tests
 ```
 
-Requires JDK 21 and Android SDK (platform 35, build-tools) with `ANDROID_HOME` set.
+Requires JDK 21. `gradle/gradle-daemon-jvm.properties` pins the daemon JVM
+criteria to 21, so any invocation launches Gradle on a detected JDK 21 even if
+the shell default is newer (e.g. Temurin 25, whose version string crashes
+Kotlin 2.1.x's version parser) — no `JAVA_HOME` override needed.
 
 ## What is deliberately out of scope
 
