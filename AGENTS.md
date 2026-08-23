@@ -29,12 +29,13 @@ This repo ships **three surfaces** on `main`, all sharing one core:
 
 ## Setup & gotchas
 
-- **Use pnpm** for installs. `pnpm-workspace.yaml` gates postinstall scripts: new deps with build scripts must be added to `allowBuilds` there (currently `@firebase/util`, `protobufjs`).
+- **Use pnpm** for installs. `pnpm-workspace.yaml` gates postinstall scripts: new deps with build scripts must be added to `allowBuilds` there (currently `@firebase/util`, `protobufjs`, `@tauri-apps/cli`).
 - Copy `.env.example` → `.env` (gitignored) with `VITE_FIREBASE_*` values or the app runs local-only (no sign-in/sync); it still works via localStorage backups.
 - **Move files with `git mv`**, never plain `mv`.
 - Firestore offline persistence is enabled via `initializeFirestore(app, { cacheSizeBytes })` (src/lib/firebase.ts). Do NOT switch to `enableIndexedDbPersistence()` — deprecated.
 - Biome: tabs, double quotes, organize-imports on write. TypeScript is strict with `noUnusedLocals`/`noUnusedParameters` — typecheck fails on unused code.
 - Hosted on Netlify (no CI in repo).
+- Native Gradle builds self-select JDK 21 via `native/gradle/gradle-daemon-jvm.properties` (daemon JVM criteria) — no `JAVA_HOME` override even on hosts whose default JVM is newer; a JDK 21 just has to be discoverable (CI runners have one preinstalled).
 
 ## Architecture
 
