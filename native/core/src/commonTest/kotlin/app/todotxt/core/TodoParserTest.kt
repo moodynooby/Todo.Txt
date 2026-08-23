@@ -98,6 +98,32 @@ class TodoParserTest {
     }
 
     @Test
+    fun parsesDueRelativeDays() {
+        assertEquals(
+            addDaysString(TodoParser.today(), 7),
+            TodoParser.parseTodoLine("a due:+7d").due,
+        )
+        assertEquals(
+            addDaysString(TodoParser.today(), 30),
+            TodoParser.parseTodoLine("a due:+30d").due,
+        )
+        assertEquals(
+            addDaysString(TodoParser.today(), -3),
+            TodoParser.parseTodoLine("a due:-3d").due,
+        )
+        assertEquals(
+            addDaysString(TodoParser.today(), 2),
+            TodoParser.parseTodoLine("a due:+2").due,
+        )
+    }
+
+    @Test
+    fun rejectsGarbageRelativeDates() {
+        assertNull(TodoParser.parseTodoLine("a due:someday").due)
+        assertNull(TodoParser.parseTodoLine("a due:d7+").due)
+    }
+
+    @Test
     fun parsesDueISOString() {
         assertEquals("2026-08-20", TodoParser.parseTodoLine("a due:2026-08-20").due)
         assertEquals(null, TodoParser.parseTodoLine("a due:2026-08-20").dueTime)

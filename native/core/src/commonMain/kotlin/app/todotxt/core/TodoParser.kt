@@ -22,6 +22,7 @@ expect fun addDaysString(base: String, days: Int): String
 object TodoParser {
 
     private val RE_IS_DATE = Regex("""^\d{4}-\d{2}-\d{2}$""")
+    private val RE_RELATIVE_DAYS = Regex("""([+-]\d+)d?""")
     private val RE_IS_TIME = Regex("""^\d{1,2}:\d{2}(:\d{2})?$""")
     private val RE_CHECKBOX_MARKER = Regex("""^-?\[[ xX]\]\s""")
     private val RE_CHECKED_MARKER = Regex("""^-?\[x\]\s""", RegexOption.IGNORE_CASE)
@@ -60,11 +61,15 @@ object TodoParser {
         today: String,
         tomorrow: String,
         yesterday: String,
-    ): String? = when (value) {
-        "today", "now" -> today
-        "tomorrow" -> tomorrow
-        "yesterday" -> yesterday
-        else -> if (RE_IS_DATE.containsMatchIn(value)) value else null
+    ): String? = when {
+        value == "today" || value == "now" -> today
+        value == "tomorrow" -> tomorrow
+        value == "yesterday" -> yesterday
+        RE_IS_DATE.containsMatchIn(value) -> value
+        // Relative offsets like +7d / -3d (also bare +7 / -3), as suggested by Quick Add.
+        else -> RE_RELATIVE_DAYS.matchEntire(value)?.let { match ->
+            addDaysString(today, match.groupValues[1].toInt())
+        }
     }
 
     fun parseTodoLine(trimmed: String, id: Int = 0): Task {
