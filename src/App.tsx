@@ -33,12 +33,14 @@ import { readHabitsBackup } from "@/lib/habitsBackup";
 import HabitsPage from "@/pages/HabitsPage";
 import NotesPage from "@/pages/NotesPage";
 import TodoPage from "@/pages/TodoPage";
-import P2pSyncPage from "@/pages/P2pSyncPage";
 import type { ExcalidrawData } from "@/types/sync";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 import { parseTodoContent } from "@/utils/todoParser";
 
+/* Lazy-loaded because its @todotxt/core dependency would otherwise push
+ * the index chunk past workbox's 2 MiB PWA precache limit. */
 const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
+const P2pSyncPage = lazy(() => import("@/pages/P2pSyncPage"));
 
 interface AppContentProps {
 	activeFilter: Filter | null;
@@ -263,6 +265,7 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 							)}
 							{viewMode === "notes" && <NotesPage />}
 							{viewMode === "habits" && <HabitsPage />}
+							{viewMode === "sync" && <P2pSyncPage />}
 							{viewMode === "todo" && (
 								<TodoPage
 									taskData={taskData}
@@ -278,23 +281,23 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 
 					{/* M3 bottom navigation — mobile only, clears with safe-area inset */}
 					<BottomNav />
-						<Box
-							hiddenFrom="md"
-							className="bottom-nav-spacer"
-							style={{ height: "calc(64px + env(safe-area-inset-bottom))" }}
-						/>
-					</AppShell.Main>
+					<Box
+						hiddenFrom="md"
+						className="bottom-nav-spacer"
+						style={{ height: "calc(64px + env(safe-area-inset-bottom))" }}
+					/>
+				</AppShell.Main>
 			</AppShell>
 
-						{timersState.timers.map((timer) => (
-							<Timer
-								key={timer.id}
-								timer={timer}
-								onRemove={handleRemoveTimer}
-								onUpdate={handleUpdateTimer}
-							/>
-						))}
-					</SyncProvider>
+			{timersState.timers.map((timer) => (
+				<Timer
+					key={timer.id}
+					timer={timer}
+					onRemove={handleRemoveTimer}
+					onUpdate={handleUpdateTimer}
+				/>
+			))}
+		</SyncProvider>
 	);
 }
 

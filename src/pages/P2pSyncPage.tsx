@@ -1,126 +1,138 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	Box,
-	Button,
-	Card,
-	Group,
-	Stack,
-	Text,
-	Title,
-} from "@mantine/core";
-import { Wifi, RefreshCw } from "lucide-react";
-// @ts-ignore — Kotlin/JS compiled module (no TypeScript declarations yet)
+import { Box, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+// @ts-expect-error — Kotlin/JS compiled module (no TypeScript declarations yet)
 import { mergeHabitsJs } from "@todotxt/core";
+import { ArrowLeft, RefreshCw, Wifi } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useHabitsContext } from "@/context/HabitsContext";
+import { useViewContext } from "@/context/ViewContext";
+import type { Habit, HabitColor } from "@/types/habits";
 
 /**
  * P2P Sync page for the web app.
  *
  * Protocol (same as native app):
  * 1. "Host" starts a local WebSocket server and shows a QR code
- * 2. "Join" scans the QR → connects via WebSocket → bidirectional sync
- * 3. Both devices merge habits using LWW rules (newer wins, dates union)
+ * 2. "Join" scans the QR -> connects via WebSocket -> bidirectional sync
+ * 3. Both devices merge habits using shared core LWW rules
+ *    (newer wins, completed-date union)
  *
  * Note: Browsers cannot listen on arbitrary ports, so the web app acts as
  * the "client" that joins a native app's sync server. The native app must
  * be the host (showing the QR code).
  */
+
 interface SyncPayload {
 	deviceId: string;
 	timestamp: number;
-	habits: {
-		id: string;
-		name: string;
-		color: string;
-		reminderEnabled: boolean;
-		reminderTime: string;
-		completedDates: string[];
-		archived: boolean;
-		createdAt: number;
-		updatedAt: number;
-	}[];
+	habits: Habit[];
 }
 
+/* Web stores colors as hex; the Kotlin HabitColor enum serializes by name.
+ * Order matches HABIT_COLORS / core HabitColor exactly. */
+const HEX_TO_CORE: Record<HabitColor, string> = {
+	"#2f6f61": "EVERGREEN",
+	"#d9784f": "TERRACOTTA",
+	"#748f6c": "MOSS",
+	"#9f6a4d": "CLAY",
+	"#536d8d": "SLATE",
+	"#9a7fbd": "LILAC",
+};
+
+const CORE_TO_HEX: Record<string, HabitColor> = Object.fromEntries(
+	Object.entries(HEX_TO_CORE).map(([hex, name]) => [name, hex as HabitColor]),
+);
+
+/** Web habit -> JSON the Kotlin decoder accepts (color as enum name). */
+const toCoreHabit = (h: Habit): object => ({
+	...h,
+	color: HEX_TO_CORE[h.color],
+});
+
+/** Core habit JSON -> web habit (color back to hex; keep valid entries only). */
+const fromCoreHabit = (raw: unknown): Habit | null => {
+	if (typeof raw !== "object" || raw === null) return null;
+	const h = raw as Record<string, unknown>;
+	const hex =
+		CORE_TO_HEX[String(h.color)] ??
+		(HABIT_IS_HEX(h.color) ? (h.color as HabitColor) : null);
+	if (!hex || typeof h.id !== "string") return null;
+	return { ...(h as unknown as Habit), color: hex };
+};
+
+const HABIT_IS_HEX = (c: unknown): boolean =>
+	typeof c === "string" && c.startsWith("#");
+
 export default function P2pSyncPage() {
-	const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
+	const [status, setStatus] = useState<
+		"idle" | "connecting" | "connected" | "error"
+	>("idle");
 	const [error, setError] = useState("");
 	const [qrUrl, setQrUrl] = useState("");
 	const wsRef = useRef<WebSocket | null>(null);
-	const habitsRef = useRef<any[]>([]);
+	const { state: habitsState, dispatchHabits } = useHabitsContext();
+	const { dispatchView } = useViewContext();
+	const habitsRef = useRef<Habit[]>([]);
 
-	const mergeHabits = useCallback((remoteHabits: any[]) => {
-		const local = habitsRef.current;
+	const connectToHost = useCallback(
+		(url: string) => {
+			if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-		// Try shared Kotlin/JS core first (same LWW logic as native app)
-		try {
-			const localJson = JSON.stringify(local);
-			const remoteJson = JSON.stringify(remoteHabits);
-			const mergedJson = mergeHabitsJs(localJson, remoteJson);
-			habitsRef.current = JSON.parse(mergedJson);
-			return;
-		} catch (e) {
-			console.warn("[P2P] Shared core merge failed, using web fallback:", e);
-		}
+			setStatus("connecting");
+			setError("");
+			habitsRef.current = habitsState.habits;
 
-		// Fallback: use web app's existing reconcile logic
-		const merged = new Map<string, any>();
-		local.forEach((h: any) => merged.set(h.id, h));
-		remoteHabits.forEach((remote: any) => {
-			const localHabit = merged.get(remote.id);
-			if (!localHabit) {
-				merged.set(remote.id, remote);
-			} else {
-				const mergedDates = Array.from(
-					new Set([...localHabit.completedDates, ...remote.completedDates]),
+			// Convert http:// to ws://
+			const wsUrl = url.replace("http://", "ws://").replace("/sync", "/ws");
+
+			const ws = new WebSocket(wsUrl);
+			wsRef.current = ws;
+
+			ws.onopen = () => {
+				console.log("[P2P] Connected to host");
+				setStatus("connected");
+				ws.send(
+					JSON.stringify({
+						deviceId: `web-${Date.now().toString(36)}`,
+						timestamp: Date.now(),
+						habits: habitsRef.current.map(toCoreHabit),
+					}),
 				);
-				const base = remote.updatedAt >= localHabit.updatedAt ? remote : localHabit;
-				merged.set(remote.id, {
-					...base,
-					completedDates: mergedDates,
-					updatedAt: Math.max(localHabit.updatedAt, remote.updatedAt),
-				});
-			}
-		});
-		habitsRef.current = Array.from(merged.values());
-	}, []);
+			};
 
-	const connectToHost = useCallback((url: string) => {
-		if (wsRef.current?.readyState === WebSocket.OPEN) return;
+			ws.onmessage = (event) => {
+				try {
+					const payload: SyncPayload & { habits: unknown[] } = JSON.parse(
+						event.data,
+					);
+					const remoteJson = JSON.stringify(payload.habits);
+					const localJson = JSON.stringify(habitsRef.current.map(toCoreHabit));
+					const merged: unknown[] = JSON.parse(
+						mergeHabitsJs(localJson, remoteJson),
+					);
+					const next = merged
+						.map(fromCoreHabit)
+						.filter((h): h is Habit => h !== null);
+					if (next.length === 0) throw new Error("empty merge result");
+					habitsRef.current = next;
+					dispatchHabits({ type: "SET_HABITS", payload: next });
+				} catch (e) {
+					console.error("[P2P] Merge error:", e);
+					setError("Received data could not be merged.");
+				}
+			};
 
-		setStatus("connecting");
-		setError("");
+			ws.onclose = () => {
+				setStatus("idle");
+				wsRef.current = null;
+			};
 
-		// Convert http:// to ws://
-		const wsUrl = url.replace("http://", "ws://").replace("/sync", "/ws");
-
-		const ws = new WebSocket(wsUrl);
-		wsRef.current = ws;
-
-		ws.onopen = () => {
-			console.log("[P2P] Connected to host");
-			setStatus("connected");
-		};
-
-		ws.onmessage = (event) => {
-			try {
-				const payload: SyncPayload = JSON.parse(event.data);
-				console.log(`[P2P] Received ${payload.habits.length} habits`);
-				mergeHabits(payload.habits);
-				// TODO: Write merged habits back to localStorage/context
-			} catch (e) {
-				console.error("[P2P] Parse error:", e);
-			}
-		};
-
-		ws.onclose = () => {
-			setStatus("idle");
-			wsRef.current = null;
-		};
-
-		ws.onerror = () => {
-			setError("Failed to connect to host device");
-			setStatus("error");
-		};
-	}, [mergeHabits]);
+			ws.onerror = () => {
+				setError("Failed to connect to host device");
+				setStatus("error");
+			};
+		},
+		[dispatchHabits, habitsState.habits],
+	);
 
 	const disconnect = useCallback(() => {
 		wsRef.current?.close();
@@ -137,13 +149,23 @@ export default function P2pSyncPage() {
 	return (
 		<Box p="md">
 			<Group mb="md">
+				<Button
+					variant="subtle"
+					color="gray"
+					leftSection={<ArrowLeft size={16} />}
+					onClick={() =>
+						dispatchView({ type: "SET_VIEW_MODE", payload: "todo" })
+					}
+				>
+					Back
+				</Button>
 				<Wifi size={24} />
 				<Title order={3}>P2P Sync</Title>
 			</Group>
 
 			<Text c="dimmed" mb="lg">
-				Sync your habits with a native app on your local network.
-				No internet server needed.
+				Sync your habits with a native app on your local network. No internet
+				server needed.
 			</Text>
 
 			<Card shadow="sm" radius="md" mb="md">
@@ -165,12 +187,17 @@ export default function P2pSyncPage() {
 				<Stack>
 					<Text fw={500}>Connect to host</Text>
 					<Text size="sm" c="dimmed">
-						Enter the URL shown on the other device, or scan its QR code
-						with a QR reader app and paste the URL here.
+						Enter the URL shown on the other device, or scan its QR code with a
+						QR reader app and paste the URL here.
 					</Text>
 					<Group>
 						<input
-							style={{ flex: 1, padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+							style={{
+								flex: 1,
+								padding: "8px",
+								borderRadius: "4px",
+								border: "1px solid #ccc",
+							}}
 							placeholder="http://192.168.1.100:8899/sync?device=abc123"
 							value={qrUrl}
 							onChange={(e) => setQrUrl(e.target.value)}
