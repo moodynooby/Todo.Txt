@@ -11,7 +11,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import { useHabitsContext } from "@/context/HabitsContext";
 import { useNotesContext } from "@/context/NotesContext";
 import { useTodoContext } from "@/context/TodoContext";
-import { getFirestoreDb, signOutUser } from "@/lib/firebase";
+import { getFirestoreDbAsync, signOutUser } from "@/lib/firebase";
 import { getDocWithRetry } from "@/lib/firestoreClient";
 import { readHabitsBackupWithTs } from "@/lib/habitsBackup";
 import { readNotesBackupWithTs } from "@/lib/notesBackup";
@@ -115,7 +115,7 @@ async function reconcileDocument(
 		Record<string, unknown>
 	>;
 	try {
-		snap = await getDocWithRetry(getFirestoreDb(), uid, path);
+		snap = await getDocWithRetry(await getFirestoreDbAsync(), uid, path);
 	} catch (e) {
 		console.error(`Connect read failed for ${path.collection}/${path.id}:`, e);
 		// No snapshot to reconcile against — fall back to the push-path seed so

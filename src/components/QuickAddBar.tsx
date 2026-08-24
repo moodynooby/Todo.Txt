@@ -1,7 +1,8 @@
 import { ActionIcon, Group, Paper, TextInput } from "@mantine/core";
-import type { Editor as TipTapEditor } from "@tiptap/core";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useLocalStorage } from "@mantine/hooks";
+import { ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { useRef, useState } from "react";
+import { HAPTIC, haptic } from "@/lib/haptics";
 
 /**
  * M3 Expressive quick-add bar for the Todo workspace.
@@ -11,43 +12,61 @@ import { useState } from "react";
  * syntax so nothing new has to be learned. The bar is the hero moment of
  * task creation — emphasized primary button, rounded pill geometry, and
  * a springy press response.
+ *
+ * The bar is presentation-only: it owns the input state and collapse
+ * toggle, while the document write itself is delegated through `onAdd`
+ * (TodoPage wires it to the TipTap editor). All theming lives in the
+ * `.quick-add-bar` styles — no inline overrides that could fight scheme
+ * switching. Collapse state persists per device; the collapsed pill
+ * re-expands and focuses the input on tap.
  */
 interface QuickAddBarProps {
-	editor: TipTapEditor | null;
+	/** Receives the trimmed todo text in plain todo.txt syntax. */
+	onAdd: (text: string) => void;
 }
 
-export const QuickAddBar = ({ editor }: QuickAddBarProps) => {
+export const QuickAddBar = ({ onAdd }: QuickAddBarProps) => {
 	const [value, setValue] = useState("");
+	const [expanded, setExpanded] = useLocalStorage<boolean>({
+		key: "quickadd-expanded",
+		defaultValue: true,
+	});
+	const inputRef = useRef<HTMLInputElement>(null);
 
-	const addItem = () => {
+	const submit = () => {
 		const text = value.trim();
-		if (!text || !editor) return;
-		const line = `- [ ] ${text}`;
-		editor.commands.focus("end");
-		const currentText = editor.getText();
-		const prefix = currentText.length > 0 ? "\n" : "";
-		editor.commands.insertContent(`${prefix}${line}\n`);
+		if (!text) return;
+		onAdd(text);
 		setValue("");
+		haptic(HAPTIC.tick);
 	};
 
+	const expandAndFocus = () => {
+		setExpanded(true);
+		// Focus after the expanded bar mounts; the ref is null this tick.
+		requestAnimationFrame(() => inputRef.current?.focus());
+	};
+
+	if (!expanded) {
+		return (
+			<button
+				type="button"
+				className="quick-add-bar quick-add-collapsed"
+				onClick={expandAndFocus}
+				aria-label="Expand quick add"
+			>
+				<Plus size={18} aria-hidden />
+				<span>Add a todo…</span>
+				<ChevronDown size={16} aria-hidden />
+			</button>
+		);
+	}
+
 	return (
-		<Paper
-			shadow="md"
-			radius="xl"
-			p="xs"
-			className="app-surface quick-add-bar"
-			style={{
-				position: "sticky",
-				top: 8,
-				zIndex: 5,
-				margin: "12px 12px 0",
-				background: "var(--app-surface-raised)",
-				border: "1px solid var(--app-border-strong)",
-				transition: "box-shadow 180ms var(--m3-ease-effects)",
-			}}
-		>
+		<Paper radius="xl" p="xs" className="quick-add-bar">
 			<Group gap="xs" wrap="nowrap">
 				<TextInput
+					ref={inputRef}
 					aria-label="Add a todo"
 					placeholder="New todo… (+project @context (A) due:today)"
 					value={value}
@@ -55,7 +74,7 @@ export const QuickAddBar = ({ editor }: QuickAddBarProps) => {
 					onKeyDown={(e) => {
 						if (e.key === "Enter" && !e.shiftKey) {
 							e.preventDefault();
-							addItem();
+							submit();
 						}
 					}}
 					size="sm"
@@ -64,11 +83,21 @@ export const QuickAddBar = ({ editor }: QuickAddBarProps) => {
 					style={{ flex: 1, minWidth: 0 }}
 				/>
 				<ActionIcon
+					variant="subtle"
+					color="dark"
+					radius="xl"
+					className="quick-add-collapse-toggle"
+					aria-label="Collapse quick add"
+					onClick={() => setExpanded(false)}
+				>
+					<ChevronUp size={16} />
+				</ActionIcon>
+				<ActionIcon
 					className="app-floating-action-primary"
 					variant="filled"
 					color="evergreen"
 					aria-label="Add todo"
-					onClick={addItem}
+					onClick={submit}
 					disabled={!value.trim()}
 				>
 					<Plus size={22} />

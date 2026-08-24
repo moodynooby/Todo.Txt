@@ -15,6 +15,23 @@ const manifest = {
 	theme_color: "#2EC6FE",
 	categories: ["productivity", "utilities"],
 	orientation: "portrait-primary",
+	// Long-press app shortcuts (installed PWA) — deep-link via ?view= which
+	// ViewContext reads once at startup.
+	shortcuts: [
+		{
+			name: "New task",
+			short_name: "New task",
+			url: "/?view=todo",
+		},
+		{
+			name: "Habits",
+			url: "/?view=habits",
+		},
+		{
+			name: "Notes",
+			url: "/?view=notes",
+		},
+	],
 	icons: [
 		{
 			src: "icon192.png",
@@ -60,7 +77,7 @@ const isTauri = Boolean(process.env.TAURI_ENV_PLATFORM);
 export default defineConfig({
 	resolve: {
 		alias: {
-			"@": resolve(__dirname, "src"),
+			"@": resolve(import.meta.dirname, "src"),
 		},
 	},
 	plugins: [
@@ -96,8 +113,18 @@ export default defineConfig({
 				// own chunk so neither it nor index crosses workbox's 2 MiB
 				// per-file precache limit.
 				manualChunks(id) {
-					if (id.replaceAll("\\", "/").includes("/@todotxt/")) {
+					const path = id.replaceAll("\\", "/");
+					if (path.includes("/@todotxt/")) {
 						return "todotxt-core";
+					}
+					// Firebase lives in its own chunk: local-only sessions (no .env
+					// configured) never execute it, and signed-in sessions get stable
+					// caching across app releases.
+					if (
+						path.includes("/node_modules/@firebase/") ||
+						path.includes("/node_modules/firebase/")
+					) {
+						return "firebase";
 					}
 					return undefined;
 				},

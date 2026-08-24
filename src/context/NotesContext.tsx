@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useReducer } from "react";
-import type { Note, NoteColor } from "@/types/notes";
+import { NOTE_COLORS, type Note, type NoteColor } from "@/types/notes";
 
 export {
 	readNotesBackup,
@@ -16,7 +16,7 @@ export function createNote(partial?: Partial<Note>): Note {
 		id: generateId(),
 		title: "",
 		content: "",
-		color: "#fff475" as NoteColor,
+		color: NOTE_COLORS[0],
 		pinned: false,
 		archived: false,
 		createdAt: now,

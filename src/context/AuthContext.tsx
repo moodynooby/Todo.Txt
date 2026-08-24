@@ -1,4 +1,3 @@
-import { onAuthStateChanged } from "firebase/auth";
 import {
 	createContext,
 	type ReactNode,
@@ -6,7 +5,7 @@ import {
 	useEffect,
 	useReducer,
 } from "react";
-import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase";
+import { getFirebaseAuthAsync, isFirebaseConfigured } from "@/lib/firebase";
 import type { SyncStatus } from "@/types/sync";
 
 export interface AuthState {
@@ -90,18 +89,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	useEffect(() => {
 		if (!isFirebaseConfigured()) return;
 
-		const auth = getFirebaseAuth();
-		return onAuthStateChanged(auth, (user) => {
-			if (user) {
-				dispatchAuth({
-					type: "SET_USER",
-					payload: mapUser(user),
+		let unsub: (() => void) | null = null;
+		let cancelled = false;
+
+		const subscribe = async () => {
+			try {
+				const { onAuthStateChanged } = await import("firebase/auth");
+				if (cancelled) return;
+				unsub = onAuthStateChanged(await getFirebaseAuthAsync(), (user) => {
+					if (user) {
+						dispatchAuth({
+							type: "SET_USER",
+							payload: mapUser(user),
+						});
+						dispatchAuth({ type: "SET_ERROR", payload: null });
+					} else {
+						dispatchAuth({ type: "SET_USER", payload: null });
+					}
 				});
-				dispatchAuth({ type: "SET_ERROR", payload: null });
-			} else {
-				dispatchAuth({ type: "SET_USER", payload: null });
+			} catch (e) {
+				console.error("Firebase auth init failed:", e);
 			}
-		});
+		};
+
+		// Defer the SDK load past first paint so session restore never competes
+		// with startup rendering; the app renders signed-out meanwhile.
+		let handle: number;
+		if (typeof window.requestIdleCallback === "function") {
+			handle = window.requestIdleCallback(() => void subscribe());
+		} else {
+			handle = window.setTimeout(() => void subscribe(), 300);
+		}
+
+		return () => {
+			cancelled = true;
+			if (typeof window.cancelIdleCallback === "function") {
+				window.cancelIdleCallback(handle);
+			} else {
+				clearTimeout(handle);
+			}
+			unsub?.();
+		};
 	}, []);
 
 	return (

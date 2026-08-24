@@ -119,6 +119,9 @@ data class DrawingStroke(
     val points: List<DrawingPoint>,
     val colorHex: String,
     val thickness: Float,
+    /** Shape semantics shared by both platforms: pen, line, rect, circle,
+     *  triangle, arrow. Legacy strokes without one render as pen. */
+    val tool: String? = null,
 )
 
 @Serializable

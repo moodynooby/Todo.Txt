@@ -64,5 +64,7 @@ export function writeNotesBackup(notes: Note[], syncedAt?: number): void {
 			syncedAt,
 		};
 		localStorage.setItem(NOTES_BACKUP_KEY, JSON.stringify(data));
-	} catch {}
+	} catch {
+		// Best-effort mirror; a full quota must not break note taking.
+	}
 }

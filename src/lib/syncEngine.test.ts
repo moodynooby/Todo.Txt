@@ -19,7 +19,9 @@ const updates = (): DocUpdate[] => [
 ];
 
 // The engine talks to Firestore only through these three modules.
-vi.mock("@/lib/firebase", () => ({ getFirestoreDb: () => ({}) as never }));
+vi.mock("@/lib/firebase", () => ({
+	getFirestoreDbAsync: async () => ({}) as never,
+}));
 vi.mock("@/lib/firestoreClient", () => ({
 	writeDocs: vi.fn(),
 	getDocWithRetry: vi.fn(),

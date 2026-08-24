@@ -1,13 +1,14 @@
-import { useEditor } from "@tiptap/react";
+import type { Editor as TipTapEditor } from "@tiptap/core";
 import {
 	createContext,
 	type ReactNode,
+	useCallback,
 	useContext,
 	useEffect,
 	useReducer,
 	useRef,
+	useState,
 } from "react";
-import { getEditorExtensions } from "@/utils/editorExtensions";
 
 export interface TodoState {
 	content: string;
@@ -35,9 +36,10 @@ export const initialTodoState: TodoState = {
 
 interface TodoContextValue {
 	state: TodoState;
-	editor: import("@tiptap/core").Editor | null;
+	editor: TipTapEditor | null;
 	dispatchTodo: (action: TodoAction) => void;
 	handleAiInsert: (text: string, mode: "replace" | "append") => void;
+	requestEditor: () => void;
 }
 
 export const TodoContext = createContext<TodoContextValue | null>(null);
@@ -66,31 +68,75 @@ export function TodoProvider({
 		content: initialContent,
 	});
 
+	const [editor, setEditor] = useState<TipTapEditor | null>(null);
+	const [editorRequested, setEditorRequested] = useState(false);
 	const lastMarkdownRef = useRef(state.content);
-	const editor = useEditor({
-		extensions: getEditorExtensions({
-			// Empty on purpose: EditorPlay renders its own warm cycling prompt as
-			// empty-state art, and the static TipTap placeholder would compete
-			// with it (TipTap's CSS ::before would show "Start writing..."
-			// behind the 🌱 prompt while the doc is empty).
-			placeholder: "",
-			onFilterClick,
-		}),
-		content: state.content || "",
-		contentType: "markdown",
-		onUpdate: ({ editor: currentEditor }) => {
-			const md = currentEditor.getMarkdown();
-			// BUG FIX (previously silent): editor changes were only stored in a
-			// local ref and never dispatched, so remote sync / backups saw stale
-			// content while the editor looked up to date. Dispatching here keeps
-			// the persisted state and the editor in sync.
-			if (md !== lastMarkdownRef.current) {
-				lastMarkdownRef.current = md;
-				dispatchTodo({ type: "SET_CONTENT", payload: { content: md } });
-			}
+
+	// Keep the latest filter callback reachable from the creation effect
+	// without recreating the editor when it changes identity.
+	const onFilterClickRef = useRef(onFilterClick);
+	onFilterClickRef.current = onFilterClick;
+
+	const requestEditor = useCallback(() => setEditorRequested(true), []);
+
+	/* The TipTap stack (~600 KB of editor + ProseMirror + extensions) is
+	 * loaded only once something actually asks for the document — the todo
+	 * page mounting or the AI dialog opening — so booting into notes,
+	 * habits, excalidraw or sync never pays for it. */
+	useEffect(() => {
+		if (!editorRequested) return;
+		let cancelled = false;
+
+		void (async () => {
+			const [{ Editor }, { getEditorExtensions }] = await Promise.all([
+				import("@tiptap/core"),
+				import("@/utils/editorExtensions"),
+			]);
+			if (cancelled) return;
+
+			const instance = new Editor({
+				extensions: getEditorExtensions({
+					// Empty on purpose: EditorPlay renders its own warm cycling prompt as
+					// empty-state art, and the static TipTap placeholder would compete
+					// with it (TipTap's CSS ::before would show "Start writing..."
+					// behind the 🌱 prompt while the doc is empty).
+					placeholder: "",
+					onFilterClick: (type, value) =>
+						onFilterClickRef.current?.(type, value),
+				}),
+				content: lastMarkdownRef.current || "",
+				contentType: "markdown",
+				onUpdate: ({ editor: currentEditor }) => {
+					const md = currentEditor.getMarkdown();
+					// BUG FIX (previously silent): editor changes were only stored in a
+					// local ref and never dispatched, so remote sync / backups saw stale
+					// content while the editor looked up to date. Dispatching here keeps
+					// the persisted state and the editor in sync.
+					if (md !== lastMarkdownRef.current) {
+						lastMarkdownRef.current = md;
+						dispatchTodo({ type: "SET_CONTENT", payload: { content: md } });
+					}
+				},
+			});
+			setEditor(instance);
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [editorRequested]);
+
+	/* Destroy exactly once on unmount; instance swaps go through setEditor. */
+	const editorRef = useRef<TipTapEditor | null>(null);
+	useEffect(() => {
+		editorRef.current = editor;
+	}, [editor]);
+	useEffect(
+		() => () => {
+			editorRef.current?.destroy();
 		},
-		immediatelyRender: false,
-	});
+		[],
+	);
 
 	useEffect(() => {
 		// Only push remote/local state into the editor when the incoming
@@ -116,21 +162,24 @@ export function TodoProvider({
 		}
 	}, [state.content, editor]);
 
-	const handleAiInsert = (text: string, mode: "replace" | "append") => {
-		if (!editor) return;
+	const handleAiInsert = useCallback(
+		(text: string, mode: "replace" | "append") => {
+			if (!editor) return;
 
-		if (mode === "replace" && !editor.state.selection.empty) {
-			editor.chain().focus().deleteSelection().insertContent(text).run();
-		} else if (mode === "append") {
-			editor.chain().focus().insertContent(`\n${text}`).run();
-		} else {
-			editor.chain().focus().setContent(text).run();
-		}
-	};
+			if (mode === "replace" && !editor.state.selection.empty) {
+				editor.chain().focus().deleteSelection().insertContent(text).run();
+			} else if (mode === "append") {
+				editor.chain().focus().insertContent(`\n${text}`).run();
+			} else {
+				editor.chain().focus().setContent(text).run();
+			}
+		},
+		[editor],
+	);
 
 	return (
 		<TodoContext.Provider
-			value={{ state, editor, dispatchTodo, handleAiInsert }}
+			value={{ state, editor, dispatchTodo, handleAiInsert, requestEditor }}
 		>
 			{children}
 		</TodoContext.Provider>

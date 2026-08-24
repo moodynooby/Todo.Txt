@@ -1,6 +1,6 @@
 import type { Editor } from "@tiptap/core";
-import { saveAs } from "file-saver";
 import { playBeep } from "@/lib/beep";
+import { HAPTIC, haptic } from "@/lib/haptics";
 
 export type SaveFormat = "markdown" | "text" | "html";
 
@@ -34,7 +34,13 @@ const downloadFile = (
 	mimeType: string,
 ): void => {
 	const blob = new Blob([content], { type: mimeType });
-	saveAs(blob, filename);
+	const url = URL.createObjectURL(blob);
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = filename;
+	anchor.click();
+	// Delay the revoke so Firefox has time to start the download.
+	setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
 const saveToFile = (
@@ -85,4 +91,5 @@ export const saveEditorContent = (
 	};
 	saveActions[format]();
 	playBeep(150, 660);
+	haptic(HAPTIC.save);
 };

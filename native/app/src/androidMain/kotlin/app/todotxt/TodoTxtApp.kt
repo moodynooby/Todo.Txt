@@ -6,6 +6,7 @@ import app.todotxt.persistence.PlatformStorage
 import app.todotxt.persistence.Storage
 import app.todotxt.service.DueReminderManager
 import app.todotxt.service.ReminderManager
+import app.todotxt.sync.AccountSyncManager
 import app.todotxt.sync.FirebaseSyncManager
 import app.todotxt.widget.WidgetRefresher
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +28,12 @@ class TodoTxtApp : Application() {
         instance = this
         PlatformStorage.init(this)
         Storage.load()
-        FirebaseSyncManager.start()
+        // Account sync (web-compatible) is the primary engine; the legacy
+        // anonymous group relay only runs while no account session exists.
+        AccountSyncManager.start()
+        if (!AccountSyncManager.hasAccountSession()) {
+            FirebaseSyncManager.start()
+        }
         // Live widget updates + alarm (re)scheduling on every data change.
         WidgetRefresher.observe(this, appScope)
         appScope.launch {

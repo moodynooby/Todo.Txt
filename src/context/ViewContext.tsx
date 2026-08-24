@@ -62,6 +62,15 @@ interface ViewProviderProps {
 	children: ReactNode;
 }
 
+export const VIEW_MODES = ["todo", "notes", "habits", "excalidraw"];
+
+/** Deep-link / app-shortcut entry: `?view=habits` overrides the persisted
+ * view once, then normal persistence takes over again. */
+const viewFromUrl = (): string | null => {
+	const value = new URLSearchParams(window.location.search).get("view");
+	return value && VIEW_MODES.includes(value) ? value : null;
+};
+
 export function ViewProvider({ children }: ViewProviderProps) {
 	const [persisted, setPersisted] = useLocalStorage<PersistedState>({
 		key: STORAGE_KEY,
@@ -70,7 +79,7 @@ export function ViewProvider({ children }: ViewProviderProps) {
 
 	const [state, dispatchReducer] = useReducer(viewReducer, {
 		...initialViewState,
-		viewMode: persisted.viewMode ?? "todo",
+		viewMode: viewFromUrl() ?? persisted.viewMode ?? "todo",
 		sidebarCollapsed: persisted.sidebarCollapsed ?? false,
 		density: persisted.density ?? "comfortable",
 	});

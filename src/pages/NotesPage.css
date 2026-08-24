@@ -33,6 +33,10 @@
 }
 
 .NotesPage-noteCard {
+	/* Pastel backgrounds always pair with near-black ink; components read
+	   these vars instead of hardcoding hex per-file. */
+	--note-text-color: #000;
+	--note-textarea-color: #000;
 	break-inside: avoid;
 	margin-bottom: 16px;
 	overflow: hidden;

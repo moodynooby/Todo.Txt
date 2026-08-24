@@ -38,6 +38,11 @@ interface EditorProps {
 	onAdvancedTools?: () => void;
 	/* Playfulness layer */
 	playLayer?: React.ReactNode;
+	/* Rendered between the toolbar and the writing surface (e.g. the
+	 * quick-add bar) so it reads as part of the editor chrome. */
+	aboveContent?: React.ReactNode;
+	/* Extra controls rendered at the end of the full toolbar. */
+	toolbarExtra?: React.ReactNode;
 	warmPlaceholder?: string;
 }
 
@@ -51,6 +56,8 @@ export function Editor({
 	onAiTools,
 	onAdvancedTools,
 	playLayer,
+	aboveContent,
+	toolbarExtra,
 	warmPlaceholder,
 }: EditorProps) {
 	// On narrow screens the toolbar collapses to essentials (M3 adaptive
@@ -209,6 +216,8 @@ export function Editor({
 						</RichTextEditor.ControlsGroup>
 					)}
 
+					{toolbarExtra}
+
 					<div
 						className="editor-smart-suggestions"
 						style={{
@@ -222,6 +231,9 @@ export function Editor({
 					</div>
 				</RichTextEditor.Toolbar>
 			)}
+
+			{/* Slot between toolbar and writing surface (quick-add lives here) */}
+			{aboveContent}
 
 			{/* Playfulness layer wraps the writing surface so TipTap stays pure */}
 			{playLayer}

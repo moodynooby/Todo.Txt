@@ -2,15 +2,15 @@
 
 This repo ships **three surfaces** on `main`, all sharing one core:
 
-1. **Native app (`native/`)** — the frontrunner. Kotlin Compose Multiplatform (Android + Desktop JVM; no iOS/macOS). Compose UI, CameraX + ML Kit QR scanning, seven Glance widgets fed by the shared core projection, Ktor QR-based P2P sync with LWW-CRDT core (continuous WebSocket), notification actions (Mark Done / Snooze), multi-timer. Kotlin 2.1.21, CMP 1.7.3, AGP 8.7.3.
-2. **Web app** (repo root — `src/`, `package.json`) — browser/PWA; also embeddable in the Tauri shell below. React 19 + Vite + TypeScript, Mantine 9 UI, TipTap 3 editor (Markdown ext), Excalidraw drawing, Firebase Auth + Firestore sync, GROQ AI (`@ai-sdk/groq`), PWA via vite-plugin-pwa.
+1. **Native app (`native/`)** — the frontrunner. Kotlin Compose Multiplatform (Android + Desktop JVM; no iOS/macOS). Compose UI, seven Glance widgets fed by the shared core projection, account-based Firebase sync speaking the web wire protocol (`sync/AccountSyncManager.kt`, per-document LWW against `users/{uid}/{collection}/{id}`), notification actions (Mark Done / Snooze), multi-timer. Kotlin 2.1.21, CMP 1.7.3, AGP 8.7.3.
+2. **Web app** (repo root — `src/`, `package.json`) — browser/PWA; also embeddable in the Tauri shell below. React 19 + Vite + TypeScript, Mantine 9 UI, TipTap 3 editor (Markdown ext), Excalidraw drawing, Firebase Auth + Firestore sync, GROQ AI via plain `fetch` (`src/hooks/useAiGroq.ts`), PWA via vite-plugin-pwa.
 3. **Tauri shell (`src-tauri/`)** — optional Rust wrapper around the same web UI for desktop + an Android build (`tauri android`), with its own RemoteViews widget stack (Todo/Momentum/Streaks/Heatmap/Week-Grid) fed by the shared `WidgetData` JSON contract. Not built by default; no `@tauri-apps/*` npm deps are installed (add them back only when building this target).
 
 **Shared core (`native/core/`)**: a KMP module with JVM + JS/IR targets — todo.txt parsing (`TodoParser`), habit merge (`HabitMerge`), streaks/heatmap math (`HabitUtils`), scheduling + dependency-metadata grammar (`SchedulingParser`, `TaskMetadataParser`), and the shared widget projection (`WidgetData`, consumed by BOTH Android widget stacks: native Glance widgets and the Tauri shell's RemoteViews providers). The web consumes all of this through the typed bridge `src/lib/core.ts` (the only file allowed to import `@todotxt/core`; it converts JSON-string results into web types and maps hex ↔ Kotlin enum colors). The bundle IS committed to git (Netlify has no Gradle toolchain and never regenerates it): after changing core code run `cd native && ./rebuild-npm-package.sh`, then `pnpm install` at the root (pnpm copies `file:` deps into its store) and commit the regenerated `native/core/npm-package/` files.
 
 **Widgets**: seven Glance widgets ship in the native app (Todo, Habits list, Momentum, Heatmap, Quick-Check, Streaks, Week-Grid), all fed by `WidgetData.project(...)` — never compute streaks/rates/grid flags inline in a composable. All receivers are registered in `AndroidManifest.xml`; refresh goes through `WidgetRefresher` only (flow observer re-renders on data change). The Tauri shell's RemoteViews providers read the same JSON contract from `widget_data.json`.
 
-**Sync**: habit merging everywhere (native P2P, web P2P view, JS exports) goes through `core/HabitMerge.kt`. Completed dates are always unioned — never drop the loser side's dates when picking the newer record.
+**Sync**: habit merging everywhere (native account sync, web sync view, JS exports) goes through `core/HabitMerge.kt`. Completed dates are always unioned — never drop the loser side's dates when picking the newer record.
 
 ## Commands
 

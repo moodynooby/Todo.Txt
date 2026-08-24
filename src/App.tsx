@@ -25,22 +25,23 @@ import { readContentBackupJson, SyncProvider } from "@/context/SyncContext";
 import { TimerProvider, useTimerContext } from "@/context/TimerContext";
 import { TodoProvider, useTodoContext } from "@/context/TodoContext";
 import { useViewContext, ViewProvider } from "@/context/ViewContext";
-import AiToolsDialog from "@/features/ai/AiToolsDialog";
-import Timer from "@/features/timer/Timer";
+import { useAppBadge } from "@/hooks/useAppBadge";
 import { useDueReminders } from "@/hooks/useDueReminders";
 import { parseTodoContent } from "@/lib/core";
 import { type SaveFormat, saveEditorContent } from "@/lib/documentExport";
 import { readHabitsBackup } from "@/lib/habitsBackup";
-import HabitsPage from "@/pages/HabitsPage";
-import NotesPage from "@/pages/NotesPage";
-import TodoPage from "@/pages/TodoPage";
 import type { ExcalidrawData } from "@/types/sync";
 import type { Filter, ParsedTodoContent } from "@/types/todo";
 
-/* Lazy-loaded because its @todotxt/core dependency would otherwise push
- * the index chunk past workbox's 2 MiB PWA precache limit. */
+/* Lazy-loaded because their dependency chains (Excalidraw, TipTap, Firebase
+ * sync UI) would otherwise push the index chunk past workbox's 2 MiB PWA
+ * precache limit and delay first paint behind megabytes of JS. */
 const ExcalidrawPage = lazy(() => import("@/pages/ExcalidrawPage"));
-const P2pSyncPage = lazy(() => import("@/pages/P2pSyncPage"));
+const TodoPage = lazy(() => import("@/pages/TodoPage"));
+const NotesPage = lazy(() => import("@/pages/NotesPage"));
+const HabitsPage = lazy(() => import("@/pages/HabitsPage"));
+const AiToolsDialog = lazy(() => import("@/features/ai/AiToolsDialog"));
+const Timer = lazy(() => import("@/features/timer/Timer"));
 
 interface AppContentProps {
 	activeFilter: Filter | null;
@@ -55,6 +56,7 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 		editor,
 		dispatchTodo,
 		handleAiInsert,
+		requestEditor,
 	} = useTodoContext();
 	const content = todoState.content;
 	const { state: timersState, dispatchTimer } = useTimerContext();
@@ -155,6 +157,13 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 	 * is open, e.g. `due:today@17:00` or `due:2026-08-16T14:30`. */
 	useDueReminders(taskData);
 
+	/* App-icon badge mirrors the open-task count on the home screen. */
+	const openTaskCount = useMemo(
+		() => taskData.tasks.filter((t) => !t.completed).length,
+		[taskData],
+	);
+	useAppBadge(openTaskCount);
+
 	/* Ask for notification permission once the user has loaded a document, so
 	 * the due reminders above can fire as soon as permission is granted. */
 	useEffect(() => {
@@ -172,8 +181,11 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 	);
 
 	const handleAiTools = useCallback((): void => {
+		// The AI dialog reads/inserts into the TipTap document, so make sure
+		// the deferred editor exists before the dialog opens.
+		requestEditor();
 		setAiToolsOpen(true);
-	}, []);
+	}, [requestEditor]);
 
 	const handleRemoveTimer = useCallback(
 		(id: number) => {
@@ -254,28 +266,30 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 							accept=".txt,.md,.html"
 							onChange={handleFileChange}
 						/>
-						<Box className="app-view-frame app-view-enter">
-							{viewMode === "excalidraw" && (
-								<Suspense fallback={<ViewLoading />}>
+						{/* Keyed by view so the enter animation replays on every
+						switch — the CSS transition is what makes view changes feel
+						like native screen navigation instead of a content swap. */}
+						<Box key={viewMode} className="app-view-frame app-view-enter">
+							<Suspense fallback={<ViewLoading />}>
+								{viewMode === "excalidraw" && (
 									<ExcalidrawPage
 										initialData={excalidrawData}
 										onChange={(data) => setExcalidrawData(data)}
 									/>
-								</Suspense>
-							)}
-							{viewMode === "notes" && <NotesPage />}
-							{viewMode === "habits" && <HabitsPage />}
-							{viewMode === "sync" && <P2pSyncPage />}
-							{viewMode === "todo" && (
-								<TodoPage
-									taskData={taskData}
-									activeFilter={activeFilter}
-									onFilterChange={onFilterChange}
-									onSave={handleSave}
-									onOpen={handleOpenRepo}
-									onAiTools={handleAiTools}
-								/>
-							)}
+								)}
+								{viewMode === "notes" && <NotesPage />}
+								{viewMode === "habits" && <HabitsPage />}
+								{viewMode === "todo" && (
+									<TodoPage
+										taskData={taskData}
+										activeFilter={activeFilter}
+										onFilterChange={onFilterChange}
+										onSave={handleSave}
+										onOpen={handleOpenRepo}
+										onAiTools={handleAiTools}
+									/>
+								)}
+							</Suspense>
 						</Box>
 					</ErrorBoundary>
 
@@ -289,14 +303,16 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 				</AppShell.Main>
 			</AppShell>
 
-			{timersState.timers.map((timer) => (
-				<Timer
-					key={timer.id}
-					timer={timer}
-					onRemove={handleRemoveTimer}
-					onUpdate={handleUpdateTimer}
-				/>
-			))}
+			<Suspense fallback={null}>
+				{timersState.timers.map((timer) => (
+					<Timer
+						key={timer.id}
+						timer={timer}
+						onRemove={handleRemoveTimer}
+						onUpdate={handleUpdateTimer}
+					/>
+				))}
+			</Suspense>
 		</SyncProvider>
 	);
 }

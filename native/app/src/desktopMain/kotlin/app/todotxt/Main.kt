@@ -18,11 +18,16 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import app.todotxt.persistence.Storage
+import app.todotxt.sync.AccountSyncManager
+import app.todotxt.sync.FirebaseSyncManager
 import app.todotxt.ui.AppRoot
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
     Storage.load()
+    // Desktop never ran the legacy relay; account sync (web-compatible) is
+    // the only cloud engine here.
+    AccountSyncManager.start()
     var isOpen by remember { mutableStateOf(true) }
     val windowState = rememberWindowState(
         size = DpSize(1180.dp, 780.dp),

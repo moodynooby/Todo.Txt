@@ -12,7 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mock: the live-sync subscription path must forward the server
 // timestamp so offline mirror seeds stay server-relative (regression fix).
-vi.mock("@/lib/firebase", () => ({ getFirestoreDb: () => ({}) as never }));
+vi.mock("@/lib/firebase", () => ({
+	getFirestoreDbAsync: async () => ({}) as never,
+}));
 vi.mock("@/lib/firestoreClient", () => ({
 	subscribeDoc: (_db: unknown, _uid: string, _path: unknown, fn: unknown) => {
 		subscriber(fn);
@@ -250,7 +252,9 @@ describe("subscription timestamp forwarding", () => {
 			onNewer as (d: Record<string, unknown>, u?: number) => void,
 		);
 
-		expect(subscriber).toHaveBeenCalledOnce();
+		// The db handle resolves asynchronously (lazy Firebase), so the
+		// subscription is registered one microtask later.
+		await vi.waitFor(() => expect(subscriber).toHaveBeenCalledOnce());
 		const callback = subscriber.mock.calls[0][0] as (
 			data: unknown,
 			updatedAt: number,

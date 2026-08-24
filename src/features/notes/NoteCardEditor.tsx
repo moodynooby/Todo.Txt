@@ -39,7 +39,6 @@ const NoteCardEditor = ({ content, onChange }: NoteCardEditorProps) => {
 			editor={editor}
 			toolbarVariant="minimal"
 			className="NotesPage-noteCard-editor"
-			style={{ "--note-text-color": "#000" } as React.CSSProperties}
 		/>
 	);
 };

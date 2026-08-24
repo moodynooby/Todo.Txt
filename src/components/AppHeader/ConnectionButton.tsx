@@ -1,8 +1,9 @@
 import { Avatar, Button, Indicator, Menu, Text } from "@mantine/core";
-import { LogOut, User } from "lucide-react";
+import { KeyRound, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import { useSyncContext } from "@/context/SyncContext";
+import SetPasswordModal from "@/features/auth/SetPasswordModal";
 import SignInModal from "@/features/auth/SignInModal";
 
 const ConnectionButton = () => {
@@ -11,6 +12,7 @@ const ConnectionButton = () => {
 	} = useAuthContext();
 	const { disconnect } = useSyncContext();
 	const [signInModalOpen, setSignInModalOpen] = useState(false);
+	const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
 	const dotColor = () => {
 		switch (syncStatus) {
@@ -45,40 +47,52 @@ const ConnectionButton = () => {
 	}
 
 	return (
-		<Menu shadow="md" width={200} position="bottom-end">
-			<Menu.Target>
-				<Indicator
-					position="bottom-end"
-					offset={4}
-					color={dotColor()}
-					size={12}
-					withBorder
-				>
-					<Avatar
-						src={user.photoURL}
-						alt={user.displayName ?? "User"}
-						size="md"
+		<>
+			<Menu shadow="md" width={200} position="bottom-end">
+				<Menu.Target>
+					<Indicator
+						position="bottom-end"
+						offset={4}
+						color={dotColor()}
+						size={12}
+						withBorder
 					>
-						{user.displayName?.charAt(0).toUpperCase() ?? "U"}
-					</Avatar>
-				</Indicator>
-			</Menu.Target>
-			<Menu.Dropdown>
-				<Menu.Label>
-					<Text size="sm" fw={600} truncate>
-						{user.displayName ?? "Signed in"}
-					</Text>
-				</Menu.Label>
-				<Menu.Divider />
-				<Menu.Item
-					leftSection={<LogOut size={16} />}
-					color="red"
-					onClick={disconnect}
-				>
-					Sign out
-				</Menu.Item>
-			</Menu.Dropdown>
-		</Menu>
+						<Avatar
+							src={user.photoURL}
+							alt={user.displayName ?? "User"}
+							size="md"
+						>
+							{user.displayName?.charAt(0).toUpperCase() ?? "U"}
+						</Avatar>
+					</Indicator>
+				</Menu.Target>
+				<Menu.Dropdown>
+					<Menu.Label>
+						<Text size="sm" fw={600} truncate>
+							{user.displayName ?? "Signed in"}
+						</Text>
+					</Menu.Label>
+					<Menu.Divider />
+					<Menu.Item
+						leftSection={<KeyRound size={16} />}
+						onClick={() => setPasswordModalOpen(true)}
+					>
+						Set sync password…
+					</Menu.Item>
+					<Menu.Item
+						leftSection={<LogOut size={16} />}
+						color="red"
+						onClick={disconnect}
+					>
+						Sign out
+					</Menu.Item>
+				</Menu.Dropdown>
+			</Menu>
+			<SetPasswordModal
+				opened={passwordModalOpen}
+				onClose={() => setPasswordModalOpen(false)}
+			/>
+		</>
 	);
 };
 

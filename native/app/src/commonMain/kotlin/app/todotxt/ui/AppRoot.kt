@@ -51,11 +51,11 @@ import app.todotxt.persistence.Storage
 import app.todotxt.persistence.ThemeMode
 import app.todotxt.theme.FieldNotesTheme
 import app.todotxt.ui.ai.AiPage
-import app.todotxt.ui.draw.DrawPage
+import app.todotxt.ui.draw.ExcalidrawDrawPage
 import app.todotxt.ui.editor.EditorPage
 import app.todotxt.ui.habits.HabitsPage
 import app.todotxt.ui.notes.NotesPage
-import app.todotxt.ui.sync.P2pSyncPage
+import app.todotxt.ui.sync.AccountSyncPage
 import app.todotxt.ui.timer.TimerPage
 import app.todotxt.ui.todo.TodoPage
 import app.todotxt.update.AppRelease
@@ -64,9 +64,6 @@ import app.todotxt.update.UpdateStatus
 import app.todotxt.update.checkForReleaseUpdate
 import app.todotxt.update.openReleaseUrl
 import kotlinx.coroutines.launch
-
-/** Android: open camera for QR scanning. Desktop: no-op. */
-expect fun rememberScanRequest(): () -> Unit
 
 enum class Workspace(val title: String) {
     TODO("Todos"),
@@ -150,16 +147,14 @@ fun AppRoot(modifier: Modifier = Modifier) {
                             Workspace.TODO -> TodoPage(content)
                             Workspace.HABITS -> HabitsPage(habits)
                             Workspace.NOTES -> NotesPage(notes)
-                            Workspace.DRAW -> DrawPage()
+                            Workspace.DRAW -> ExcalidrawDrawPage()
                             Workspace.TIMER -> TimerPage()
                             Workspace.AI -> AiPage()
                             Workspace.EDITOR -> EditorPage(
                                 initialContent = content,
                                 onBack = { workspace = Workspace.TODO },
                             )
-                            Workspace.SYNC -> P2pSyncPage(
-                                onScanRequest = rememberScanRequest(),
-                            )
+                            Workspace.SYNC -> AccountSyncPage()
                         }
                     }
                 }

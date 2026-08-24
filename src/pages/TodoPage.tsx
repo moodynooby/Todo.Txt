@@ -1,8 +1,8 @@
-import { ActionIcon, Drawer, Flex, Transition } from "@mantine/core";
+import { ActionIcon, Drawer, Flex, Paper, Transition } from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { RichTextEditor } from "@mantine/tiptap";
-import { Filter as FilterIcon } from "lucide-react";
-import { useEffect } from "react";
+import { Code2, Filter as FilterIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import AdvancedToolsDialog from "@/components/AdvancedToolsDialog";
 import { Editor } from "@/components/Editor";
 import EditorPlay from "@/components/Editor/EditorPlay";
@@ -40,7 +40,12 @@ const TodoPage = ({
 	onOpen,
 	onAiTools,
 }: TodoPageProps) => {
-	const { editor } = useTodoContext();
+	const {
+		editor,
+		requestEditor,
+		state: todoState,
+		dispatchTodo,
+	} = useTodoContext();
 	const { state: viewState, dispatchView } = useViewContext();
 	const sidebarCollapsed = viewState.sidebarCollapsed;
 	const onToggleSidebar = () => dispatchView({ type: "TOGGLE_SIDEBAR" });
@@ -58,6 +63,32 @@ const TodoPage = ({
 		activeFilter,
 		onFilterChange,
 	});
+
+	/* Pull in the TipTap stack now that the document surface is actually
+	 * on screen (see TodoContext — editor creation is deferred). */
+	useEffect(() => {
+		requestEditor();
+	}, [requestEditor]);
+
+	/* Raw todo.txt source view: the plain text is the actual storage format,
+	 * so power users can read/edit exactly what sync sees, with the rich
+	 * surface as the friendly default. Edits dispatch through the same
+	 * SET_CONTENT path as remote updates, so the editor converges on blur. */
+	const [sourceMode, setSourceMode] = useState(false);
+	const handleSourceChange = (value: string) =>
+		dispatchTodo({ type: "SET_CONTENT", payload: { content: value } });
+
+	/* Quick-added lines land as markdown task items at the end of the
+	 * document — same write path as typing, so filters and parsing see it. */
+	const handleQuickAdd = useCallback(
+		(text: string) => {
+			if (!editor || editor.isDestroyed) return;
+			editor.commands.focus("end");
+			const prefix = editor.getText().length > 0 ? "\n" : "";
+			editor.commands.insertContent(`${prefix}- [ ] ${text}\n`);
+		},
+		[editor],
+	);
 
 	/* Playfulness layer: empty-state art and the pet companion */
 	const taskCount = taskData.tasks.length;
@@ -159,15 +190,11 @@ const TodoPage = ({
 				direction="column"
 				style={{ flex: 1, minWidth: 0, overflow: "hidden" }}
 			>
-				{/* Hero moment: the quick-add bar is the fastest path to a new
-					todo (DESIGN.md). Typing directly in the editor remains the
-					power path — both write to the same document. */}
-				<QuickAddBar editor={editor} />
-
-				{/* Single writing surface — the quick-add bar above is the
-						guided path; typing directly in the editor is the power
+				{/* Single writing surface — the quick-add strip below the toolbar
+						is the guided path; typing directly in the editor is the power
 						path. The play layer adds rhythm dots, empty-state art,
-						and the pet. */}
+						and the pet. The source view swaps the rich surface for the
+						raw todo.txt text. */}
 				<Editor
 					editor={editor}
 					toolbarVariant="full"
@@ -182,19 +209,52 @@ const TodoPage = ({
 						flexDirection: "column",
 						minHeight: 0,
 					}}
-					playLayer={
-						<EditorPlay
-							mood={mood}
-							isEmpty={isEmpty}
-							onPetNudge={handlePetNudge}
-							contentStyle={{
-								flex: 1,
-								display: "flex",
-								flexDirection: "column",
-							}}
+					aboveContent={<QuickAddBar onAdd={handleQuickAdd} />}
+					toolbarExtra={
+						<RichTextEditor.Control
+							onClick={() => setSourceMode((s) => !s)}
+							active={sourceMode}
+							aria-label="Toggle raw todo.txt source"
 						>
-							<RichTextEditor.Content />
-						</EditorPlay>
+							<Code2 size={16} />
+						</RichTextEditor.Control>
+					}
+					playLayer={
+						sourceMode ? (
+							<Paper
+								radius="lg"
+								p="lg"
+								className="tiptap-container todo-source-view"
+								style={{
+									flex: 1,
+									display: "flex",
+									flexDirection: "column",
+									minHeight: 0,
+									overflow: "auto",
+								}}
+							>
+								<textarea
+									className="todo-source-input"
+									aria-label="Raw todo.txt source"
+									spellCheck={false}
+									value={todoState.content}
+									onChange={(e) => handleSourceChange(e.currentTarget.value)}
+								/>
+							</Paper>
+						) : (
+							<EditorPlay
+								mood={mood}
+								isEmpty={isEmpty}
+								onPetNudge={handlePetNudge}
+								contentStyle={{
+									flex: 1,
+									display: "flex",
+									flexDirection: "column",
+								}}
+							>
+								<RichTextEditor.Content />
+							</EditorPlay>
+						)
 					}
 				/>
 

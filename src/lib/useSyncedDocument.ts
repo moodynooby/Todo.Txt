@@ -1,4 +1,3 @@
-import { serverTimestamp } from "firebase/firestore";
 import {
 	createContext,
 	useCallback,
@@ -7,7 +6,7 @@ import {
 	useMemo,
 	useRef,
 } from "react";
-import { getFirestoreDb } from "@/lib/firebase";
+import { getFirestoreDbAsync } from "@/lib/firebase";
 import {
 	type DocUpdate,
 	getDocWithRetry,
@@ -161,14 +160,16 @@ export function useSyncedDocument<T>(opts: SyncedDocumentOptions<T>): void {
 	}, [opts.value]);
 
 	// 2. Cloud write: debounced automatically by the engine's queue; here we
-	//    just announce the intent whenever the prepared value changes.
+	//    just announce the intent whenever the prepared value changes. The
+	//    server-timestamp sentinel is injected at flush time (processQueue),
+	//    because producing it requires the lazily-loaded Firestore SDK.
 	const enqueue = useStableCall((update: DocUpdate) => engine.enqueue(update));
 	useEffect(() => {
 		const { path, encode } = optsRef.current;
 		// Encode the beforeWrite-normalized value so per-device runtime state
 		// (e.g. running timers) never reaches Firestore.
 		const data = encode ? encode(writeValue) : { value: writeValue };
-		enqueue({ path, data: { ...data, updatedAt: serverTimestamp() } });
+		enqueue({ path, data });
 		// We intentionally depend on the ref-stable options so a changed
 		// encode/decode never triggers a redundant write.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -311,33 +312,45 @@ class SyncEngineImpl implements SyncEngine {
 		const uid = this.uid;
 		if (!uid) return; // Resubscribed automatically when `connect` runs.
 
-		const unsub = subscribeDoc(
-			getFirestoreDb(),
-			uid,
-			path,
-			(data, updatedAt) => {
-				// `applyWithMirror` (the registration side) expects the server
-				// timestamp as its second argument — forwarding it is what keeps
-				// offline mirror seeds server-relative after live updates.
-				onNewer(data as AnyRecord, updatedAt);
-				this.markHealthy("synced");
-			},
-			0,
-			(err) => {
-				console.error("Firestore snapshot error:", err);
-				this.markUnhealthy("error");
-				this.retry(() => this.subscribe(path, onNewer));
-			},
-		);
-		this.unsubscribes.set(key, unsub);
+		// The Firestore SDK (and db instance) resolve asynchronously; proxy the
+		// unsubscribe handle so callers can cancel before it even connects.
+		let active = true;
+		let unsub: (() => void) | null = null;
+		void (async () => {
+			const db = await getFirestoreDbAsync();
+			if (!active) return;
+			unsub = subscribeDoc(
+				db,
+				uid,
+				path,
+				(data, updatedAt) => {
+					// `applyWithMirror` (the registration side) expects the server
+					// timestamp as its second argument — forwarding it is what keeps
+					// offline mirror seeds server-relative after live updates.
+					onNewer(data as AnyRecord, updatedAt);
+					this.markHealthy("synced");
+				},
+				0,
+				(err) => {
+					console.error("Firestore snapshot error:", err);
+					this.markUnhealthy("error");
+					this.retry(() => this.subscribe(path, onNewer));
+				},
+			);
+			if (active) this.unsubscribes.set(key, unsub);
+		})();
+		this.unsubscribes.set(key, () => {
+			active = false;
+			unsub?.();
+		});
 	};
 
-	readOnce = (path: UserDocPath) => {
+	readOnce = async (path: UserDocPath) => {
 		const uid = this.uid;
 		if (!uid) {
-			return Promise.resolve({ exists: false, data: undefined, updatedAt: 0 });
+			return { exists: false, data: undefined, updatedAt: 0 };
 		}
-		return getDocWithRetry<AnyRecord>(getFirestoreDb(), uid, path);
+		return getDocWithRetry<AnyRecord>(await getFirestoreDbAsync(), uid, path);
 	};
 
 	/** Restore any writes that survived a previous teardown (sign-out, page
@@ -398,7 +411,7 @@ class SyncEngineImpl implements SyncEngine {
 		}
 
 		this.processing = true;
-		const batch = [...this.queue];
+		const queued = [...this.queue];
 		this.queue = [];
 		// Optimistically clear the persisted outbox; a successful write is the
 		// only path that removes it for good — failure re-persists below.
@@ -407,14 +420,26 @@ class SyncEngineImpl implements SyncEngine {
 		this.markUnhealthy("syncing");
 
 		try {
-			await writeDocs(getFirestoreDb(), this.uid, batch);
+			// Inject the server-timestamp sentinel here rather than at enqueue
+			// time — producing it requires the lazily-loaded Firestore SDK.
+			// Entries that already carry an updatedAt (e.g. restored outbox
+			// writes) are forwarded untouched.
+			const { serverTimestamp } = await import("firebase/firestore");
+			const batch = queued.map((u) => ({
+				path: u.path,
+				data:
+					"updatedAt" in u.data
+						? u.data
+						: { ...u.data, updatedAt: serverTimestamp() },
+			}));
+			await writeDocs(await getFirestoreDbAsync(), this.uid, batch);
 			this.markHealthy("synced");
 		} catch (e) {
 			console.error("Firestore write error:", e);
 			this.markUnhealthy("error");
 			// Re-queue unsaved updates and retry with backoff (capped by
 			// RETRY_MAX_MS; cleared on the next successful write).
-			this.queue = batch.concat(this.queue);
+			this.queue = queued.concat(this.queue);
 			this.persistQueue();
 			this.retry(() => void this.processQueue());
 		} finally {
@@ -455,5 +480,3 @@ class SyncEngineImpl implements SyncEngine {
 		this.onStatusChange?.();
 	}
 }
-
-export { serverTimestamp };

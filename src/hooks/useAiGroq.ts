@@ -1,8 +1,15 @@
-import { createGroq } from "@ai-sdk/groq";
-import { generateText } from "ai";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+
+const DEFAULT_SYSTEM_PROMPT =
+	"You are a helpful assistant for managing todo lists. Return ONLY the processed text without any preamble or explanation.";
+
+interface ChatCompletionResponse {
+	choices?: Array<{ message?: { content?: string } }>;
+	error?: { message?: string };
+}
 
 export const useAiGroq = (apiKey: string) => {
 	const [isLoading, setIsLoading] = useState(false);
@@ -33,19 +40,35 @@ export const useAiGroq = (apiKey: string) => {
 			setError(null);
 
 			try {
-				const groq = createGroq({ apiKey });
-
-				const { text } = await generateText({
-					model: groq(DEFAULT_MODEL),
-					instructions:
-						systemPrompt ||
-						"You are a helpful assistant for managing todo lists. Return ONLY the processed text without any preamble or explanation.",
-					prompt,
-					abortSignal: controller.signal,
+				const response = await fetch(GROQ_ENDPOINT, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${apiKey}`,
+					},
+					body: JSON.stringify({
+						model: DEFAULT_MODEL,
+						messages: [
+							{
+								role: "system",
+								content: systemPrompt || DEFAULT_SYSTEM_PROMPT,
+							},
+							{ role: "user", content: prompt },
+						],
+					}),
+					signal: controller.signal,
 				});
 
+				const data = (await response.json()) as ChatCompletionResponse;
+
 				if (!mountedRef.current || controller.signal.aborted) return null;
-				return text;
+				if (!response.ok) {
+					throw new Error(
+						data.error?.message || `Groq API error (${response.status})`,
+					);
+				}
+
+				return data.choices?.[0]?.message?.content ?? null;
 			} catch (err) {
 				if (!mountedRef.current || controller.signal.aborted) return null;
 				console.error("Groq API Error:", err);

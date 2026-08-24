@@ -31,9 +31,6 @@ const NoteCard = ({
 		className="NotesPage-noteCard app-surface"
 		style={{
 			backgroundColor: note.color,
-			color: "#000",
-			"--note-textarea-color": "#000",
-			...(note.pinned ? { borderColor: "rgba(0, 0, 0, 0.12)" } : {}),
 		}}
 	>
 		<Group justify="space-between">

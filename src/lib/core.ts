@@ -26,7 +26,36 @@ type CoreModule = {
 	mergeHabitsJs: (localJson: string, remoteJson: string) => string;
 };
 
-const c = core as CoreModule;
+/* The Kotlin/JS bundle attaches its API as a NESTED namespace
+ * (`module.exports.app.todotxt.core.*`) via $jsExportAll$, so there are no
+ * static named exports to analyze — whether the functions appear directly
+ * on the imported namespace depends on each bundler's CJS interop (and it
+ * diverges between Vite's dev pre-bundler and the production build).
+ * Resolve every plausible shape explicitly instead. */
+function resolveCoreModule(mod: unknown): CoreModule {
+	const seen = new Set<unknown>();
+	let current = mod;
+	while (current && typeof current === "object" && !seen.has(current)) {
+		seen.add(current);
+		const candidate = current as Record<string, unknown>;
+		if (typeof candidate.parseTodoContentJs === "function") {
+			return candidate as CoreModule;
+		}
+		const nested = (candidate.app as Record<string, unknown> | undefined)
+			?.todotxt as Record<string, unknown> | undefined;
+		const inner = nested?.core as Record<string, unknown> | undefined;
+		if (inner && typeof inner.parseTodoContentJs === "function") {
+			return inner as CoreModule;
+		}
+		current = candidate.default;
+	}
+	throw new Error(
+		"@todotxt/core loaded but its JS exports were not found — rebuild it " +
+			"with native/rebuild-npm-package.sh and reinstall dependencies.",
+	);
+}
+
+const c = resolveCoreModule(core);
 
 // ---------------------------------------------------------------------------
 // Habit color mapping — web stores hex, the Kotlin enum serializes by name.
@@ -86,8 +115,8 @@ function adaptTask(raw: unknown): Task {
 		raw: t.raw,
 		completed: t.completed,
 		priority: t.priority ?? undefined,
-		projects: t.projects.length > 0 ? t.projects : undefined,
-		contexts: t.contexts.length > 0 ? t.contexts : undefined,
+		projects: t.projects && t.projects.length > 0 ? t.projects : undefined,
+		contexts: t.contexts && t.contexts.length > 0 ? t.contexts : undefined,
 		due: t.due ?? undefined,
 		dueTime: t.dueTime ?? undefined,
 	};

@@ -59,6 +59,13 @@ object Storage {
     private val _drawings = MutableStateFlow(emptyList<Drawing>())
     val drawings: StateFlow<List<Drawing>> = _drawings.asStateFlow()
 
+    /**
+     * Raw `.excalidraw` scene JSON (v2 format) — the shared drawing contract
+     * with the web app, synced at `excalidraw/main`. Null = no scene yet.
+     */
+    private val _excalidrawScene = MutableStateFlow<String?>(null)
+    val excalidrawScene: StateFlow<String?> = _excalidrawScene.asStateFlow()
+
     fun load() {
         scope.launch {
             if (localStateIsCorrupt()) {
@@ -71,6 +78,8 @@ object Storage {
             _groq.value = readGroqFile()
             _settings.value = readSettingsFile()
             _drawings.value = readDrawingsFile()
+            _excalidrawScene.value =
+                PlatformStorage.readString("excalidraw.json")?.takeIf { it.isNotBlank() }
             // Arm due-date reminders on launch so overdue tasks nudge
             // immediately (web: fire on every parse while the app is open).
             DueReminderManager.scheduleDueReminders(TodoParser.parseTodoContent(_content.value))
@@ -171,6 +180,17 @@ object Storage {
             PlatformStorage.writeString("drawings.json", json.encodeToString(_drawings.value))
         }
         BackupManager.schedule("drawings")
+    }
+
+    fun replaceExcalidrawScene(value: String?) {
+        _excalidrawScene.value = value
+        scope.launch { PlatformStorage.writeString("excalidraw.json", value ?: "") }
+        BackupManager.schedule("excalidraw")
+    }
+
+    fun updateExcalidrawScene(value: String?) {
+        _excalidrawScene.value = value
+        scope.launch { PlatformStorage.writeString("excalidraw.json", value ?: "") }
     }
 
     internal fun restoreFromBackup(snapshot: FullSnapshot) {

@@ -41,6 +41,7 @@ import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { useHabitsContext } from "@/context/HabitsContext";
 import { getCompletionRate, getHabitStreak } from "@/lib/core";
+import { HAPTIC, haptic } from "@/lib/haptics";
 import { showUndoToast } from "@/lib/undoToast";
 import {
 	HABIT_COLORS,
@@ -241,12 +242,13 @@ export default function HabitsPage() {
 											<button
 												type="button"
 												className="habit-check"
-												onClick={() =>
+												onClick={() => {
 													dispatchHabits({
 														type: "TOGGLE_COMPLETION",
 														payload: { id: habit.id, date: today },
-													})
-												}
+													});
+													haptic(complete ? HAPTIC.tick : HAPTIC.success);
+												}}
 												aria-label={`${complete ? "Undo" : "Complete"} ${habit.name}`}
 											>
 												{complete && <Check size={17} strokeWidth={3} />}

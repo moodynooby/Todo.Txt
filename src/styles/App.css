@@ -74,6 +74,34 @@ body {
 	color: var(--app-ink);
 }
 
+/* Native input feel -----------------------------------------------------
+   Mobile browsers paint their own blue tap flash and allow accidental
+   pull-to-refresh over themed controls; suppressing both makes the app's
+   spring press feedback the only touch response, as in a native shell. */
+html {
+	-webkit-tap-highlight-color: transparent;
+	/* No pull-to-refresh / rubber-band reload while scrolling workspaces. */
+	overscroll-behavior-y: contain;
+}
+
+button,
+a,
+input,
+textarea,
+select,
+[role="button"] {
+	touch-action: manipulation;
+}
+
+/* Offscreen render skip: long lists (habit rows, note cards) cost nothing
+   while scrolled away. `auto <size>` remembers each row's last rendered
+   height, so scrollbar and anchor behavior stay stable. */
+.habit-row,
+.NotesPage-noteCard {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 120px;
+}
+
 /* ------------------------------------------------------------------ */
 /* Shared layout primitives (see docs/design-system.md)                */
 /* ------------------------------------------------------------------ */
@@ -158,6 +186,55 @@ body {
 
 .app-floating-action-primary:active {
 	transform: scale(0.95);
+}
+
+/* Quick-add bar — the Todo workspace hero moment. Theming lives here so
+   scheme switching and the Mantine theme stay authoritative; the component
+   carries no inline color overrides. */
+.quick-add-bar {
+	position: sticky;
+	top: 8px;
+	z-index: 5;
+	margin: 12px 12px 0;
+	background: var(--app-surface-raised);
+	border: 1px solid var(--app-border-strong);
+	box-shadow: var(--app-shadow-card);
+	transition: box-shadow 180ms var(--m3-ease-effects);
+}
+
+.quick-add-collapse-toggle {
+	color: var(--app-ink-muted);
+}
+
+/* Collapsed pill: a quiet affordance that re-expands on tap. Same sticky
+   placement as the expanded bar so toggling never shifts the layout. */
+button.quick-add-collapsed {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--app-ink-faint);
+	background: var(--app-surface-raised);
+	border: 1px dashed var(--app-border-strong);
+	border-radius: var(--m3-radius-pill);
+	box-shadow: none;
+	cursor: text;
+	transition:
+		transform 160ms var(--m3-ease-spatial-fast),
+		border-color 160ms var(--m3-ease-effects),
+		color 160ms var(--m3-ease-effects);
+}
+
+button.quick-add-collapsed:hover {
+	color: var(--app-ink-muted);
+	border-color: var(--app-ink-faint);
+}
+
+button.quick-add-collapsed:active {
+	transform: scale(0.98);
 }
 
 .app-header {
@@ -372,7 +449,10 @@ body {
 }
 
 .todo-editor-frame .mantine-RichTextEditor-content {
-	background: var(--app-surface-raised);
+	/* The raised "paper" is painted by the wrapping .tiptap-container so the
+	   writing surface reads as one continuous panel; painting it here too
+	   produced a detached strip behind the (possibly empty) document. */
+	background: transparent;
 	border: none;
 	border-radius: 0;
 	flex: 1;
@@ -380,6 +460,12 @@ body {
 	display: flex;
 	flex-direction: column;
 	padding: 0;
+}
+
+/* Editor canvas = raised paper surface (DESIGN.md shape table). */
+.todo-editor-frame .tiptap-container {
+	background: var(--app-surface-raised);
+	box-shadow: var(--app-shadow-card);
 }
 
 .todo-editor-frame .ProseMirror {
@@ -763,6 +849,7 @@ html[data-density="compact"] .tiptap-container .ProseMirror {
 }
 
 .habit-check {
+	position: relative;
 	display: grid;
 	place-items: center;
 	width: 27px;
@@ -777,9 +864,22 @@ html[data-density="compact"] .tiptap-container .ProseMirror {
 		background 160ms var(--m3-ease-effects);
 }
 
+/* The circle stays 27px visually (per the habit-row scale) but the touch
+   target expands to ~45px — Android's minimum touch target. */
+.habit-check::after {
+	content: "";
+	position: absolute;
+	inset: -9px;
+	border-radius: 50%;
+}
+
 .habit-check:hover {
 	transform: scale(1.08);
 	background: color-mix(in srgb, var(--habit-color), white 72%);
+}
+
+.habit-check:active {
+	transform: scale(0.95);
 }
 
 .habit-row-complete .habit-check {
@@ -1086,9 +1186,7 @@ html[data-density="compact"] .tiptap-container .ProseMirror {
 	border-top: 1px solid var(--app-border-strong);
 }
 
-:root[data-mantine-color-scheme="dark"]
-	.todo-editor-frame
-	.mantine-RichTextEditor-content {
+:root[data-mantine-color-scheme="dark"] .todo-editor-frame .tiptap-container {
 	background: var(--app-surface-raised);
 	border-color: var(--app-border-strong);
 	box-shadow:
