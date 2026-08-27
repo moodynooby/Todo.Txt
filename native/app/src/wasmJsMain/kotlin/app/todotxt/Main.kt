@@ -5,11 +5,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import app.todotxt.persistence.Storage
+import app.todotxt.sync.AccountSyncManager
 import app.todotxt.ui.AppRoot
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     Storage.load()
+    AccountSyncManager.start()
     ComposeViewport("root") {
         AppRoot(Modifier.fillMaxSize())
     }

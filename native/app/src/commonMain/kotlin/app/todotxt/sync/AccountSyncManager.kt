@@ -83,6 +83,8 @@ object AccountSyncManager {
 
     private val _status = MutableStateFlow<AccountSyncStatus>(AccountSyncStatus.Disabled)
     val status: StateFlow<AccountSyncStatus> = _status.asStateFlow()
+    private val _authMessage = MutableStateFlow<String?>(null)
+    val authMessage: StateFlow<String?> = _authMessage.asStateFlow()
 
     private var session: Session? = null
     private var applyingRemote = false
@@ -133,6 +135,7 @@ object AccountSyncManager {
     fun signIn(email: String, password: String) {
         scope.launch {
             try {
+                _authMessage.value = null
                 _status.value = AccountSyncStatus.Connecting
                 val created = postIdentity(
                     "accounts:signInWithPassword",
@@ -153,6 +156,7 @@ object AccountSyncManager {
     fun createAccount(email: String, password: String) {
         scope.launch {
             try {
+                _authMessage.value = null
                 _status.value = AccountSyncStatus.Connecting
                 val created = postIdentity(
                     "accounts:signUp",
@@ -168,6 +172,29 @@ object AccountSyncManager {
                 _status.value = AccountSyncStatus.Error(e.message ?: "Account creation failed")
             }
         }
+    }
+
+    fun sendPasswordReset(email: String) {
+        scope.launch {
+            try {
+                _status.value = AccountSyncStatus.Connecting
+                postIdentity(
+                    "accounts:sendOobCode",
+                    buildJsonObject {
+                        put("requestType", "PASSWORD_RESET")
+                        put("email", email.trim())
+                    },
+                )
+                _authMessage.value = "Password reset email sent."
+                _status.value = AccountSyncStatus.SignedOut
+            } catch (e: Throwable) {
+                _status.value = AccountSyncStatus.Error(e.message ?: "Password reset failed")
+            }
+        }
+    }
+
+    fun clearAuthMessage() {
+        _authMessage.value = null
     }
 
     fun signOut() {

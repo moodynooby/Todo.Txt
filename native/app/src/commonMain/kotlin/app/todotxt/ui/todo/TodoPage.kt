@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
+import app.todotxt.domain.Filter
 import app.todotxt.domain.FilterType
 import app.todotxt.core.mergeImportedTodo
 import app.todotxt.domain.ParsedTodoContent
@@ -66,7 +67,7 @@ import app.todotxt.ui.keyboard.rememberKeyboardHost
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoPage(content: String) {
-    var filter by remember { mutableStateOf<FilterType?>(null) }
+	var filter by remember { mutableStateOf<Filter?>(null) }
     var selectedIds by remember { mutableStateOf(setOf<Int>()) }
     var importMenuOpen by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -74,9 +75,12 @@ fun TodoPage(content: String) {
     var exportFormatOpen by remember { mutableStateOf(false) }
     var editTarget by remember { mutableStateOf<app.todotxt.domain.Task?>(null) }
     var scheduleOpen by remember { mutableStateOf(false) }
-    var clearDoneConfirm by remember { mutableStateOf(false) }
+	var clearDoneConfirm by remember { mutableStateOf(false) }
+	var dependencyOpen by remember { mutableStateOf(false) }
 
-    DisposableEffect(Unit) {
+	val parsed = remember(content) { TodoParser.parseTodoContent(content) }
+
+	DisposableEffect(Unit) {
         ImportExportBridge.onImported = { imported ->
             Storage.setContent(mergeImportedTodo(Storage.content.value, imported))
         }
@@ -97,9 +101,12 @@ fun TodoPage(content: String) {
             .fillMaxSize()
             .padding(16.dp),
     ) {
-        PageHeader("Todos") {
-            // Import / export of the raw todo.txt document.
-            IconButton(onClick = { importMenuOpen = true }) {
+		PageHeader("Todos") {
+			TextButton(onClick = { dependencyOpen = true }) {
+				Text("Dependencies")
+			}
+			// Import / export of the raw todo.txt document.
+			IconButton(onClick = { importMenuOpen = true }) {
                 Icon(Icons.Filled.Share, contentDescription = "Import / Export")
             }
             DropdownMenu(
@@ -118,19 +125,18 @@ fun TodoPage(content: String) {
                         }
                     },
                 )
-                DropdownMenuItem(
-                    text = { Text("Export todo.txt") },
-                    onClick = {
-                        importMenuOpen = false
-                        exportTodoDocument(content)
-                    },
-                )
+				DropdownMenuItem(
+					text = { Text("Export todo.txt") },
+					onClick = {
+						importMenuOpen = false
+						exportFormatOpen = true
+					},
+				)
             }
         }
 
-        // Quick-add bar with +project / @context / due: suggestions.
-        val parsed = remember(content) { TodoParser.parseTodoContent(content) }
-        QuickAddBar(
+		// Quick-add bar with +project / @context / due: suggestions.
+		QuickAddBar(
             parsed = parsed,
             focusRequester = addFocus,
             modifier = Modifier.padding(vertical = 8.dp),
@@ -182,30 +188,43 @@ fun TodoPage(content: String) {
                 onClick = { filter = null },
                 label = { Text("All") },
             )
+            parsed.priorities.keys.filter { it.isNotBlank() }.sorted().forEach { priority ->
+                FilterChip(
+                    selected = filter == Filter(FilterType.PRIORITY, priority),
+                    onClick = { filter = Filter(FilterType.PRIORITY, priority) },
+                    label = { Text("($priority)") },
+                )
+            }
+            parsed.projects.keys.sorted().forEach { project ->
+                FilterChip(
+                    selected = filter == Filter(FilterType.PROJECT, project),
+                    onClick = { filter = Filter(FilterType.PROJECT, project) },
+                    label = { Text("+$project") },
+                )
+            }
+            parsed.contexts.keys.sorted().forEach { context ->
+                FilterChip(
+                    selected = filter == Filter(FilterType.CONTEXT, context),
+                    onClick = { filter = Filter(FilterType.CONTEXT, context) },
+                    label = { Text("@$context") },
+                )
+            }
+            parsed.dueDates.keys.sorted().forEach { due ->
+                FilterChip(
+                    selected = filter == Filter(FilterType.DUE, due),
+                    onClick = { filter = Filter(FilterType.DUE, due) },
+                    label = { Text("due:$due") },
+                )
+            }
             FilterChip(
-                selected = filter == FilterType.PRIORITY,
-                onClick = { filter = FilterType.PRIORITY },
-                label = { Text("(A/B/C)") },
-            )
-            FilterChip(
-                selected = filter == FilterType.PROJECT,
-                onClick = { filter = FilterType.PROJECT },
-                label = { Text("+projects") },
-            )
-            FilterChip(
-                selected = filter == FilterType.CONTEXT,
-                onClick = { filter = FilterType.CONTEXT },
-                label = { Text("@contexts") },
-            )
-            FilterChip(
-                selected = filter == FilterType.DUE,
-                onClick = { filter = FilterType.DUE },
-                label = { Text("due") },
-            )
-            FilterChip(
-                selected = filter == FilterType.COMPLETION,
-                onClick = { filter = FilterType.COMPLETION },
+                selected = filter == Filter(FilterType.COMPLETION, "done"),
+                onClick = { filter = Filter(FilterType.COMPLETION, "done") },
                 label = { Text("done") },
+            )
+            FilterChip(
+                selected = filter == Filter(FilterType.COMPLETION, "pending"),
+                onClick = { filter = Filter(FilterType.COMPLETION, "pending") },
+                label = { Text("pending") },
             )
         }
 
@@ -293,8 +312,15 @@ fun TodoPage(content: String) {
     }
 
     // Clear-completed confirmation.
-    if (clearDoneConfirm) {
-        AlertDialog(
+	if (dependencyOpen) {
+		DependencyDialog(
+			tasks = parsed.tasks,
+			onDismiss = { dependencyOpen = false },
+		)
+	}
+
+	if (clearDoneConfirm) {
+		AlertDialog(
             onDismissRequest = { clearDoneConfirm = false },
             title = { Text("Clear completed tasks?") },
             text = {
@@ -325,9 +351,9 @@ fun TodoPage(content: String) {
     }
 }
 
-private fun filteredTasks(
+internal fun filteredTasks(
     parsed: ParsedTodoContent,
-    filter: FilterType?,
+    filter: Filter?,
     searchQuery: String,
     showCompleted: Boolean,
 ): List<app.todotxt.domain.Task> {
@@ -337,14 +363,17 @@ private fun filteredTasks(
     if (q.isNotEmpty()) {
         tasks = tasks.filter { it.text.lowercase().contains(q) || it.raw.lowercase().contains(q) }
     }
-    return when (filter) {
+    return when (filter?.type) {
         null -> tasks
-        FilterType.PRIORITY -> tasks.filter { it.priority != null }
-        FilterType.PROJECT -> tasks.filter { it.projects.isNotEmpty() }
-        FilterType.CONTEXT -> tasks.filter { it.contexts.isNotEmpty() }
-        FilterType.DUE -> tasks.filter { it.due != null }
-        FilterType.COMPLETION -> tasks.filter { it.completed }
-        else -> tasks
+        FilterType.PRIORITY -> tasks.filter { it.priority == filter.value }
+        FilterType.PROJECT -> tasks.filter { filter.value in it.projects }
+        FilterType.CONTEXT -> tasks.filter { filter.value in it.contexts }
+        FilterType.DUE -> tasks.filter { it.due == filter.value }
+        FilterType.COMPLETION -> if (filter.value == "done") {
+            tasks.filter { it.completed }
+        } else {
+            tasks.filter { !it.completed }
+        }
     }
 }
 

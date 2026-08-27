@@ -17,6 +17,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,6 +43,7 @@ import app.todotxt.ui.PageHeader
 @Composable
 fun AccountSyncPage() {
     val status by AccountSyncManager.status.collectAsState()
+    val authMessage by AccountSyncManager.authMessage.collectAsState()
 
     Column(
         modifier = Modifier
@@ -53,6 +55,13 @@ fun AccountSyncPage() {
         PageHeader(title = "Cloud Sync")
 
         StatusCard(status)
+        authMessage?.let { message ->
+            Text(
+                message,
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
 
         when (status) {
             is AccountSyncStatus.Synced -> SignOutSection()
@@ -152,15 +161,17 @@ private fun SignOutSection() {
 @Composable
 private fun AuthForm() {
     var isCreateMode by remember { mutableStateOf(false) }
+    var resetMode by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            if (isCreateMode) {
-                "Create an account (same one as the web app)"
-            } else {
-                "Sign in with the same account as the web app"
+            when {
+                resetMode -> "Send a password-reset email"
+                isCreateMode -> "Create an account (same one as the web app)"
+                else -> "Sign in with the same account as the web app"
             },
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -171,36 +182,63 @@ private fun AuthForm() {
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        if (resetMode) {
             Button(
-                onClick = {
-                    if (isCreateMode) {
-                        AccountSyncManager.createAccount(email, password)
-                    } else {
-                        AccountSyncManager.signIn(email, password)
-                    }
-                },
-                enabled = email.contains("@") && password.length >= 6,
-            ) {
-                Text(if (isCreateMode) "Create account" else "Sign in")
-            }
-            OutlinedButton(onClick = { isCreateMode = !isCreateMode }) {
-                Text(
-                    if (isCreateMode) "I have an account"
-                    else "Create an account",
+                onClick = { AccountSyncManager.sendPasswordReset(email) },
+                enabled = email.contains("@"),
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Send reset email") }
+            OutlinedButton(
+                onClick = { resetMode = false },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Back to sign in") }
+        } else {
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (isCreateMode) {
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirm password") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Button(
+                    onClick = {
+                        if (isCreateMode) {
+                            AccountSyncManager.createAccount(email, password)
+                        } else {
+                            AccountSyncManager.signIn(email, password)
+                        }
+                    },
+                    enabled = email.contains("@") && password.length >= 6 &&
+                        (!isCreateMode || password == confirmPassword),
+                ) {
+                    Text(if (isCreateMode) "Create account" else "Sign in")
+                }
+                OutlinedButton(onClick = {
+                    isCreateMode = !isCreateMode
+                    confirmPassword = ""
+                }) {
+                    Text(if (isCreateMode) "I have an account" else "Create an account")
+                }
+            }
+            TextButton(
+                onClick = { resetMode = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Forgot password?") }
         }
     }
 }

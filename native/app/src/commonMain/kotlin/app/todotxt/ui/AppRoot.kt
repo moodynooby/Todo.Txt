@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -46,6 +47,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.unit.dp
 import app.todotxt.persistence.Storage
 import app.todotxt.persistence.ThemeMode
@@ -105,6 +113,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
     FieldNotesTheme(darkTheme = darkTheme) {
         var workspace by remember { mutableStateOf(Workspace.CAPTURE) }
         var moreOpen by remember { mutableStateOf(false) }
+        var commandOpen by remember { mutableStateOf(false) }
         var updateStatus by remember { mutableStateOf<UpdateStatus>(UpdateStatus.Idle) }
         val updateScope = androidx.compose.runtime.rememberCoroutineScope()
         LaunchedEffect(Unit) {
@@ -116,7 +125,21 @@ fun AppRoot(modifier: Modifier = Modifier) {
         val notes by Storage.notes.collectAsState()
         val habits by Storage.habits.collectAsState()
 
-        BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxSize()
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown &&
+                        event.key == Key.K &&
+                        (event.isCtrlPressed || event.isMetaPressed)
+                    ) {
+                        commandOpen = true
+                        true
+                    } else {
+                        false
+                    }
+                },
+        ) {
             val compact = maxWidth < 720.dp
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -139,6 +162,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                         DesktopNavigationRail(
                             workspace = workspace,
                             onWorkspaceSelected = { workspace = it },
+                            onCommandPalette = { commandOpen = true },
                         )
                     }
                     Box(
@@ -174,6 +198,10 @@ fun AppRoot(modifier: Modifier = Modifier) {
                             current = workspace,
                             settings = settings.themeMode,
                             updateStatus = updateStatus,
+                            onOpenCommandPalette = {
+                                commandOpen = true
+                                moreOpen = false
+                            },
 
                         onWorkspaceSelected = {
                             workspace = it
@@ -192,6 +220,14 @@ fun AppRoot(modifier: Modifier = Modifier) {
 
                     )
                 }
+            }
+
+            if (commandOpen) {
+                CommandPaletteDialog(
+                    onDismiss = { commandOpen = false },
+                    onWorkspaceSelected = { workspace = it },
+                    onThemeSelected = { mode -> Storage.updateSettings { it.copy(themeMode = mode) } },
+                )
             }
 
             when (val status = updateStatus) {
@@ -284,11 +320,15 @@ private fun MobileNavigationBar(
 private fun DesktopNavigationRail(
     workspace: Workspace,
     onWorkspaceSelected: (Workspace) -> Unit,
+    onCommandPalette: () -> Unit,
 ) {
     NavigationRail(
         modifier = Modifier.fillMaxHeight(),
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
+        androidx.compose.material3.IconButton(onClick = onCommandPalette) {
+            Icon(Icons.Filled.Search, contentDescription = "Command palette")
+        }
         primaryWorkspaces.forEach { destination ->
             NavigationRailItem(
                 selected = workspace == destination,
@@ -321,6 +361,7 @@ private fun MoreToolsSheet(
     current: Workspace,
     settings: ThemeMode,
     updateStatus: UpdateStatus,
+    onOpenCommandPalette: () -> Unit,
     onWorkspaceSelected: (Workspace) -> Unit,
     onThemeSelected: (ThemeMode) -> Unit,
     onCheckForUpdates: () -> Unit,
@@ -338,6 +379,10 @@ private fun MoreToolsSheet(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 8.dp),
         )
+        TextButton(
+            onClick = onOpenCommandPalette,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Command palette") }
         secondaryWorkspaces.forEach { destination ->
             ListItem(
                 headlineContent = { Text(destination.title) },
