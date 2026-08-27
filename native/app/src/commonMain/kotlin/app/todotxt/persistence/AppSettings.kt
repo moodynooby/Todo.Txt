@@ -10,4 +10,7 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
 @Serializable
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val navigationChromeVisible: Boolean = true,
+    val timerOffsetX: Int = 20,
+    val timerOffsetY: Int = 20,
 )

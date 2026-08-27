@@ -25,6 +25,7 @@ fun CommandPaletteDialog(
     onDismiss: () -> Unit,
     onWorkspaceSelected: (Workspace) -> Unit,
     onThemeSelected: (ThemeMode) -> Unit,
+    onToggleNavigation: () -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
     val matches = remember(query) {
@@ -57,6 +58,13 @@ fun CommandPaletteDialog(
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("Open ${workspace.title}") }
                 }
+                TextButton(
+                    onClick = {
+                        onToggleNavigation()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Hide or show navigation") }
                 if (matches.isEmpty()) {
                     Text(
                         "No matching workspace.",

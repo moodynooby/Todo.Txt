@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -26,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -51,6 +53,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.key
@@ -65,6 +68,7 @@ import app.todotxt.ui.editor.EditorPage
 import app.todotxt.ui.habits.HabitsPage
 import app.todotxt.ui.notes.NotesPage
 import app.todotxt.ui.sync.AccountSyncPage
+import app.todotxt.ui.timer.FloatingTimerOverlay
 import app.todotxt.ui.timer.TimerPage
 import app.todotxt.ui.todo.TodoPage
 import app.todotxt.update.AppRelease
@@ -135,6 +139,13 @@ fun AppRoot(modifier: Modifier = Modifier) {
                     ) {
                         commandOpen = true
                         true
+                    } else if (event.type == KeyEventType.KeyDown &&
+                        event.key == Key.M &&
+                        event.isShiftPressed &&
+                        (event.isCtrlPressed || event.isMetaPressed)
+                    ) {
+                        Storage.updateSettings { it.copy(navigationChromeVisible = !it.navigationChromeVisible) }
+                        true
                     } else {
                         false
                     }
@@ -144,7 +155,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 bottomBar = {
-                    if (compact) {
+                    if (compact && settings.navigationChromeVisible) {
                         MobileNavigationBar(
                             workspace = workspace,
                             onWorkspaceSelected = { workspace = it },
@@ -158,7 +169,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                         .fillMaxSize()
                         .padding(innerPadding),
                 ) {
-                    if (!compact) {
+                    if (!compact && settings.navigationChromeVisible) {
                         DesktopNavigationRail(
                             workspace = workspace,
                             onWorkspaceSelected = { workspace = it },
@@ -188,6 +199,19 @@ fun AppRoot(modifier: Modifier = Modifier) {
                 }
             }
 
+            if (!settings.navigationChromeVisible) {
+                IconButton(
+                    onClick = { Storage.updateSettings { it.copy(navigationChromeVisible = true) } },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp),
+                ) {
+                    Icon(Icons.Filled.Menu, contentDescription = "Show navigation")
+                }
+            }
+
+            FloatingTimerOverlay(Modifier.fillMaxSize())
+
             if (moreOpen) {
                 ModalBottomSheet(
                     onDismissRequest = { moreOpen = false },
@@ -202,6 +226,10 @@ fun AppRoot(modifier: Modifier = Modifier) {
                                 commandOpen = true
                                 moreOpen = false
                             },
+                        onToggleNavigation = {
+                            Storage.updateSettings { it.copy(navigationChromeVisible = !it.navigationChromeVisible) }
+                            moreOpen = false
+                        },
 
                         onWorkspaceSelected = {
                             workspace = it
@@ -227,6 +255,9 @@ fun AppRoot(modifier: Modifier = Modifier) {
                     onDismiss = { commandOpen = false },
                     onWorkspaceSelected = { workspace = it },
                     onThemeSelected = { mode -> Storage.updateSettings { it.copy(themeMode = mode) } },
+                    onToggleNavigation = {
+                        Storage.updateSettings { it.copy(navigationChromeVisible = !it.navigationChromeVisible) }
+                    },
                 )
             }
 
@@ -362,6 +393,7 @@ private fun MoreToolsSheet(
     settings: ThemeMode,
     updateStatus: UpdateStatus,
     onOpenCommandPalette: () -> Unit,
+    onToggleNavigation: () -> Unit,
     onWorkspaceSelected: (Workspace) -> Unit,
     onThemeSelected: (ThemeMode) -> Unit,
     onCheckForUpdates: () -> Unit,
@@ -383,6 +415,10 @@ private fun MoreToolsSheet(
             onClick = onOpenCommandPalette,
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Command palette") }
+        TextButton(
+            onClick = onToggleNavigation,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Hide or show navigation") }
         secondaryWorkspaces.forEach { destination ->
             ListItem(
                 headlineContent = { Text(destination.title) },

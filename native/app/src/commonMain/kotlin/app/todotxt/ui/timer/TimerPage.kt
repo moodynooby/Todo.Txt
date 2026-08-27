@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.IdUtils
+import app.todotxt.core.TimerRuntime
 import app.todotxt.domain.TimerState
 import app.todotxt.persistence.Storage
 import app.todotxt.platform.playBeep
@@ -102,19 +103,9 @@ fun TimerItem(timer: TimerState) {
         }
     }
 
-    fun nowElapsed(): Long {
-        val started = timer.startedAt
-        return if (started != null) {
-            timer.elapsed + (app.todotxt.platform.nowMillis() - started)
-        } else {
-            timer.elapsed
-        }
-    }
+    fun nowElapsed(): Long = TimerRuntime.elapsedAt(timer, app.todotxt.platform.nowMillis())
 
-    fun remainingMs(): Long? {
-        if (timer.durationMs <= 0) return null
-        return (timer.durationMs - nowElapsed()).coerceAtLeast(0)
-    }
+    fun remainingMs(): Long? = TimerRuntime.remainingAt(timer, app.todotxt.platform.nowMillis())
 
     val remaining = remainingMs()
     val elapsed = nowElapsed()
@@ -169,7 +160,7 @@ fun TimerItem(timer: TimerState) {
                     Button(
                         onClick = {
                             Storage.updateTimers { list ->
-                                list.map { if (it.id == timer.id) it.copy(isActive = true, startedAt = app.todotxt.platform.nowMillis()) else it }
+                                list.map { if (it.id == timer.id) TimerRuntime.start(it, app.todotxt.platform.nowMillis()) else it }
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -181,7 +172,7 @@ fun TimerItem(timer: TimerState) {
                     }
                     IconButton(onClick = {
                         Storage.updateTimers { list ->
-                            list.map { if (it.id == timer.id) TimerState(id = it.id, title = it.title, durationMs = it.durationMs, createdAt = it.createdAt) else it }
+                            list.map { if (it.id == timer.id) TimerRuntime.reset(it) else it }
                         }
                     }) {
                         Icon(Icons.Filled.Refresh, contentDescription = "Reset")
@@ -191,7 +182,7 @@ fun TimerItem(timer: TimerState) {
                         onClick = {
                             playBeep()
                             Storage.updateTimers { list ->
-                                list.map { if (it.id == timer.id) it.copy(isActive = false, elapsed = nowElapsed(), startedAt = null) else it }
+                                list.map { if (it.id == timer.id) TimerRuntime.pause(it, app.todotxt.platform.nowMillis()) else it }
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -215,7 +206,7 @@ fun TimerItem(timer: TimerState) {
         LaunchedEffect(timer.id) {
             playBeep()
             Storage.updateTimers { list ->
-                list.map { if (it.id == timer.id) it.copy(isActive = false, elapsed = it.durationMs, startedAt = null) else it }
+                list.map { if (it.id == timer.id) TimerRuntime.advance(it, app.todotxt.platform.nowMillis()) else it }
             }
         }
     }

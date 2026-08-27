@@ -33,10 +33,19 @@
 }
 
 .NotesPage-noteCard {
-	/* Pastel backgrounds always pair with near-black ink; components read
-	   these vars instead of hardcoding hex per-file. */
-	--note-text-color: #000;
-	--note-textarea-color: #000;
+	/* Foreground variables are injected per card from the actual background. */
+	--note-text-color: var(--app-ink);
+	--note-textarea-color: var(--note-text-color);
+	--note-control-background: color-mix(
+		in srgb,
+		var(--note-text-color) 14%,
+		transparent
+	);
+	--note-control-border: color-mix(
+		in srgb,
+		var(--note-text-color) 42%,
+		transparent
+	);
 	break-inside: avoid;
 	margin-bottom: 16px;
 	overflow: hidden;
@@ -59,6 +68,18 @@
 	background: transparent !important;
 }
 
+.NotesPage-noteCard .mantine-ActionIcon-root {
+	color: var(--note-text-color);
+	background: var(--note-control-background);
+	border-color: var(--note-control-border);
+}
+
+.NotesPage-noteCard .mantine-ActionIcon-root:hover,
+.NotesPage-noteCard .mantine-ActionIcon-root:focus-visible {
+	background: color-mix(in srgb, var(--note-text-color) 24%, transparent);
+	border-color: var(--note-text-color);
+}
+
 .NotesPage-noteCard-editor .mantine-RichTextEditor-toolbar {
 	background: transparent;
 	border: none;
@@ -78,11 +99,12 @@
 	.mantine-ActionIcon-root {
 	width: 26px;
 	height: 26px;
-	color: var(--note-text-color, inherit);
+	color: var(--note-text-color);
 }
 
 .NotesPage-noteCard-editor .mantine-RichTextEditor-content {
 	background: transparent;
+	color: var(--note-text-color);
 }
 
 .NotesPage-noteCard-editor .ProseMirror {
@@ -90,7 +112,7 @@
 	min-height: 20px;
 	font-size: 13px;
 	line-height: 1.5;
-	color: var(--note-text-color, inherit);
+	color: var(--note-text-color);
 }
 
 .NotesPage-noteCard-editor .ProseMirror p {
@@ -98,7 +120,7 @@
 }
 
 .NotesPage-noteCard-editor .ProseMirror p.is-editor-empty:first-child::before {
-	color: var(--note-text-color, inherit);
+	color: var(--note-text-color);
 	opacity: 0.5;
 }
 

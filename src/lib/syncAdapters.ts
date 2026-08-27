@@ -7,7 +7,6 @@ import { writeHabitsBackup } from "@/lib/habitsBackup";
 import { writeNotesBackup } from "@/lib/notesBackup";
 import {
 	EXCALIDRAW_DOC,
-	GROQ_SETTINGS_DOC,
 	HABITS_DOC,
 	NOTES_DOC,
 	TIMERS_DOC,
@@ -102,12 +101,6 @@ export const EXCALIDRAW_CODEC: SyncCodec<ExcalidrawData | null> = {
 	decode: (r) =>
 		"data" in r ? (r.data as ExcalidrawData | null | undefined) : undefined,
 	encode: (data) => ({ data }),
-};
-
-export const GROQ_CODEC: SyncCodec<string> = {
-	valueKey: "apiKey",
-	decode: (r) => ("apiKey" in r ? (r.apiKey as string | undefined) : undefined),
-	encode: (apiKey) => ({ apiKey }),
 };
 
 /** Run a raw cloud FIELD value (the shape startup reconciliation sees)
@@ -213,40 +206,22 @@ export function useSyncedExcalidraw(
 	});
 }
 
-export function useSyncedGroqApiKey(
-	key: string,
-	onChange: (key: string) => void,
-): void {
-	useSyncedDocument<string>({
-		path: GROQ_SETTINGS_DOC,
-		value: key,
-		applyRemote: onChange,
-		encode: GROQ_CODEC.encode,
-		decode: GROQ_CODEC.decode,
-	});
-}
-
 /**
  * Mount every feature adapter in one place so the provider tree stays flat.
  * Drop a new `useSyncedX` call here to register a feature.
  */
 export function SyncFeatures({
 	excalidrawData,
-	groqApiKey,
 	onExcalidrawChange,
-	onGroqApiKeyChange,
 }: {
 	excalidrawData: ExcalidrawData | null;
-	groqApiKey: string;
 	onExcalidrawChange: (data: ExcalidrawData | null) => void;
-	onGroqApiKeyChange: (key: string) => void;
 }) {
 	useSyncedTodo();
 	useSyncedNotes();
 	useSyncedTimers();
 	useSyncedHabits();
 	useSyncedExcalidraw(excalidrawData, onExcalidrawChange);
-	useSyncedGroqApiKey(groqApiKey, onGroqApiKeyChange);
 
 	// No-op render: the hooks own the integration; this component exists
 	// purely to hang them under the engine context.

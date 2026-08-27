@@ -51,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import app.todotxt.core.DynamicContrast
 import app.todotxt.domain.IdUtils
 import app.todotxt.domain.Note
 import app.todotxt.domain.NoteColor
@@ -125,6 +126,10 @@ fun NotesPage(notes: List<Note>) {
                     onValueChange = { draftContent = it },
                     placeholder = { Text("Write a note…") },
                     modifier = Modifier.fillMaxWidth().height(180.dp),
+                )
+                MarkdownToolbar(
+                    content = draftContent,
+                    onContentChange = { draftContent = it },
                 )
                 ColorDotsRow(selected = draftColor) { draftColor = it }
                 Row {
@@ -237,6 +242,11 @@ private fun NoteCard(
         val hex = note.color.hex.removePrefix("#")
         Color(hex.toLong(16) or 0xFF000000)
     }
+    val foreground = remember(note.color) {
+        val hex = DynamicContrast.chooseForeground(note.color.hex)
+        val rgb = hex.removePrefix("#").toLong(16)
+        Color(0xFF000000L or rgb)
+    }
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
@@ -245,7 +255,10 @@ private fun NoteCard(
             .fillMaxWidth()
             .clickable(onClick = onEdit),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = color),
+        colors = CardDefaults.cardColors(
+            containerColor = color,
+            contentColor = foreground,
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(Modifier.padding(12.dp)) {
@@ -258,11 +271,16 @@ private fun NoteCard(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
+                    color = foreground,
                     overflow = TextOverflow.Clip,
                 )
                 Box {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "Note actions")
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription = "Note actions",
+                            tint = foreground,
+                        )
                     }
                     DropdownMenu(
                         expanded = menuOpen,
@@ -315,7 +333,7 @@ private fun NoteCard(
                 }
             }
             Text(
-                text = renderMarkdown(note.content),
+                text = renderMarkdown(note.content, foreground),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 6.dp),
                 maxLines = 6,
@@ -366,6 +384,10 @@ private fun EditNoteDialog(
                     placeholder = { Text("Write a note…") },
                     modifier = Modifier.fillMaxWidth().height(180.dp),
                 )
+                MarkdownToolbar(
+                    content = content,
+                    onContentChange = { content = it },
+                )
                 ColorDotsRow(selected = color) { color = it }
             }
         },
@@ -389,6 +411,60 @@ private fun EditNoteDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+}
+
+private fun AnnotatedString.Builder.appendInlineMarkdown(
+    line: String,
+    foreground: Color,
+) {
+    val pattern = Regex("""(\*\*[^*]+\*\*|\*[^*]+\*)""")
+    var cursor = 0
+    pattern.findAll(line).forEach { match ->
+        append(line.substring(cursor, match.range.first))
+        val value = match.value
+        val marked = value.removePrefix("**").removeSuffix("**")
+            .removePrefix("*").removeSuffix("*")
+        val style = if (value.startsWith("**")) {
+            SpanStyle(fontWeight = FontWeight.Bold, color = foreground)
+        } else {
+            SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = foreground)
+        }
+        withStyle(style) { append(marked) }
+        cursor = match.range.last + 1
+    }
+    append(line.substring(cursor))
+}
+
+/** Compact formatting actions shared by KMP note editors. */
+@Composable
+private fun MarkdownToolbar(
+    content: String,
+    onContentChange: (String) -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        listOf(
+            "B" to "**text**",
+            "I" to "*text*",
+            "H1" to "# ",
+            "H2" to "## ",
+            "•" to "- ",
+            "☑" to "- [ ] ",
+        ).forEach { (label, prefix) ->
+            TextButton(
+                onClick = { onContentChange(insertMarkdown(content, prefix)) },
+                modifier = Modifier.size(42.dp),
+            ) { Text(label) }
+        }
+    }
+}
+
+private fun insertMarkdown(content: String, prefix: String): String {
+    val lineStart = content.lastIndexOf('\n').let { if (it < 0) 0 else it + 1 }
+    val selectedLine = content.substring(lineStart)
+    return when (prefix) {
+        "**text**", "*text*" -> content + if (content.isBlank()) prefix else " $prefix"
+        else -> content.substring(0, lineStart) + prefix + selectedLine
+    }
 }
 
 /** Color picker: the six web note colors, matching ColorDots.tsx. */
@@ -442,13 +518,13 @@ private fun List<Note>.renderNotesJson(): String {
 private fun String.escapeJson(): String =
     replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
 
-private fun renderMarkdown(text: String): AnnotatedString {
+private fun renderMarkdown(text: String, foreground: Color): AnnotatedString {
     return buildAnnotatedString {
         val lines = text.split("\n")
         lines.forEachIndexed { index, line ->
             when {
                 line.startsWith("# ") -> {
-                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color(0xFF2F6F61))) {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = foreground)) {
                         append(line)
                     }
                 }
@@ -458,19 +534,13 @@ private fun renderMarkdown(text: String): AnnotatedString {
                     }
                 }
                 line.startsWith("- ") || line.startsWith("* ") -> {
-                    withStyle(SpanStyle(color = Color(0xFFD9784F))) {
+                    withStyle(SpanStyle(color = foreground)) {
                         append("• ")
                     }
                     append(line.substring(2))
                 }
                 else -> {
-                    // Basic bold/italic search
-                    var current = line
-                    val boldRegex = Regex("""\*\*(.*?)\*\*""")
-                    val italicRegex = Regex("""\*(.*?)\*""")
-                    
-                    // This is a simplified renderer for the experiment
-                    append(line)
+                    appendInlineMarkdown(line, foreground)
                 }
             }
             if (index < lines.size - 1) append("\n")

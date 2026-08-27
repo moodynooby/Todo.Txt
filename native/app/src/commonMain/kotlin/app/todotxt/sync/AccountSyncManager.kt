@@ -403,22 +403,6 @@ object AccountSyncManager {
                 true
             },
         ),
-        SyncDoc(
-            key = "settings/groq",
-            collection = "settings",
-            id = "groq",
-            fieldNames = listOf("apiKey", "updatedAt"),
-            encode = {
-                Storage.groq.value.apiKey?.takeIf { it.isNotBlank() }?.let { key ->
-                    buildJsonObject { put("apiKey", key) }
-                }
-            },
-            decodeAndApply = { fields ->
-                if ("apiKey" !in fields) return@SyncDoc false
-                Storage.updateGroq { it.copy(apiKey = fields.stringValueOrNull("apiKey")) }
-                true
-            },
-        ),
     )
 
     private suspend fun syncDoc(doc: SyncDoc, s: Session) {

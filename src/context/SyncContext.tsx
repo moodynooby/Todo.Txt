@@ -32,7 +32,7 @@ import type { BackupData, ExcalidrawData, SyncStatus } from "@/types/sync";
 /**
  * SyncProvider — owns the *connection lifecycle only*.
  *
- * Feature syncing (notes, timers, excalidraw, groq) lives in
+ * Feature syncing (notes, timers, and excalidraw) lives in
  * `useSyncedDocument` calls; the wire shapes and normalization rules for
  * every document live in that module's codecs and are reused here verbatim,
  * so a startup-pulled snapshot follows exactly the same rules as a live
@@ -65,9 +65,7 @@ export const useSyncContext = (): SyncContextValue => {
 interface SyncProviderProps {
 	children: ReactNode;
 	excalidrawData: ExcalidrawData | null;
-	groqApiKey: string;
 	onExcalidrawChange: (data: ExcalidrawData | null) => void;
-	onGroqApiKeyChange: (key: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -374,9 +372,7 @@ export function SyncProvider(props: SyncProviderProps) {
 			<SyncContext.Provider value={{ connect, disconnect }}>
 				<SyncFeatures
 					excalidrawData={props.excalidrawData}
-					groqApiKey={props.groqApiKey}
 					onExcalidrawChange={props.onExcalidrawChange}
-					onGroqApiKeyChange={props.onGroqApiKeyChange}
 				/>
 				{props.children}
 			</SyncContext.Provider>

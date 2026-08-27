@@ -77,10 +77,6 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 		setExcalidrawData(data);
 	}, []);
 
-	const handleRemoteGroqApiKey = useCallback((key: string) => {
-		setGroqApiKey(key);
-	}, []);
-
 	const handleFileLoaded = useCallback(
 		(content: string) => {
 			dispatchTodo({
@@ -207,9 +203,7 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 	return (
 		<SyncProvider
 			excalidrawData={excalidrawData}
-			groqApiKey={groqApiKey}
 			onExcalidrawChange={handleRemoteExcalidraw}
-			onGroqApiKeyChange={handleRemoteGroqApiKey}
 		>
 			<AppShell header={{ height: 48 }} padding={0}>
 				<AppShell.Header>
@@ -254,11 +248,11 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 													"\n",
 												) ?? "")
 									}
+									groqApiKey={groqApiKey}
 									onInsert={(text, mode) => {
 										handleAiInsert(text, mode);
 										setAiToolsOpen(false);
 									}}
-									groqApiKey={groqApiKey}
 									onGroqApiKeyChange={setGroqApiKey}
 								/>
 							</Suspense>

@@ -8,6 +8,7 @@ import {
 	Modal,
 	Paper,
 	PasswordInput,
+	Select,
 	Stack,
 	Text,
 	TextInput,
@@ -24,6 +25,12 @@ import {
 	WrapText,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import {
+	AI_MODELS,
+	AI_TOOLS,
+	type AiToolSpec,
+	validateAiTodoOutput,
+} from "@/features/ai/aiPrompts";
 import { useAiGroq } from "@/hooks/useAiGroq";
 
 interface AiToolsDialogProps {
@@ -35,57 +42,14 @@ interface AiToolsDialogProps {
 	onGroqApiKeyChange: (key: string) => void;
 }
 
-interface AiTool {
-	id: string;
-	label: string;
-	icon: React.ElementType;
-	prompt: string;
-}
-
-const AI_TOOLS: AiTool[] = [
-	{
-		id: "shorten",
-		label: "Shorten",
-		icon: TextCursorInput,
-		prompt:
-			"Make the following text more concise while preserving its core meaning.",
-	},
-	{
-		id: "reduce",
-		label: "Reduce",
-		icon: WrapText,
-		prompt:
-			"Reduce the content length significantly without losing the essential points.",
-	},
-	{
-		id: "reformat",
-		label: "Reformat",
-		icon: ListChecks,
-		prompt:
-			"Reformat the following todo list into a cleaner, more readable structure. Follow todo.txt conventions.",
-	},
-	{
-		id: "reorganize",
-		label: "Reorganize",
-		icon: LayoutList,
-		prompt:
-			"Group related tasks together and reorganize the following list logically.",
-	},
-	{
-		id: "cleanup",
-		label: "Cleanup Done",
-		icon: Eraser,
-		prompt:
-			"Identify and remove all completed tasks (those starting with 'x '). Return the remaining list.",
-	},
-	{
-		id: "grammar",
-		label: "Fix Grammar",
-		icon: Check,
-		prompt:
-			"Correct grammatical errors and improve the clarity of the following text.",
-	},
-];
+const AI_TOOL_ICONS: Record<string, React.ElementType> = {
+	shorten: TextCursorInput,
+	reduce: WrapText,
+	reformat: ListChecks,
+	reorganize: LayoutList,
+	cleanup: Eraser,
+	grammar: Check,
+};
 
 const AiToolsDialog = ({
 	isOpen,
@@ -95,7 +59,8 @@ const AiToolsDialog = ({
 	groqApiKey,
 	onGroqApiKeyChange,
 }: AiToolsDialogProps) => {
-	const { generate, isLoading, error: apiError } = useAiGroq(groqApiKey);
+	const [model, setModel] = useState(AI_MODELS[0]);
+	const { generate, isLoading, error: apiError } = useAiGroq(groqApiKey, model);
 
 	const mountedRef = useRef(true);
 	const [showKeyInput, setShowKeyInput] = useState(false);
@@ -123,9 +88,9 @@ const AiToolsDialog = ({
 		setShowKeyInput(false);
 	};
 
-	const handleToolClick = async (promptTemplate: string, toolId: string) => {
-		setActiveTool(toolId);
-		const fullPrompt = `${promptTemplate}\n\nCONTENT:\n${initialContent}`;
+	const handleToolClick = async (tool: AiToolSpec) => {
+		setActiveTool(tool.id);
+		const fullPrompt = `${tool.instruction}\n\nCONTENT:\n${initialContent}`;
 		const output = await generate(fullPrompt);
 		if (output && mountedRef.current) setResult(output);
 	};
@@ -136,6 +101,8 @@ const AiToolsDialog = ({
 		const output = await generate(fullPrompt);
 		if (output && mountedRef.current) setResult(output);
 	};
+
+	const validation = result ? validateAiTodoOutput(result) : null;
 
 	const handleClose = () => {
 		setResult("");
@@ -211,9 +178,17 @@ const AiToolsDialog = ({
 					</Group>
 				)}
 
-				<Grid>
+									<Select
+						label="Model"
+						data={AI_MODELS}
+						value={model}
+						onChange={(value) => value && setModel(value)}
+					/>
+
+					<Grid>
+
 					{AI_TOOLS.map((tool) => {
-						const Icon = tool.icon;
+						const Icon = AI_TOOL_ICONS[tool.id] ?? Sparkles;
 						const isActive = activeTool === tool.id;
 						return (
 							<Grid.Col key={tool.id} span={{ base: 6, sm: 4 }}>
@@ -225,9 +200,7 @@ const AiToolsDialog = ({
 										opacity: groqApiKey ? 1 : 0.6,
 									}}
 									onClick={() =>
-										groqApiKey &&
-										!isLoading &&
-										handleToolClick(tool.prompt, tool.id)
+										groqApiKey && !isLoading && handleToolClick(tool)
 									}
 								>
 									<Stack align="center" gap="xs">
@@ -315,14 +288,30 @@ const AiToolsDialog = ({
 								>
 									{result}
 								</Text>
+								{validation && !validation.valid && (
+									<Text c="red" size="xs" mt="xs">
+										{validation.error}
+									</Text>
+								)}
 								<Group gap="xs" mt="sm">
-									<Button size="xs" onClick={() => onInsert(result, "replace")}>
+									<Button
+										size="xs"
+										disabled={!validation?.valid}
+										onClick={() =>
+											validation?.valid &&
+											onInsert(validation.normalized, "replace")
+										}
+									>
 										Replace
 									</Button>
 									<Button
 										size="xs"
 										variant="light"
-										onClick={() => onInsert(result, "append")}
+										disabled={!validation?.valid}
+										onClick={() =>
+											validation?.valid &&
+											onInsert(validation.normalized, "append")
+										}
 									>
 										Append
 									</Button>
@@ -339,8 +328,10 @@ const AiToolsDialog = ({
 						Cancel
 					</Button>
 					<Button
-						disabled={!result}
-						onClick={() => onInsert(result, "replace")}
+						disabled={!validation?.valid}
+						onClick={() =>
+							validation?.valid && onInsert(validation.normalized, "replace")
+						}
 					>
 						Apply Changes
 					</Button>

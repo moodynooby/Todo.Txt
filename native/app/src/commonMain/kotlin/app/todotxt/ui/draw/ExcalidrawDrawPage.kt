@@ -334,18 +334,20 @@ fun ExcalidrawDrawPage() {
                     }
                 },
         ) {
+            val fallbackColor = MaterialTheme.colorScheme.onSurface
+            val selectionAccent = MaterialTheme.colorScheme.primary
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val bounds = ExBounds.of(scene.visibleElements)
                 val (scale, offsetX, offsetY) =
                     viewTransform(size.width, size.height, bounds)
                 for (el in scene.visibleElements) {
-                    drawElement(el, scale, offsetX, offsetY, textMeasurer)
+                    drawElement(el, scale, offsetX, offsetY, textMeasurer, fallbackColor)
                 }
-                pending.value?.let { drawElement(it, scale, offsetX, offsetY, textMeasurer) }
+                pending.value?.let { drawElement(it, scale, offsetX, offsetY, textMeasurer, fallbackColor) }
                 selectedId.value?.let { id ->
                     scene.visibleElements
                         .firstOrNull { ExEl.id(it) == id }
-                        ?.let { drawSelection(it, scale, offsetX, offsetY) }
+                        ?.let { drawSelection(it, scale, offsetX, offsetY, selectionAccent) }
                 }
             }
         }
@@ -397,15 +399,15 @@ private fun viewTransform(
     return Triple(scale, offsetX, offsetY)
 }
 
-internal fun parseExColor(hex: String): Color = runCatching {
+internal fun parseExColor(hex: String, fallback: Color = Color.Black): Color = runCatching {
     val value = hex.removePrefix("#")
     val argb = when (value.length) {
         8 -> value.toLong(16)
         6 -> 0xFF000000L or value.toLong(16)
-        else -> return Color.Black
+        else -> return fallback
     }
     Color(argb.toInt())
-}.getOrElse { Color.Black }
+}.getOrElse { fallback }
 
 private fun DrawScope.drawElement(
     el: JsonObject,
@@ -413,17 +415,18 @@ private fun DrawScope.drawElement(
     offsetX: Float,
     offsetY: Float,
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    fallbackColor: Color,
 ) {
     if (!ExEl.isRenderable(el)) return
     val sx = { x: Float -> x * scale + offsetX }
     val sy = { y: Float -> y * scale + offsetY }
     val stroke = Stroke(ExEl.strokeWidth(el) * scale, cap = StrokeCap.Round)
-    val strokeColor = parseExColor(ExEl.strokeColor(el)).copy(
+    val strokeColor = parseExColor(ExEl.strokeColor(el), fallbackColor).copy(
         alpha = ExEl.opacity(el) / 100f,
     )
     val fill = ExEl.backgroundColor(el)
     val fillPaint = if (fill != "transparent" && fill.isNotBlank()) {
-        parseExColor(fill).copy(alpha = ExEl.opacity(el) / 100f)
+        parseExColor(fill, fallbackColor).copy(alpha = ExEl.opacity(el) / 100f)
     } else null
 
     fun pathOf(points: List<Pair<Float, Float>>): Path = Path().apply {
@@ -499,8 +502,8 @@ private fun DrawScope.drawSelection(
     scale: Float,
     offsetX: Float,
     offsetY: Float,
+    accent: Color,
 ) {
-    val accent = Color(0xFF6965DB)
     drawRect(
         accent,
         topLeft = Offset(

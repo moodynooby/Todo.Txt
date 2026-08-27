@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { TODO_AI_SYSTEM_PROMPT } from "@/features/ai/aiPrompts";
+
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-
-const DEFAULT_SYSTEM_PROMPT =
-	"You are a helpful assistant for managing todo lists. Return ONLY the processed text without any preamble or explanation.";
 
 interface ChatCompletionResponse {
 	choices?: Array<{ message?: { content?: string } }>;
 	error?: { message?: string };
 }
 
-export const useAiGroq = (apiKey: string) => {
+export const useAiGroq = (apiKey: string, model = DEFAULT_MODEL) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const mountedRef = useRef(true);
@@ -47,11 +46,12 @@ export const useAiGroq = (apiKey: string) => {
 						Authorization: `Bearer ${apiKey}`,
 					},
 					body: JSON.stringify({
-						model: DEFAULT_MODEL,
+													model,
+
 						messages: [
 							{
 								role: "system",
-								content: systemPrompt || DEFAULT_SYSTEM_PROMPT,
+								content: systemPrompt || TODO_AI_SYSTEM_PROMPT,
 							},
 							{ role: "user", content: prompt },
 						],
@@ -81,7 +81,7 @@ export const useAiGroq = (apiKey: string) => {
 				}
 			}
 		},
-		[apiKey],
+		[apiKey, model],
 	);
 
 	return { generate, isLoading, error };

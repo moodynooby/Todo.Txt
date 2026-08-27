@@ -6,6 +6,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,14 @@ fun main() = application {
         icon = icon,
         menu = {
             Item("Show Window", onClick = { isOpen = true })
+            Item(
+                if (Storage.settings.value.navigationChromeVisible) "Hide navigation" else "Show navigation",
+                onClick = {
+                    Storage.updateSettings {
+                        it.copy(navigationChromeVisible = !it.navigationChromeVisible)
+                    }
+                },
+            )
             Separator()
             Item("Quit", onClick = ::exitApplication)
         }
@@ -52,10 +61,16 @@ fun main() = application {
             title = "T0do.TxT",
             icon = icon,
         ) {
-            MenuBar {
-                Menu("File", mnemonic = 'F') {
-                    Item("Hide", onClick = { isOpen = false })
-                    Item("Quit", onClick = ::exitApplication)
+            val settings by Storage.settings.collectAsState()
+            if (settings.navigationChromeVisible) {
+                MenuBar {
+                    Menu("File", mnemonic = 'F') {
+                        Item("Hide navigation and menu", onClick = {
+                            Storage.updateSettings { it.copy(navigationChromeVisible = false) }
+                        })
+                        Item("Hide window", onClick = { isOpen = false })
+                        Item("Quit", onClick = ::exitApplication)
+                    }
                 }
             }
             AppRoot(Modifier.fillMaxSize())
