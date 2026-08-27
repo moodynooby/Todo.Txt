@@ -38,7 +38,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -61,19 +59,15 @@ import app.todotxt.persistence.exportTodoDocument
 import app.todotxt.ui.ConfirmDialog
 import app.todotxt.ui.PageHeader
 import app.todotxt.ui.SearchField
-import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
-import com.mohamedrejeb.richeditor.model.rememberRichTextState
-import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 
 /** Notes workspace — colored cards with search, pin / archive / edit,
  * like the web board (NotesPage.tsx + NoteCard.tsx parity). */
-@OptIn(ExperimentalRichTextApi::class)
 @Composable
 fun NotesPage(notes: List<Note>) {
     var showCreate by remember { mutableStateOf(false) }
     var draftTitle by remember { mutableStateOf("") }
     var draftColor by remember { mutableStateOf(NoteColor.entries.random()) }
-    val draftState = rememberRichTextState()
+    var draftContent by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
     var showArchived by remember { mutableStateOf(false) }
     var editTarget by remember { mutableStateOf<Note?>(null) }
@@ -126,21 +120,19 @@ fun NotesPage(notes: List<Note>) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
-                // Tiptap-like rich editor: toolbar + WYSIWYG editing; persisted
-                // as markdown so it round-trips through the plain `content` field.
-                RichToolbar(draftState)
-                RichTextEditor(
-                    state = draftState,
-                    placeholder = { Text("Rich content…") },
+                OutlinedTextField(
+                    value = draftContent,
+                    onValueChange = { draftContent = it },
+                    placeholder = { Text("Write a note…") },
                     modifier = Modifier.fillMaxWidth().height(180.dp),
                 )
                 ColorDotsRow(selected = draftColor) { draftColor = it }
                 Row {
                     Button(
                         onClick = {
-                            val richMarkdown = draftState.toMarkdown()
+                            val richMarkdown = draftContent
                             if (draftTitle.isNotBlank() || richMarkdown.isNotBlank()) {
-                                val now = System.currentTimeMillis()
+                                val now = app.todotxt.platform.nowMillis()
                                 val note = Note(
                                     id = IdUtils.newId(),
                                     title = draftTitle,
@@ -151,7 +143,7 @@ fun NotesPage(notes: List<Note>) {
                                 )
                                 Storage.updateNotes { list -> list + note }
                                 draftTitle = ""
-                                draftState.setMarkdown("")
+                                draftContent = ""
                                 draftColor = NoteColor.entries.random()
                                 showCreate = false
                             }
@@ -356,8 +348,7 @@ private fun EditNoteDialog(
 ) {
     var title by remember { mutableStateOf(note.title) }
     var color by remember { mutableStateOf(note.color) }
-    val richState = rememberRichTextState()
-    LaunchedEffect(note.id) { richState.setMarkdown(note.content) }
+    var content by remember(note.id) { mutableStateOf(note.content) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit note") },
@@ -369,10 +360,10 @@ private fun EditNoteDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                RichToolbar(richState)
-                RichTextEditor(
-                    state = richState,
-                    placeholder = { Text("Rich content…") },
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    placeholder = { Text("Write a note…") },
                     modifier = Modifier.fillMaxWidth().height(180.dp),
                 )
                 ColorDotsRow(selected = color) { color = it }
@@ -381,11 +372,11 @@ private fun EditNoteDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val now = System.currentTimeMillis()
+                    val now = app.todotxt.platform.nowMillis()
                     Storage.updateNotes { list ->
                         list.map {
                             if (it.id == note.id) it.copy(
-                                title = title, content = richState.toMarkdown(),
+                                title = title, content = content,
                                 color = color, updatedAt = now,
                             ) else it
                         }
@@ -398,53 +389,6 @@ private fun EditNoteDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
-}
-
-/** Shared rich-text toolbar (Tiptap-style formatting actions). */
-@OptIn(ExperimentalRichTextApi::class)
-@Composable
-private fun RichToolbar(state: com.mohamedrejeb.richeditor.model.RichTextState) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        val current = state.currentSpanStyle
-        val isBold = current.fontWeight == FontWeight.Bold
-        val isItalic = current.fontStyle == FontStyle.Italic
-        androidx.compose.material3.IconButton(
-            onClick = {
-                state.toggleSpanStyle(
-                    androidx.compose.ui.text.SpanStyle(
-                        fontWeight = if (isBold) FontWeight.Normal else FontWeight.Bold,
-                    ),
-                )
-            },
-            modifier = Modifier.size(30.dp),
-        ) {
-            Text("B", style = MaterialTheme.typography.labelMedium)
-        }
-        androidx.compose.material3.IconButton(
-            onClick = {
-                state.toggleSpanStyle(
-                    androidx.compose.ui.text.SpanStyle(
-                        fontStyle = if (isItalic) FontStyle.Normal else FontStyle.Italic,
-                    ),
-                )
-            },
-            modifier = Modifier.size(30.dp),
-        ) {
-            Text("I", style = MaterialTheme.typography.labelMedium)
-        }
-        androidx.compose.material3.IconButton(
-            onClick = { state.toggleUnorderedList() },
-            modifier = Modifier.size(30.dp),
-        ) {
-            Text("•", style = MaterialTheme.typography.labelMedium)
-        }
-        androidx.compose.material3.IconButton(
-            onClick = { state.toggleOrderedList() },
-            modifier = Modifier.size(30.dp),
-        ) {
-            Text("1.", style = MaterialTheme.typography.labelMedium)
-        }
-    }
 }
 
 /** Color picker: the six web note colors, matching ColorDots.tsx. */
@@ -492,7 +436,7 @@ private fun List<Note>.renderNotesJson(): String {
             append("""{"id":""" + note.id.escapeJson() + """","title":""" + note.title.escapeJson() + """","content":""" + note.content.escapeJson() + """","color":""" + note.color.hex + """","pinned":""" + note.pinned + """","archived":""" + note.archived + """","createdAt":""" + note.createdAt + ""","updatedAt":""" + note.updatedAt + """}""")
         }
     }
-    return """{"notes":[${items}],"updatedAt":""" + System.currentTimeMillis() + """}"""
+    return """{"notes":[${items}],"updatedAt":""" + app.todotxt.platform.nowMillis() + """}"""
 }
 
 private fun String.escapeJson(): String =

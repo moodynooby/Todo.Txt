@@ -1,12 +1,15 @@
 [build]
-  command = "pnpm install --frozen-lockfile && pnpm run build"
+  command = "pnpm install --frozen-lockfile && pnpm run build:kmp"
   publish = "dist"
 
-# NOTE on the pnpm-only build command: the repo is a pnpm workspace
-# (pnpm-workspace.yaml) with a file: dep on the Kotlin-compiled
-# @todotxt/core bundle. npm cannot read the pnpm lockfile and its
-# `npm install` re-resolves into a broken tree (stale package-lock.json
-# + file: workspace dep), so build strictly with pnpm.
+[build.environment]
+  NODE_VERSION = "20"
+  JAVA_VERSION = "21"
+
+# The hosted web app is now the Compose Multiplatform/Kotlin/Wasm build. The
+# former Vite/React implementation remains available locally through
+# `pnpm run build:legacy` while browser parity is completed.
+# Build strictly with pnpm because the repository uses a pnpm lockfile.
 
 # SPA: every path falls back to index.html (the app has no URL-based router,
 # but the service worker / PWA share target hits `/`, so keep it explicit).
@@ -15,7 +18,18 @@
   to = "/index.html"
   status = 200
 
-# Long-lived cache for hashed static assets; the rest gets a short TTL.
+# Long-lived cache for generated Wasm and hashed static assets; the rest gets a short TTL.
+[[headers]]
+  for = "/*.wasm"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    Content-Type = "application/wasm"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 [[headers]]
   for = "/assets/*"
   [headers.values]

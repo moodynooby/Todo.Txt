@@ -7,7 +7,6 @@ import app.todotxt.persistence.PlatformStorage
 import app.todotxt.persistence.Storage
 import app.todotxt.service.PlatformDeviceId
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -18,7 +17,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -63,9 +61,9 @@ object FirebaseSyncManager {
         encodeDefaults = true
         explicitNulls = false
     }
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var syncJob: Job? = null
-    private val client = HttpClient(CIO)
+    private val client = HttpClient()
 
     private val _status = MutableStateFlow<FirebaseSyncStatus>(FirebaseSyncStatus.Disabled)
     val status: StateFlow<FirebaseSyncStatus> = _status.asStateFlow()
@@ -298,7 +296,7 @@ object FirebaseSyncManager {
     private fun writeLocalUpdatedAt(value: Long) =
         PlatformStorage.writeString(LOCAL_UPDATED_FILE, value.toString())
 
-    private fun now(): Long = System.currentTimeMillis()
+    private fun now(): Long = app.todotxt.platform.nowMillis()
 
     private fun JsonObject.requiredString(name: String): String =
         this[name]?.jsonPrimitive?.content ?: error("Firebase response missing $name")

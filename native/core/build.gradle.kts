@@ -1,6 +1,9 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    kotlin("multiplatform") version "2.1.21"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.21"
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.serialization)
     `maven-publish`
 }
 
@@ -14,14 +17,18 @@ repositories {
 kotlin {
     // JVM target consumed by the Compose Multiplatform native app
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "17"
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
         }
-        withJava()
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
     }
 
     // JS target consumed by the TypeScript web app (npm package `@todotxt/core`)
-    js(IR) {
+    js {
         nodejs {
             // Node.js target for npm publishing
         }
@@ -41,6 +48,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+                implementation(libs.kotlinx.datetime)
             }
         }
         val commonTest by getting {

@@ -63,7 +63,7 @@ fun TimerPage() {
                                 id = IdUtils.newId(),
                                 title = titleDraft.takeIf { it.isNotBlank() },
                                 durationMs = minutes * 60_000L,
-                                createdAt = System.currentTimeMillis()
+                                createdAt = app.todotxt.platform.nowMillis()
                             )
                             Storage.updateTimers { it + newTimer }
                             titleDraft = ""
@@ -105,7 +105,7 @@ fun TimerItem(timer: TimerState) {
     fun nowElapsed(): Long {
         val started = timer.startedAt
         return if (started != null) {
-            timer.elapsed + (System.currentTimeMillis() - started)
+            timer.elapsed + (app.todotxt.platform.nowMillis() - started)
         } else {
             timer.elapsed
         }
@@ -125,11 +125,12 @@ fun TimerItem(timer: TimerState) {
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
         val hours = minutes / 60
-        return if (hours > 0) {
-            "%d:%02d:%02d".format(hours, minutes % 60, seconds)
-        } else {
-            "%d:%02d".format(minutes, seconds)
-        }
+		fun padded(value: Long): String = value.toString().padStart(2, '0')
+		return if (hours > 0) {
+			"$hours:${padded(minutes % 60)}:${padded(seconds)}"
+		} else {
+			"$minutes:${padded(seconds)}"
+		}
     }
 
     Card(
@@ -168,7 +169,7 @@ fun TimerItem(timer: TimerState) {
                     Button(
                         onClick = {
                             Storage.updateTimers { list ->
-                                list.map { if (it.id == timer.id) it.copy(isActive = true, startedAt = System.currentTimeMillis()) else it }
+                                list.map { if (it.id == timer.id) it.copy(isActive = true, startedAt = app.todotxt.platform.nowMillis()) else it }
                             }
                         },
                         modifier = Modifier.weight(1f),

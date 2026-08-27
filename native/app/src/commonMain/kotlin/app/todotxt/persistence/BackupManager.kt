@@ -6,7 +6,6 @@ import app.todotxt.domain.Note
 import app.todotxt.domain.TimerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -38,7 +37,7 @@ object BackupManager {
         encodeDefaults = true
         explicitNulls = false
     }
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var pendingJob: Job? = null
 
     private val _portableStatus = MutableStateFlow<PortableBackupStatus>(PortableBackupStatus.Idle)
@@ -128,7 +127,7 @@ object BackupManager {
     )
 
     /** Local-backup flavor: stamps [FullSnapshot.savedAt]. */
-    fun captureLocal(): FullSnapshot = capture(savedAt = System.currentTimeMillis())
+    fun captureLocal(): FullSnapshot = capture(savedAt = app.todotxt.platform.nowMillis())
 
     private fun readEnvelope(slot: Int): BackupEnvelope? = runCatching {
         val raw = PlatformStorage.readString(slotName(slot))?.takeIf { it.isNotBlank() }

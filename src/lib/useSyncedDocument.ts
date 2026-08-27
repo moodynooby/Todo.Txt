@@ -234,6 +234,8 @@ function useStableCall<F extends (...args: never[]) => void>(fn: F): F {
 const WRITE_DEBOUNCE_MS = 1000;
 const RETRY_BASE_MS = 500;
 const RETRY_MAX_MS = 30000;
+const documentKey = (path: UserDocPath): string =>
+	`${path.collection}/${path.id}`;
 
 export interface UseSyncEngineOptions {
 	uid: string | null;
@@ -279,7 +281,8 @@ class SyncEngineImpl implements SyncEngine {
 	enqueue = (update: DocUpdate): void => {
 		// Merge with a pending update for the same document so we never flood
 		// the batch with redundant merges.
-		const existing = this.queue.findIndex((u) => u.path.id === update.path.id);
+		const key = documentKey(update.path);
+		const existing = this.queue.findIndex((u) => documentKey(u.path) === key);
 		if (existing >= 0) {
 			this.queue[existing] = {
 				path: update.path,
@@ -362,7 +365,10 @@ class SyncEngineImpl implements SyncEngine {
 		for (const update of readOutbox(uid)) {
 			// The in-memory queue (written after the last persistence) is the
 			// superset — never demote a live value to a persisted snapshot.
-			if (this.queue.some((u) => u.path.id === update.path.id)) continue;
+			if (
+				this.queue.some((u) => documentKey(u.path) === documentKey(update.path))
+			)
+				continue;
 			this.queue.push(update);
 		}
 		if (this.queue.length > 0) {

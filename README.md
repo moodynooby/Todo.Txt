@@ -1,233 +1,168 @@
 # Todo.Txt
 
-A full-featured todo application built on the philosophy of
-[todo.txt](https://github.com/todotxt/todo.txt) — plain text, OS-agnostic,
-searchable, portable, lightweight, and easily manipulated.
+Todo.Txt is a local-first productivity application built around the [todo.txt](https://github.com/todotxt/todo.txt) format: plain text, searchable, portable, lightweight, and easy to manipulate.
 
-This repository ships **three surfaces** in the same repo: the native app is
-the frontrunner, the web app shares logic with it through a common Kotlin
-Multiplatform core module, and an optional Tauri shell wraps the web UI for
-desktop/Android with its own widget stack.
+The repository’s primary product is now the **Kotlin Multiplatform / Compose Multiplatform application**. The same common UI and domain layer targets Android, desktop JVM, and Kotlin/Wasm in the browser. The former React/Vite application remains as a rollback and compatibility surface; the optional Tauri shell remains available for teams that still need its Rust/webview packaging or widget integrations.
 
-| Product | Location | Platform | Stack |
+| Product surface | Location | Platform | Role |
 |---|---|---|---|
-| **Native app** | `native/` | Android + Desktop (Windows / Linux) | Kotlin, Compose Multiplatform |
-| **Web app** | repo root (`src/`) | Browser / PWA | React 19 + Vite + TypeScript + Mantine |
-| **Tauri shell** | `src-tauri/` | Desktop + Android (optional build) | Rust + system webview (same web UI) |
-| **Shared core** | `native/core/` | JVM + JS/IR | Kotlin Multiplatform |
+| **Compose application** | `native/app/` | Android, Windows/Linux desktop, browser/Wasm | Primary product and shared UI |
+| **Shared KMP core** | `native/core/` | JVM, Kotlin/JS, Kotlin/Wasm | Todo parsing, habits, streaks, scheduling, projections, and document rules |
+| Legacy web application | `src/` | Browser/PWA | Compatibility and rollback build via `build:legacy` |
+| Optional Tauri shell | `src-tauri/` | Desktop/Android | Existing Rust/webview packaging and widget path |
 
-All three consume the shared core: the native and Tauri widget stacks render
-the same `WidgetData` projection, habit merges go through one canonical
-`HabitMerge`, and the web app imports the compiled `@todotxt/core` bundle.
+## Product model and unified capture
+
+The primary Compose UI opens on a Google Keep-style **Home / Capture** workspace. It provides one quick-capture entry point for tasks and notes, previews open todos and recent notes, and links to the specialized Todo, Notes, Draw, Habits, Timer, AI, Editor, and Sync tools.
+
+The unified entry point does **not** flatten the underlying models. Todo documents retain todo.txt parsing, projects, contexts, priorities, completion, and scheduling semantics. Notes retain their rich-text document model, and Draw retains its Excalidraw-style scene graph and editor behavior. Each model keeps separate persistence, synchronization, undo, and export semantics while sharing navigation and capture affordances.
 
 ## Features
 
-- todo.txt-based plain text todos, notes, projects, contexts, and priority
-- Rich notes with TipTap-style Markdown editor and Excalidraw-style vector
-  drawing (native: `RichEditor` + `DrawPage`; web: TipTap + Excalidraw)
-- Habits with streaks, heatmap, and momentum tracking — **shared core logic**
-  (LWW-CRDT merge, scheduling parser) used identically by native and web
-- QR-based bidirectional P2P sync (LWW CRDT + continuous WebSocket), pairing
-  Android, Desktop, and Web devices
-- Android: seven Glance widgets (Todo, Habits, Momentum, Heatmap, Quick-Check,
-  Streaks, Week-Grid) fed by one shared projection; the Tauri shell's
-  RemoteViews widgets read the same JSON contract. Notification actions
-  (Mark Done / Snooze), exact-alarm permission UX
-- Multi-timer support, Firebase Auth + Firestore cloud sync (web), AI tools
-  via GROQ (user-supplied key)
+The shared application supports todo.txt-compatible tasks, notes, priorities, projects, contexts, habits with streaks and heatmaps, multiple timers, rich notes, vector drawing, AI tools using a user-supplied Groq key, Firebase Auth/Firestore synchronization, QR-based device pairing, and platform-specific notification/widget integrations where the operating system exposes them.
+
+Android continues to provide Glance widgets and action-oriented notifications. Desktop uses Compose JVM packaging. Browser storage is local-first through `localStorage`, and browser sync can use the injected public Firebase project configuration when authentication and Firestore rules are configured.
 
 ## Prerequisites
 
-- **JDK 21** — Gradle wrapper builds the native app and core module
-- **Android SDK** with `platforms;android-35`, `build-tools;34.0.0` /
-  `35.0.0`, and `platform-tools`; set `ANDROID_HOME`
-  (e.g. `export ANDROID_HOME=$HOME/android-sdk`)
-- **Node.js 20+** with npm (web app)
-- For the native app: a connected Android device / emulator, or simply a
-  Windows / Linux desktop for the Desktop JVM target
+| Tool | Requirement |
+|---|---|
+| JDK | 21; required by the native Gradle daemon and current Compose toolchain |
+| Node.js | 20 or newer; Netlify uses Node 20 |
+| pnpm | 9; install dependencies with the committed lockfile |
+| Android SDK | Required only for Android builds; set `ANDROID_HOME` and install the project’s Android platform/build tools |
+| Desktop host | Windows or Linux for the corresponding Compose desktop installer |
 
-## Development workflow (dev servers + hot reload)
+## Development workflow
 
-Daily development runs two dev servers, one per product:
+Install the JavaScript dependencies with pnpm, then choose the primary browser or desktop target:
 
 ```bash
-# Terminal 1 — web app dev server (http://localhost:5173)
-npm install          # repo root, on main or native/kotlin-compose
-npm run dev
+pnpm install --frozen-lockfile
 
-# Terminal 2 — native desktop app with Compose hot reload
+# Primary browser application, with hot reload through the Wasm dev tooling as needed.
+pnpm run build
+
+# Optional compatibility/rollback browser build.
+pnpm run build:legacy
+
+# Compose desktop application.
 cd native
 ./gradlew :app:run -DmainClass=app.todotxt.MainKt
 ```
 
-The desktop Compose app opens in its own window and picks up UI changes via
-Compose's hot reload. For Android, open `native/` in Android Studio (best
-experience: layout inspector, logcat, emulator) or connect a device and run
-`./gradlew :app:installDebug`.
+For Android, open `native/` in Android Studio or run `./gradlew :app:installDebug` after configuring `ANDROID_HOME`.
 
-## Build all platforms
+## Build commands
+
+The default root build is the production KMP/Wasm distribution. It invokes the native Gradle build, copies the generated executable bundle into `dist/`, injects public Firebase configuration into the HTML shell, and removes the public source map.
 
 ```bash
-# --- Native app (native/kotlin-compose branch) ---
-cd native && export ANDROID_HOME=$HOME/android-sdk
+# Primary production web build.
+pnpm run build
+pnpm run build:kmp
 
-# Typecheck / compile only (fastest full verification, both targets)
-./gradlew :app:compileKotlinDesktop :app:compileDebugKotlinAndroid \
-    --no-daemon --console=plain
+# Legacy React/Vite rollback build.
+pnpm run build:legacy
 
-# Android APK
-./gradlew :app:assembleDebug            # debug
-./gradlew :app:assembleRelease          # universal release APK
+# Web quality gates.
+pnpm exec biome check src scripts package.json
+pnpm test
+pnpm typecheck
 
-# Desktop installer for the host OS (Windows or Linux)
-./gradlew :app:packageDistributionForCurrentOS
-./gradlew :app:packageReleaseDistributionForCurrentOS
-
-# Shared core unit tests (JVM)
-./gradlew :core:jvmTest --no-daemon
-
-# --- Web app (repo root, main branch) ---
-npm run check          # biome lint + tsc --noEmit
-npm run build          # production bundle → dist/
-npm test               # vitest
+# Native quality gates.
+cd native
+./gradlew :core:jvmTest --no-daemon --max-workers=1 --console=plain
+./gradlew :app:compileKotlinDesktop --no-daemon --max-workers=1 --console=plain
+./gradlew :app:compileKotlinWasmJs --no-daemon --max-workers=1 --console=plain
 ```
 
-### Shared core and the web app
+The full production Wasm optimizer is memory-sensitive. CI and deployment use one Gradle worker and bounded JVM settings from `native/gradle.properties`; hosted builds should retain those settings rather than enabling parallel compiler workers.
 
-`native/core/` is a KMP module with `jvm` (native app) and `js(IR)` (web app)
-targets. It exports todo-content parsing, habit merge, streak / heatmap
-calculation, and the scheduling parser — `CoreEntry.kt` (JS/IR) and `LwwMap`
-(JVM).
+## Shared KMP core and compatibility package
 
-The web app consumes the Kotlin/JS bundle as a local package:
+`native/core/` targets JVM, Kotlin/JS IR, and Kotlin/Wasm. It contains the canonical todo-content parser, habit merge and streak calculations, scheduling parser, widget projection, and shared document rules. The Compose application consumes this core directly for Android, desktop, and browser builds.
+
+The legacy React application imports the committed Kotlin/JS compatibility package:
 
 ```json
 "@todotxt/core": "file:native/core/npm-package"
 ```
 
-`npm-package/` **is committed to git** — Netlify (and fresh clones) have no
-Gradle toolchain, so the compiled bundle is treated as a source artifact.
-After changing core code, regenerate and commit it:
+When shared core code changes, regenerate the package and commit the result because a fresh Netlify checkout must not depend on a local Gradle output directory:
 
 ```bash
-cd native && ./rebuild-npm-package.sh
-git add native/core/npm-package && git commit   # required for deploys
+cd native
+./rebuild-npm-package.sh
+git add core/npm-package
 ```
 
-`./rebuild-npm-package.sh` runs `:core:jsBrowserProductionWebpack` and copies
-the resulting bundle (`build/js/packages/todotxt-native-core/`) into
-`core/npm-package/` with the correct `@todotxt/core` package.json.
+## Browser parity and platform boundaries
 
-## Cross-platform releases (GitHub Actions)
+The browser and native applications share the common Compose UI and core data rules, but browser APIs cannot provide every native capability identically. Browser import uses a file picker and browser export opens an encoded text download. Browser due-task reminders use the Notification API when permission is granted; scheduled background habit reminders and Android exact-alarm actions are not equivalent in a closed browser tab. Browser portable encrypted `.tdb` backup/restore is intentionally reported as unavailable until a compatible Web Crypto implementation is completed. Browser Firebase sync also requires valid public project configuration, authentication, and secure Firestore rules.
 
-`.github/workflows/release.yml` builds installers for every platform in
-parallel and assembles them into a GitHub Release.
+These are explicit capability boundaries rather than silent fallbacks. Local browser persistence remains available without Firebase, while Android and desktop retain their platform-private backup and encrypted portable-backup flows.
 
-| Job | Host | Artifact |
+## Firebase configuration
+
+Firebase Web API keys and project IDs are public client identifiers, not service-account credentials. Configure `FIREBASE_API_KEY` and `FIREBASE_PROJECT_ID` as Netlify environment variables or GitHub repository secrets; the KMP web build injects them into `index.html`. Authentication and Firestore Rules remain the security boundary, and the application must be tested with restrictive production rules before release.
+
+For Android, pass the corresponding values as Gradle properties when assembling a configured build:
+
+```bash
+cd native
+./gradlew :app:assembleDebug \
+  -PfirebaseApiKey="$FIREBASE_API_KEY" \
+  -PfirebaseProjectId="$FIREBASE_PROJECT_ID"
+```
+
+## Netlify deployment
+
+`netlify.toml` is configured for the primary KMP/Wasm site:
+
+```toml
+command = "pnpm install --frozen-lockfile && pnpm run build:kmp"
+publish = "dist"
+```
+
+The build environment pins Node 20 and Java 21, serves Wasm with the correct MIME type, caches hashed Wasm/JavaScript assets, and routes application paths back to `index.html`. Set the two Firebase variables in Netlify site settings if browser account sync is desired. Without them, the browser remains local-first.
+
+## GitHub Actions
+
+The repository has two distinct workflow roles:
+
+| Workflow | Trigger | Purpose |
 |---|---|---|
-| Desktop — Windows | `windows-latest` (JDK 17) | MSI installer |
-| Desktop — Linux | `ubuntu-latest` (JDK 17) | `.deb` package |
-| Android — APK | `ubuntu-latest` | Universal release APK |
-| Web — static bundle | `ubuntu-latest` | `web-dist.zip` (PWA-ready) |
+| `ci.yml` | Pushes, pull requests, and manual dispatch | Frozen pnpm install, Biome, tests, typecheck, legacy build, KMP core tests, desktop compile, and Wasm source compile |
+| `release.yml` | Release tags (`v*`/`app-v*`) or manual dispatch | Windows MSI, Linux `.deb`, Android APK, and KMP/Wasm web artifact |
 
-To trigger a release, either push a tag matching `app-v*` / `v*` on any branch,
-or run it manually from the Actions tab ("Release" workflow → Run workflow).
-All assets land on a GitHub Release named after the tag/ref. Requirements met
-on CI: full Gradle wrapper (including `gradlew.bat`), `icon.ico` for jpackage,
-`binutils` + `fakeroot` for Linux packaging, pnpm for the web app, and ProGuard
-disabled for desktop release packaging (the bundled ProGuard 7.x cannot read
-JDK 17+ jmods — desktop distributions ship unminified instead).
+All native Gradle jobs use JDK 21. The Web release job installs `libatomic1`, uses the frozen pnpm lockfile, and runs the same KMP build used by Netlify. Release web configuration is read from the `FIREBASE_API_KEY` and `FIREBASE_PROJECT_ID` repository secrets.
 
-### Android signing
+For production Android signing, configure the repository secrets below. If they are absent, the workflow can create an installable CI-only signed APK, but that key must not be used for Play Store upgrades.
 
-The Android job always produces a **signed** (and therefore installable) APK.
-By default it generates a CI-only keystore — fine for sideloading, but do not
-use it for Play Store distribution (replacing the signing key breaks upgrades).
-For production signing, set these repository secrets:
-
-| Secret | Value |
+| Secret | Purpose |
 |---|---|
-| `BASE64_KEYSTORE` | `base64` of your `.jks` / `.keystore` file |
-| `KEYSTORE_PASSWORD` | Store password |
-| `KEY_ALIAS` | Key alias |
-| `KEY_PASSWORD` | Key password |
+| `BASE64_KEYSTORE` | Base64-encoded production keystore |
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_ALIAS` | Signing key alias |
+| `KEY_PASSWORD` | Signing key password |
 
-When the secrets are present the workflow signs with your keystore instead.
+## Repository layout
 
-## Quality gates (run before committing)
-
-| Check | Command |
-|---|---|
-| Native compile, both targets | `cd native && ./gradlew :app:compileKotlinDesktop :app:compileDebugKotlinAndroid --no-daemon` |
-| Core unit tests | `cd native && ./gradlew :core:jvmTest` |
-| Web lint + typecheck | `npm run check` (repo root / main) |
-| Web production build | `npm run build` |
-
-## Repo layout
-
-```
+```text
 Todo.Txt/
-├── src/                     # Web app source (repo root, main)
-├── package.json             # Web app manifest
-├── src-tauri/               # Optional Tauri shell (desktop + Android) wrapping the web UI
-├── native/
-│   ├── app/                 # Compose Multiplatform app (android + desktop)
-│   ├── core/                # Shared KMP module: JVM + JS/IR targets
-│   │   ├── rebuild-npm-package.sh  # one-command JS bundle rebuild
-│   │   └── npm-package/     # committed JS bundle for the web app (Netlify can't rebuild it)
-│   ├── kotlin-js-store/     # (gitignored) yarn lockfile
-│   └── build/               # (gitignored) Gradle outputs
-├── AGENTS.md, CI.md, DESIGN.md, ADVANCED_PARSER.md
-└── README.md
+├── native/app/                 # Primary Compose Multiplatform application
+├── native/core/                # Shared KMP domain and compatibility core
+├── native/core/npm-package/    # Committed Kotlin/JS package for legacy web
+├── src/                        # Legacy React/Vite compatibility surface
+├── src-tauri/                  # Optional Rust/webview shell
+├── scripts/build-kmp-web.mjs   # KMP/Wasm build and dist assembly
+├── netlify.toml                # Primary Netlify build configuration
+└── .github/workflows/          # CI and release workflows
 ```
 
-## Out of scope
-
-- iOS / macOS targets (Android + Desktop JVM only)
-- Committing `build/`, `kotlin-js-store/yarn.lock`, or any other reproducible
-  artifacts to git — the one exception is `native/core/npm-package/`, which
-  IS committed (see above: Netlify cannot run Gradle)
-
-## Deploy the web app (Netlify)
-
-The web app deploys to Netlify with zero extra configuration beyond the
-included `netlify.toml` (base dir `.`, build command
-`npm install && npm run build`, publish dir `dist`, SPA fallback redirect,
-and long-lived cache headers for hashed assets).
-
-1. On [Netlify](https://app.netlify.com) choose "Add new site → Import an
-   existing project", connect the `moodynooby/Todo.Txt` repository, and pick
-   the `main` branch.
-2. Netlify reads `netlify.toml` automatically — no manual settings needed.
-3. Every push to `main` redeploys automatically; the site URL is
-   `https://todotxt.netlify.app/`.
-
-If you want a deterministic package manager, set the Netlify environment
-variable `NETLIFY_USE_PNPM=true` (the lockfile is pnpm). The production build
-includes the PWA service worker, so the app installs offline on all
-platforms.
-
-## Links
-
-- [Todo.txt philosophy](https://github.com/todotxt/todo.txt)
-- [Website](https://todotxt.netlify.app/)
+Generated Gradle outputs, Kotlin JS/Wasm stores, and other reproducible build products are ignored. The exception is `native/core/npm-package/`, which remains committed for the legacy build and deployment compatibility.
 
 ## License
 
 MIT
-
-## Android build (Tauri)
-
-Toolchain: JDK 21, Gradle 8.14.3, AGP 8.13.0, NDK r30 (`30.0.15729638`), Rust with
-`aarch64-linux-android` target. Export before building:
-
-```bash
-export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # adjust to your JDK 21
-export ANDROID_HOME=/path/to/android-sdk
-export NDK_HOME=$ANDROID_HOME/ndk/30.0.15729638
-pnpm tauri android build --apk
-```
-
-Do not upgrade to AGP 9.x — Tauri's bundled Gradle modules still apply the
-standalone Kotlin plugin and fail under AGP 9's built-in Kotlin (see
-`ANDROID_BUILD_FIX_PLAN.md`).

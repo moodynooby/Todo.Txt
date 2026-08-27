@@ -67,4 +67,4 @@ object UndoStack {
     }
 }
 
-internal fun currentTimeMillis(): Long = System.currentTimeMillis()
+internal fun currentTimeMillis(): Long = app.todotxt.platform.nowMillis()

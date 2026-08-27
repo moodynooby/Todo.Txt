@@ -10,7 +10,6 @@ import app.todotxt.persistence.PlatformStorage
 import app.todotxt.persistence.Storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -35,7 +34,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.datetime.Instant
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.patch
@@ -79,9 +77,9 @@ object AccountSyncManager {
         encodeDefaults = true
         explicitNulls = false
     }
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var syncJob: Job? = null
-    private val client = HttpClient(CIO)
+    private val client = HttpClient()
 
     private val _status = MutableStateFlow<AccountSyncStatus>(AccountSyncStatus.Disabled)
     val status: StateFlow<AccountSyncStatus> = _status.asStateFlow()
@@ -649,7 +647,7 @@ object AccountSyncManager {
         PlatformStorage.writeString(STATE_FILE, json.encodeToString(SyncState(updated)))
     }
 
-    private fun now(): Long = System.currentTimeMillis()
+    private fun now(): Long = app.todotxt.platform.nowMillis()
 
     private fun JsonObject.requiredString(name: String): String =
         this[name]?.jsonPrimitive?.content ?: error("Firebase response missing $name")

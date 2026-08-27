@@ -238,27 +238,31 @@ function AppContent({ activeFilter, onFilterChange }: AppContentProps) {
 								setShortcutsOpen(false);
 							}}
 						/>
-						<AiToolsDialog
-							isOpen={aiToolsOpen}
-							onClose={() => {
-								setAiToolsOpen(false);
-							}}
-							initialContent={
-								editor?.state.selection.empty
-									? (editor?.getText() ?? "")
-									: (editor?.state.doc.textBetween(
-											editor.state.selection.from,
-											editor.state.selection.to,
-											"\n",
-										) ?? "")
-							}
-							onInsert={(text, mode) => {
-								handleAiInsert(text, mode);
-								setAiToolsOpen(false);
-							}}
-							groqApiKey={groqApiKey}
-							onGroqApiKeyChange={setGroqApiKey}
-						/>
+						{aiToolsOpen && (
+							<Suspense fallback={null}>
+								<AiToolsDialog
+									isOpen
+									onClose={() => {
+										setAiToolsOpen(false);
+									}}
+									initialContent={
+										editor?.state.selection.empty
+											? (editor?.getText() ?? "")
+											: (editor?.state.doc.textBetween(
+													editor.state.selection.from,
+													editor.state.selection.to,
+													"\n",
+												) ?? "")
+									}
+									onInsert={(text, mode) => {
+										handleAiInsert(text, mode);
+										setAiToolsOpen(false);
+									}}
+									groqApiKey={groqApiKey}
+									onGroqApiKeyChange={setGroqApiKey}
+								/>
+							</Suspense>
+						)}
 						<input
 							type="file"
 							ref={fileInputRef}

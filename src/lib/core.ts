@@ -146,8 +146,7 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 	const parsed = JSON.parse(c.parseTodoContentJs(content)) as {
 		tasks: unknown[];
 	};
-	const tasks = parsed.tasks.map(adaptTask);
-
+	const tasks: Task[] = [];
 	const priorities: Record<string, Task[]> = {};
 	const projects: Record<string, Task[]> = {};
 	const contexts: Record<string, Task[]> = {};
@@ -164,26 +163,31 @@ export const parseTodoContent = (content: string): ParsedTodoContent => {
 		}
 		return due;
 	};
+	const addToBucket = (
+		bucket: Record<string, Task[]>,
+		key: string,
+		task: Task,
+	) => {
+		let items = bucket[key];
+		if (!items) {
+			items = [];
+			bucket[key] = items;
+		}
+		items.push(task);
+	};
 
-	for (const task of tasks) {
+	for (const rawTask of parsed.tasks) {
+		const task = adaptTask(rawTask);
+		tasks.push(task);
 		if (task.completed) completedCount++;
-		if (task.priority) {
-			if (!priorities[task.priority]) priorities[task.priority] = [];
-			priorities[task.priority].push(task);
+		if (task.priority) addToBucket(priorities, task.priority, task);
+		for (const project of task.projects ?? []) {
+			addToBucket(projects, project, task);
 		}
-		for (const p of task.projects ?? []) {
-			if (!projects[p]) projects[p] = [];
-			projects[p].push(task);
+		for (const context of task.contexts ?? []) {
+			addToBucket(contexts, context, task);
 		}
-		for (const ctx of task.contexts ?? []) {
-			if (!contexts[ctx]) contexts[ctx] = [];
-			contexts[ctx].push(task);
-		}
-		if (task.due) {
-			const category = categorizeDueDate(task.due);
-			if (!dueDates[category]) dueDates[category] = [];
-			dueDates[category].push(task);
-		}
+		if (task.due) addToBucket(dueDates, categorizeDueDate(task.due), task);
 	}
 
 	return { tasks, priorities, projects, contexts, dueDates, completedCount };

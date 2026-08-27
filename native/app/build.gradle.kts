@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -9,6 +10,7 @@ plugins {
     alias(libs.plugins.serialization)
 }
 
+@OptIn(ExperimentalWasmDsl::class)
 kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -22,6 +24,14 @@ kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
+    }
+
+    // Compose Multiplatform web target. This is the KMP-first browser path;
+    // platform-only services receive explicit wasmJs actuals as the target is
+    // brought to parity with Android and desktop.
+    wasmJs {
+        browser()
+        binaries.executable()
     }
 
     sourceSets {
@@ -41,18 +51,9 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.serialization.kotlinx.json)
-                implementation(libs.ktor.client.cio)
-                implementation(libs.ktor.server.core)
-                implementation(libs.ktor.server.netty)
-                implementation(libs.ktor.server.content.negotiation)
-                implementation(libs.ktor.server.websockets)
                 implementation(libs.ktor.client.websockets)
-                implementation(libs.zxing)
 
                 api(project(":core"))
-                // Tier 2: Tiptap-like rich editor (Excalidraw-like vector tools are
-                // implemented natively in DrawPage — see that file).
-                implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc11")
             }
         }
         val commonTest by getting {
@@ -63,6 +64,7 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
+                implementation(libs.ktor.client.cio)
                 implementation(compose.preview)
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.androidx.glance.appwidget)
@@ -75,7 +77,14 @@ kotlin {
         }
         val desktopMain by getting {
             dependencies {
+                implementation(libs.ktor.client.cio)
                 implementation(compose.desktop.currentOs)
+            }
+        }
+        val wasmJsMain by getting {
+            dependencies {
+                implementation(libs.kotlinx.browser)
+                implementation(libs.ktor.client.js)
             }
         }
     }

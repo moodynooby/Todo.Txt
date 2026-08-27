@@ -33,6 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,8 +44,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.FilterType
+import app.todotxt.core.mergeImportedTodo
 import app.todotxt.domain.ParsedTodoContent
 import app.todotxt.domain.TodoParser
+import app.todotxt.persistence.ImportExportBridge
 import app.todotxt.persistence.Storage
 import app.todotxt.persistence.UndoStack
 import app.todotxt.persistence.exportTodoDocument
@@ -73,6 +76,13 @@ fun TodoPage(content: String) {
     var scheduleOpen by remember { mutableStateOf(false) }
     var clearDoneConfirm by remember { mutableStateOf(false) }
 
+    DisposableEffect(Unit) {
+        ImportExportBridge.onImported = { imported ->
+            Storage.setContent(mergeImportedTodo(Storage.content.value, imported))
+        }
+        onDispose { ImportExportBridge.onImported = null }
+    }
+
     // Keyboard-driven workspace (desktop): `/` focuses search, `n` focuses
     // quick-add, `Ctrl/Cmd+Z` undoes the last destructive action.
     val hostFocus = rememberKeyboardHost()
@@ -100,7 +110,12 @@ fun TodoPage(content: String) {
                     text = { Text("Import todo.txt (merge)") },
                     onClick = {
                         importMenuOpen = false
-                        importTodoDocument()
+                        when (val result = importTodoDocument()) {
+                            is app.todotxt.persistence.ImportExportResult.Imported ->
+                                Storage.setContent(mergeImportedTodo(content, result.content))
+                            app.todotxt.persistence.ImportExportResult.Shared,
+                            app.todotxt.persistence.ImportExportResult.Cancelled -> Unit
+                        }
                     },
                 )
                 DropdownMenuItem(

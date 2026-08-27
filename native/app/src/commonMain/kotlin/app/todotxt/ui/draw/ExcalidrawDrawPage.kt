@@ -238,6 +238,7 @@ fun ExcalidrawDrawPage() {
                                     selectedId.value = hit?.let { ExEl.id(it) }
                                     if (hit != null) {
                                         var moved = false
+                                        var movedScene = scene
                                         val id = ExEl.id(hit)
                                         while (true) {
                                             val event = awaitPointerEvent()
@@ -245,8 +246,8 @@ fun ExcalidrawDrawPage() {
                                             if (event.type == PointerEventType.Move) {
                                                 moved = true
                                                 val now = toScene(event.changes.first().position)
-                                                val next = scene.withElements(
-                                                    scene.elements.map { el ->
+                                                val next = movedScene.withElements(
+                                                    movedScene.elements.map { el ->
                                                         if (ExEl.id(el) == id) {
                                                             ExFactory.translate(
                                                                 el,
@@ -256,10 +257,11 @@ fun ExcalidrawDrawPage() {
                                                         } else el
                                                     },
                                                 )
+                                                movedScene = next
                                                 Storage.updateExcalidrawScene(next.serialize())
                                             }
                                         }
-                                        if (moved) commit(scene)
+                                        if (moved) commit(movedScene)
                                     }
                                 }
 

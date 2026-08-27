@@ -150,7 +150,7 @@ fun HabitsPage(habits: List<Habit>) {
                 Button(
                     onClick = {
                         if (draftName.isNotBlank()) {
-                            val now = System.currentTimeMillis()
+                            val now = app.todotxt.platform.nowMillis()
                             val habit = Habit(
                                 id = IdUtils.newId(),
                                 name = draftName,
@@ -203,7 +203,7 @@ private fun exportHabits() {
             append("""{"id":""" + habit.id.escapeJson() + """","name":""" + habit.name.escapeJson() + """","color":""" + habit.color.name + """","reminder":${habit.reminderEnabled},"completedDates":[""" + habit.completedDates.joinToString(",") { """"$it"""" } + """],"createdAt":""" + habit.createdAt + ""","updatedAt":""" + habit.updatedAt + """}""")
         }
     }
-    exportTodoDocument("""{"habits":[${items}],"updatedAt":""" + System.currentTimeMillis() + """}""")
+    exportTodoDocument("""{"habits":[${items}],"updatedAt":""" + app.todotxt.platform.nowMillis() + """}""")
 }
 
 private fun String.escapeJson(): String =
@@ -383,7 +383,7 @@ private fun EditHabitDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val now = System.currentTimeMillis()
+                    val now = app.todotxt.platform.nowMillis()
                     Storage.updateHabits { list ->
                         list.map {
                             if (it.id == habit.id) it.copy(

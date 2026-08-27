@@ -35,32 +35,32 @@ const NotesPage = () => {
 	const [showArchived, setShowArchived] = useState(false);
 	const [debouncedSearch] = useDebouncedValue(search, 200);
 
-	const activeNotes = useMemo(() => {
-		let result = notes.filter((n) => !n.archived);
-		if (debouncedSearch) {
-			const q = debouncedSearch.toLowerCase();
-			result = result.filter(
-				(n) =>
-					n.title.toLowerCase().includes(q) ||
-					n.content.toLowerCase().includes(q),
-			);
+	const { archivedNotes, pinned, unpinned } = useMemo(() => {
+		const archived: typeof notes = [];
+		const pinnedNotes: typeof notes = [];
+		const unpinnedNotes: typeof notes = [];
+		const query = debouncedSearch.toLowerCase();
+
+		for (const note of notes) {
+			if (note.archived) {
+				if (!debouncedSearch) archived.push(note);
+				continue;
+			}
+			if (
+				debouncedSearch &&
+				!note.title.toLowerCase().includes(query) &&
+				!note.content.toLowerCase().includes(query)
+			)
+				continue;
+			(note.pinned ? pinnedNotes : unpinnedNotes).push(note);
 		}
-		return result;
-	}, [notes, debouncedSearch]);
 
-	const archivedNotes = useMemo(() => {
-		if (debouncedSearch) return [];
-		return notes.filter((n) => n.archived);
+		return {
+			archivedNotes: archived,
+			pinned: pinnedNotes,
+			unpinned: unpinnedNotes,
+		};
 	}, [notes, debouncedSearch]);
-
-	const pinned = useMemo(
-		() => activeNotes.filter((n) => n.pinned),
-		[activeNotes],
-	);
-	const unpinned = useMemo(
-		() => activeNotes.filter((n) => !n.pinned),
-		[activeNotes],
-	);
 
 	const handleAddNote = useCallback(
 		() => dispatchNotes({ type: "UPSERT_NOTE", payload: createNote() }),

@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import app.todotxt.core.mergeImportedTodo
 import app.todotxt.persistence.AndroidImportExportControls
 import app.todotxt.ui.AppRoot
 
@@ -23,9 +24,7 @@ class MainActivity : ComponentActivity() {
             AndroidImportExportControls(
                 onImported = { content ->
                     val existing = app.todotxt.persistence.Storage.content.value
-                    val merged = if (existing.isBlank()) content
-                    else "$content\n$existing"
-                    app.todotxt.persistence.Storage.setContent(merged)
+                    app.todotxt.persistence.Storage.setContent(mergeImportedTodo(existing, content))
                 },
                 onExportShared = {},
             )

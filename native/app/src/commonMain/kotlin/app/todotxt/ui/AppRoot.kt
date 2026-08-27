@@ -51,6 +51,7 @@ import app.todotxt.persistence.Storage
 import app.todotxt.persistence.ThemeMode
 import app.todotxt.theme.FieldNotesTheme
 import app.todotxt.ui.ai.AiPage
+import app.todotxt.ui.capture.CapturePage
 import app.todotxt.ui.draw.ExcalidrawDrawPage
 import app.todotxt.ui.editor.EditorPage
 import app.todotxt.ui.habits.HabitsPage
@@ -66,6 +67,7 @@ import app.todotxt.update.openReleaseUrl
 import kotlinx.coroutines.launch
 
 enum class Workspace(val title: String) {
+    CAPTURE("Home"),
     TODO("Todos"),
     HABITS("Habits"),
     NOTES("Notes"),
@@ -77,6 +79,7 @@ enum class Workspace(val title: String) {
 }
 
 private val primaryWorkspaces = listOf(
+    Workspace.CAPTURE,
     Workspace.TODO,
     Workspace.HABITS,
     Workspace.NOTES,
@@ -100,7 +103,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
         ThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
     }
     FieldNotesTheme(darkTheme = darkTheme) {
-        var workspace by remember { mutableStateOf(Workspace.TODO) }
+        var workspace by remember { mutableStateOf(Workspace.CAPTURE) }
         var moreOpen by remember { mutableStateOf(false) }
         var updateStatus by remember { mutableStateOf<UpdateStatus>(UpdateStatus.Idle) }
         val updateScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -144,6 +147,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                             .fillMaxHeight(),
                     ) {
                         when (workspace) {
+                            Workspace.CAPTURE -> CapturePage(onOpen = { workspace = it })
                             Workspace.TODO -> TodoPage(content)
                             Workspace.HABITS -> HabitsPage(habits)
                             Workspace.NOTES -> NotesPage(notes)
@@ -152,7 +156,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                             Workspace.AI -> AiPage()
                             Workspace.EDITOR -> EditorPage(
                                 initialContent = content,
-                                onBack = { workspace = Workspace.TODO },
+                                onBack = { workspace = Workspace.CAPTURE },
                             )
                             Workspace.SYNC -> AccountSyncPage()
                         }

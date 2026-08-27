@@ -26,7 +26,7 @@ actual object DueReminderManager {
         val newScheduler = Executors.newSingleThreadScheduledExecutor()
 
         val tz = kotlinx.datetime.TimeZone.currentSystemDefault()
-        val today = kotlinx.datetime.Clock.System.now().toLocalDateTime(tz).date
+        val today = kotlin.time.Clock.System.now().toLocalDateTime(tz).date
 
         // Incomplete tasks with a due date on-or-before today (deduped by date).
         val dueDates = parsed.tasks

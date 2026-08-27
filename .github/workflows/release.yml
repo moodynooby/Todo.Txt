@@ -8,9 +8,8 @@
 #   build-web      — Web app static bundle
 #   release        — Collects all artifacts into a GitHub Release
 #
-# Note: desktop release packaging runs under JDK 17 because the ProGuard
-# version bundled with Compose Multiplatform 1.7.x cannot read Java 21 class
-# files. Sources still compile on JDK 21 via the Gradle toolchain.
+# Desktop and Android packaging use JDK 21, matching the native Gradle daemon
+# criteria and the current Compose Multiplatform toolchain.
 name: Release
 
 on:
@@ -47,15 +46,14 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Package MSI installer
         shell: cmd
         run: |
           cd native
-          rem Set JAVA_HOME to the JDK 17 installed by setup-java
+          rem setup-java provides the JDK 21 used by the native Gradle build
           for /f "delims=" %%i in ('where java') do set JAVA_BIN=%%i
-          set "JAVA_HOME=%JAVA_BIN:bin\java.exe=%"
           call gradlew.bat :app:packageReleaseDistributionForCurrentOS --no-daemon
 
       - name: Collect artifacts
@@ -94,7 +92,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Package .deb installer
         run: |
@@ -198,26 +196,40 @@ jobs:
           path: out/*.apk
           if-no-files-found: error
 
-  # ---------------- Web app static bundle ----------------
+  # ---------------- KMP/Wasm web app static bundle ----------------
   build-web:
-    name: Web — static bundle
+    name: Web — KMP/Wasm bundle
     runs-on: ubuntu-latest
     if: startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'app-v') || github.event_name == 'workflow_dispatch'
+    env:
+      FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: pnpm
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Install Wasm runtime dependency
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libatomic1
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm build
+      - name: Build KMP/Wasm web app
+        run: pnpm run build
 
       - name: Zip distribution
         run: zip -r web-dist.zip dist

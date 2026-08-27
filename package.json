@@ -1,12 +1,14 @@
 {
 	"name": "todo.txt",
 	"version": "1.0.1",
-	"description": "A todo.txt-compatible plain text todo app built with React and Mantine",
+	"description": "A todo.txt-compatible local-first app built with Kotlin Multiplatform and Compose Multiplatform",
 	"private": true,
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build && node scripts/check-size.mjs",
+		"build": "pnpm run build:kmp",
+		"build:kmp": "node scripts/build-kmp-web.mjs",
+		"build:legacy": "vite build && node scripts/check-size.mjs",
 		"preview": "vite preview",
 		"lint": "biome check --write .",
 		"typecheck": "tsc --noEmit",

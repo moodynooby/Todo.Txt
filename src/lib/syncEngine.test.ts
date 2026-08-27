@@ -27,6 +27,9 @@ vi.mock("@/lib/firestoreClient", () => ({
 	getDocWithRetry: vi.fn(),
 	subscribeDoc: vi.fn(() => () => undefined),
 }));
+vi.mock("firebase/firestore", () => ({
+	serverTimestamp: vi.fn(() => ({ __serverTimestamp: true })),
+}));
 
 import { writeDocs } from "@/lib/firestoreClient";
 
@@ -58,6 +61,34 @@ describe("SyncEngine outbox lifecycle", () => {
 			engine.enqueue(updates()[0]);
 			advance(1000);
 			await once(1);
+		});
+	});
+
+	it("keeps same document IDs separate across collections", async () => {
+		await withClock(async (advance) => {
+			const engine = createSyncEngine({ uid: "user-1" });
+			engine.uid = "user-1";
+			engine.enqueue({
+				path: { collection: "todos", id: "main" },
+				data: { content: "tasks", updatedAt: 1 },
+			});
+			engine.enqueue({
+				path: { collection: "notes", id: "main" },
+				data: { content: "notes", updatedAt: 2 },
+			});
+			advance(1000);
+			await once(1);
+
+			expect(viWriteDocs.mock.calls[0][2]).toEqual([
+				{
+					path: { collection: "todos", id: "main" },
+					data: { content: "tasks", updatedAt: 1 },
+				},
+				{
+					path: { collection: "notes", id: "main" },
+					data: { content: "notes", updatedAt: 2 },
+				},
+			]);
 		});
 	});
 

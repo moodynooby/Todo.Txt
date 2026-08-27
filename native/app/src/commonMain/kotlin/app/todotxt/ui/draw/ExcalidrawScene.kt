@@ -45,7 +45,7 @@ class ExcalidrawScene private constructor(private val root: JsonObject) {
         val updated = newElements.map { el ->
             buildJsonObject {
                 el.forEach { (k, v) -> put(k, v) }
-                if (el["updated"] == null) put("updated", System.currentTimeMillis())
+                if (el["updated"] == null) put("updated", app.todotxt.platform.nowMillis())
             }
         }
         val rebuilt = buildJsonObject {
@@ -165,7 +165,7 @@ object ExFactory {
         put("groupIds", buildJsonArray {})
         put("frameId", JsonNull)
         put("boundElements", JsonNull)
-        put("updated", System.currentTimeMillis())
+        put("updated", app.todotxt.platform.nowMillis())
         put("link", JsonNull)
         put("locked", false)
     }

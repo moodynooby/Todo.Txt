@@ -83,30 +83,48 @@ export default function HabitsPage() {
 	const [notificationHint, setNotificationHint] = useState("");
 	const today = formatLocalDate(new Date());
 	const week = useMemo(() => getLastDays(7), []);
-	const habits = state.habits.filter((habit) => !habit.archived);
-	const doneToday = habits.filter((habit) => isHabitCompleteOn(habit, today));
-	const dailyProgress = habits.length
-		? Math.round((doneToday.length / habits.length) * 100)
-		: 0;
-	const strongestHabit = useMemo(
-		() =>
-			habits
-				.map((habit) => ({ habit, streak: getHabitStreak(habit) }))
-				.sort((a, b) => b.streak - a.streak)[0],
-		[habits],
-	);
-	const weeklyCompletion = week.map((date) => {
-		const key = formatLocalDate(date);
-		const count = habits.filter((habit) =>
-			isHabitCompleteOn(habit, key),
-		).length;
-		return {
-			date,
-			key,
-			count,
-			percent: habits.length ? (count / habits.length) * 100 : 0,
-		};
-	});
+	const { habits, doneToday, dailyProgress, strongestHabit, weeklyCompletion } =
+		useMemo(() => {
+			const activeHabits = state.habits.filter((habit) => !habit.archived);
+			const weeklyCounts = new Map<string, number>(
+				week.map((date) => [formatLocalDate(date), 0] as const),
+			);
+			let completedToday = 0;
+			let strongest: { habit: Habit; streak: number } | undefined;
+
+			for (const habit of activeHabits) {
+				if (isHabitCompleteOn(habit, today)) completedToday++;
+				const streak = getHabitStreak(habit);
+				if (!strongest || streak > strongest.streak) {
+					strongest = { habit, streak };
+				}
+				for (const date of new Set(habit.completedDates)) {
+					const count = weeklyCounts.get(date);
+					if (count !== undefined) weeklyCounts.set(date, count + 1);
+				}
+			}
+
+			return {
+				habits: activeHabits,
+				doneToday: completedToday,
+				dailyProgress: activeHabits.length
+					? Math.round((completedToday / activeHabits.length) * 100)
+					: 0,
+				strongestHabit: strongest,
+				weeklyCompletion: week.map((date) => {
+					const key = formatLocalDate(date);
+					const count = weeklyCounts.get(key) ?? 0;
+					return {
+						date,
+						key,
+						count,
+						percent: activeHabits.length
+							? (count / activeHabits.length) * 100
+							: 0,
+					};
+				}),
+			};
+		}, [state.habits, today, week]);
 
 	const openNewHabit = () => {
 		setDraft(defaultDraft);
@@ -409,7 +427,7 @@ export default function HabitsPage() {
 								</Text>
 							</Box>
 							<Badge className="week-badge" variant="light">
-								{doneToday.length} of {habits.length || 0} today
+								{doneToday} of {habits.length || 0} today
 							</Badge>
 						</Group>
 						<Box

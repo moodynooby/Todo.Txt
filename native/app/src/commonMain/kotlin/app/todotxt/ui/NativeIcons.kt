@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.filled.Sync
@@ -32,24 +33,31 @@ fun WorkspaceIcon(
     contentDescription: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    val resource: DrawableResource = when (workspace) {
-        Workspace.TODO -> Res.drawable.icon_workspace_todo
-        Workspace.HABITS -> Res.drawable.icon_workspace_habits
-        Workspace.NOTES -> Res.drawable.icon_workspace_notes
-        Workspace.DRAW -> Res.drawable.icon_workspace_draw
-        else -> Res.drawable.icon_workspace_todo
+    if (workspace == Workspace.CAPTURE) {
+        Icon(
+            Icons.Filled.Home,
+            contentDescription = contentDescription,
+            modifier = modifier.size(size),
+        )
+    } else {
+        val resource: DrawableResource = when (workspace) {
+            Workspace.TODO -> Res.drawable.icon_workspace_todo
+            Workspace.HABITS -> Res.drawable.icon_workspace_habits
+            Workspace.NOTES -> Res.drawable.icon_workspace_notes
+            Workspace.DRAW -> Res.drawable.icon_workspace_draw
+            else -> Res.drawable.icon_workspace_todo
+        }
+        Image(
+            painter = painterResource(resource),
+            contentDescription = contentDescription,
+            contentScale = ContentScale.Fit,
+            modifier = modifier.size(size).then(
+                if (contentDescription == null) Modifier else Modifier.semantics {
+                    this.contentDescription = contentDescription
+                },
+            ),
+        )
     }
-
-    Image(
-        painter = painterResource(resource),
-        contentDescription = contentDescription,
-        contentScale = ContentScale.Fit,
-        modifier = modifier.size(size).then(
-            if (contentDescription == null) Modifier else Modifier.semantics {
-                this.contentDescription = contentDescription
-            },
-        ),
-    )
 }
 
 @Composable
@@ -60,6 +68,7 @@ fun WorkspaceDestinationIcon(workspace: Workspace, size: Dp = 26.dp) {
         WorkspaceIcon(workspace = workspace, size = size)
     } else {
         val icon = when (workspace) {
+            Workspace.CAPTURE -> Icons.Filled.Home
             Workspace.TIMER -> Icons.Filled.Timer
             Workspace.AI -> Icons.Filled.AutoAwesome
             Workspace.EDITOR -> Icons.Filled.NoteAlt

@@ -1,0 +1,67 @@
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Web and KMP validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Wasm runtime dependency
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libatomic1
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check web formatting and lint
+        run: pnpm exec biome check src scripts package.json
+
+      - name: Run web tests
+        run: pnpm test
+
+      - name: Typecheck web sources
+        run: pnpm typecheck
+
+      - name: Build legacy web rollback
+        run: pnpm run build:legacy
+
+      - name: Run KMP core tests
+        working-directory: native
+        run: ./gradlew :core:jvmTest --no-daemon --max-workers=1 --console=plain
+
+      - name: Compile KMP desktop target
+        working-directory: native
+        run: ./gradlew :app:compileKotlinDesktop --no-daemon --max-workers=1 --console=plain
+
+      - name: Compile KMP Wasm target
+        working-directory: native
+        run: ./gradlew :app:compileKotlinWasmJs --no-daemon --max-workers=1 --console=plain

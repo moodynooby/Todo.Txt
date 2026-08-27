@@ -23,13 +23,11 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import app.todotxt.domain.ParsedTodoContent
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
 
 /**
  * Pet-side stats strip: a compact "X of Y done today" progress ring next to a
@@ -45,7 +43,7 @@ fun StatsHeader(
     parsed: ParsedTodoContent,
     modifier: Modifier = Modifier,
 ) {
-    val today = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
+    val today = remember { kotlinx.datetime.LocalDate.parse(app.todotxt.domain.HabitUtils.today()) }
     val total = parsed.tasks.size
     val done = parsed.tasks.count { it.completed }
 
