@@ -183,7 +183,10 @@ object TodoParser {
         } else if (RE_X_PREFIX.containsMatchIn(line)) {
             if (!completed) lines[lineIndex] = RE_X_PREFIX.replaceFirst(line, "")
         } else if (completed && line.isNotBlank()) {
-            lines[lineIndex] = "-[x] ${line.trim()}"
+            // Canonical todo.txt completion marker. Checkbox markers remain
+            // supported above as an explicit app extension, but plain lines
+            // must use the standard `x ` prefix when marked complete.
+            lines[lineIndex] = "x ${line.trim()}"
         }
         return lines.joinToString("\n")
     }

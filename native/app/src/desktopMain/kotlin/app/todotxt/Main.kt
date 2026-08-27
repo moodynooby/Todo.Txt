@@ -22,6 +22,7 @@ import app.todotxt.persistence.Storage
 import app.todotxt.sync.AccountSyncManager
 import app.todotxt.sync.FirebaseSyncManager
 import app.todotxt.ui.AppRoot
+import app.todotxt.ui.timer.FloatingTimerOverlay
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
@@ -30,6 +31,8 @@ fun main() = application {
     // the only cloud engine here.
     AccountSyncManager.start()
     var isOpen by remember { mutableStateOf(true) }
+    var timerWindowOpen by remember { mutableStateOf(false) }
+    val timers by Storage.timers.collectAsState()
     val windowState = rememberWindowState(
         size = DpSize(1180.dp, 780.dp),
         position = WindowPosition(Alignment.Center),
@@ -49,10 +52,24 @@ fun main() = application {
                     }
                 },
             )
+            Item("Open floating timer", onClick = { timerWindowOpen = true })
             Separator()
             Item("Quit", onClick = ::exitApplication)
         }
     )
+
+    if (timerWindowOpen && timers.any { it.isActive || it.elapsed > 0L }) {
+        Window(
+            onCloseRequest = { timerWindowOpen = false },
+            state = rememberWindowState(size = DpSize(360.dp, 220.dp)),
+            title = "Todo.Txt Timer",
+            icon = icon,
+            alwaysOnTop = true,
+            resizable = false,
+        ) {
+            FloatingTimerOverlay(Modifier.fillMaxSize())
+        }
+    }
 
     if (isOpen) {
         Window(

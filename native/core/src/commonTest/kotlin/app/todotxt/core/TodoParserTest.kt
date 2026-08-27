@@ -166,10 +166,11 @@ class TodoParserTest {
     }
 
     @Test
-    fun addsCheckboxToPlainLineOnCompletion() {
+    fun addsCanonicalXPrefixToPlainLineOnCompletion() {
         val content = "buy groceries"
         val done = TodoParser.setLineCompleted(content, 0, true)
-        assertTrue(done.contains("-[x] buy groceries"))
+        assertEquals("x buy groceries", done)
+        assertTrue(TodoParser.parseTodoLine(done).completed)
     }
 
     @Test

@@ -36,8 +36,14 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install Wasm runtime dependency
+      - name: Install Wasm and Android runtime dependencies
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libatomic1
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 37 toolchain
+        run: yes | sdkmanager "platforms;android-37.0" "build-tools;36.1.0"
 
       - name: Install JavaScript dependencies
         run: pnpm install --frozen-lockfile
@@ -54,6 +60,9 @@ jobs:
       - name: Build legacy web rollback
         run: pnpm run build:legacy
 
+      - name: Build production KMP/Wasm web distribution
+        run: pnpm build
+
       - name: Run KMP core tests
         working-directory: native
         run: ./gradlew :core:jvmTest --no-daemon --max-workers=1 --console=plain
@@ -65,3 +74,7 @@ jobs:
       - name: Compile KMP Wasm target
         working-directory: native
         run: ./gradlew :app:compileKotlinWasmJs --no-daemon --max-workers=1 --console=plain
+
+      - name: Compile Android target
+        working-directory: native
+        run: ./gradlew :app:compileDebugKotlinAndroid --no-daemon --max-workers=1 --console=plain
