@@ -2,8 +2,8 @@ import { ActionIcon, Card, Group, Textarea } from "@mantine/core";
 import { Archive, ArchiveRestore, Pin, PinOff, Trash2 } from "lucide-react";
 import ColorDots from "@/features/notes/ColorDots";
 import NoteCardEditor from "@/features/notes/NoteCardEditor";
-import { chooseForeground } from "@/utils/contrast";
 import type { Note, NoteColor } from "@/types/notes";
+import { chooseForeground } from "@/utils/contrast";
 
 interface NoteCardProps {
 	note: Note;
@@ -30,7 +30,7 @@ const NoteCard = ({
 		shadow="sm"
 		padding="xs"
 		className="NotesPage-noteCard app-surface"
-				style={
+		style={
 			{
 				backgroundColor: note.color,
 				"--note-text-color": chooseForeground(note.color),
@@ -39,7 +39,6 @@ const NoteCard = ({
 				"--note-control-border": `color-mix(in srgb, ${chooseForeground(note.color)} 42%, transparent)`,
 			} as React.CSSProperties
 		}
-
 	>
 		<Group justify="space-between">
 			<Textarea

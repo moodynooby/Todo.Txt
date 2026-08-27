@@ -46,7 +46,7 @@ export const useAiGroq = (apiKey: string, model = DEFAULT_MODEL) => {
 						Authorization: `Bearer ${apiKey}`,
 					},
 					body: JSON.stringify({
-													model,
+						model,
 
 						messages: [
 							{

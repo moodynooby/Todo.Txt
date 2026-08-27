@@ -13,11 +13,10 @@ const result = spawnSync(
 	[
 		":app:wasmJsBrowserDistribution",
 		"--no-daemon",
-					"--max-workers=1",
-			"-Dkotlin.compiler.execution.strategy=in-process",
-			"-Dkotlin.daemon.jvmargs=-Xmx768m",
-			"--console=plain",
-
+		"--max-workers=1",
+		"-Dkotlin.compiler.execution.strategy=in-process",
+		"-Dkotlin.daemon.jvmargs=-Xmx768m",
+		"--console=plain",
 	],
 	{ cwd: native, stdio: "inherit", shell: process.platform === "win32" },
 );

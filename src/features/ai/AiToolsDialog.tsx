@@ -178,15 +178,14 @@ const AiToolsDialog = ({
 					</Group>
 				)}
 
-									<Select
-						label="Model"
-						data={AI_MODELS}
-						value={model}
-						onChange={(value) => value && setModel(value)}
-					/>
+				<Select
+					label="Model"
+					data={AI_MODELS}
+					value={model}
+					onChange={(value) => value && setModel(value)}
+				/>
 
-					<Grid>
-
+				<Grid>
 					{AI_TOOLS.map((tool) => {
 						const Icon = AI_TOOL_ICONS[tool.id] ?? Sparkles;
 						const isActive = activeTool === tool.id;
