@@ -29,6 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import app.todotxt.persistence.BackupManager
+import app.todotxt.persistence.PortableBackup
+import app.todotxt.persistence.PortableBackupStatus
 import app.todotxt.sync.AccountSyncManager
 import app.todotxt.sync.AccountSyncStatus
 import app.todotxt.ui.PageHeader
@@ -74,12 +77,82 @@ fun AccountSyncPage() {
             else -> AuthForm()
         }
 
+        PortableBackupSection()
+
         Text(
             "Synced through Firebase: todos, notes, habits, timers, and the " +
                 "AI key. Drawings and theme stay on this device.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun PortableBackupSection() {
+    val backupStatus by BackupManager.portableStatus.collectAsState()
+    var passphrase by remember { mutableStateOf("") }
+
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                "Encrypted portable backup",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                "Export or restore the complete local workspace, including drawings and settings. " +
+                    "The backup is protected on your device with a passphrase and is compatible " +
+                    "across the native and web app.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(
+                value = passphrase,
+                onValueChange = { passphrase = it },
+                label = { Text("Backup passphrase") },
+                supportingText = { Text("Use at least 8 characters. Keep it somewhere safe.") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = { PortableBackup.export(passphrase) },
+                    enabled = passphrase.length >= 8 && backupStatus !is PortableBackupStatus.Exporting,
+                ) { Text("Export backup") }
+                OutlinedButton(
+                    onClick = { PortableBackup.import(passphrase) },
+                    enabled = passphrase.length >= 8 && backupStatus !is PortableBackupStatus.Importing,
+                ) { Text("Import backup") }
+            }
+            val failedMessage = (backupStatus as? PortableBackupStatus.Failed)?.message
+            val statusText = failedMessage ?: when (backupStatus) {
+                PortableBackupStatus.Idle -> null
+                PortableBackupStatus.Exporting -> "Preparing encrypted backup…"
+                PortableBackupStatus.Importing -> "Waiting for backup file…"
+                PortableBackupStatus.Completed -> "Backup operation completed."
+                is PortableBackupStatus.Failed -> null
+            }
+            statusText?.let { message ->
+                Text(
+                    message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (failedMessage != null) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                )
+            }
+        }
     }
 }
 

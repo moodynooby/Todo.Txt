@@ -69,9 +69,19 @@ fun AndroidImportExportControls(
     val openBackupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri: Uri? ->
-        if (uri != null) {
-            readUri(ctx.applicationContext, uri)?.let { raw ->
-                PortableBackup.decryptAndRestore(raw, LauncherBridge.importBackupPassphrase)
+        when {
+            uri == null -> BackupManager.setPortableStatus(
+                PortableBackupStatus.Failed("Backup import cancelled"),
+            )
+            else -> {
+                val raw = readUri(ctx.applicationContext, uri)
+                if (raw == null) {
+                    BackupManager.setPortableStatus(
+                        PortableBackupStatus.Failed("Could not read the selected backup"),
+                    )
+                } else {
+                    PortableBackup.decryptAndRestore(raw, LauncherBridge.importBackupPassphrase)
+                }
             }
         }
     }

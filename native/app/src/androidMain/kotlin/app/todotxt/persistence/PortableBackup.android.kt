@@ -11,11 +11,6 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 actual object PortableBackup {
-    private const val PREFIX = "TODOTXT-BACKUP-1"
-    private const val ITERATIONS = 120_000
-    private const val KEY_BITS = 256
-    private const val SALT_BYTES = 16
-    private const val IV_BYTES = 12
 
     actual fun export(passphrase: String) {
         if (passphrase.length < 8) {
@@ -30,8 +25,8 @@ actual object PortableBackup {
         BackupManager.setPortableStatus(PortableBackupStatus.Exporting)
         runCatching {
             val payload = BackupManager.exportPortablePayload()
-            val salt = ByteArray(SALT_BYTES)
-            val iv = ByteArray(IV_BYTES)
+            val salt = ByteArray(PortableBackupFormat.SALT_BYTES)
+            val iv = ByteArray(PortableBackupFormat.IV_BYTES)
             SecureRandom().nextBytes(salt)
             SecureRandom().nextBytes(iv)
             val key = deriveKey(passphrase, salt)
@@ -40,7 +35,7 @@ actual object PortableBackup {
             val ciphertext = cipher.doFinal(payload.encodeToByteArray())
             val encoded = listOf(salt, iv, ciphertext).joinToString(".") { Base64.encodeToString(it, Base64.NO_WRAP) }
             val file = java.io.File(context.cacheDir, "todotxt-backup.tdb")
-            file.writeText("$PREFIX\n$encoded")
+            file.writeText("${PortableBackupFormat.PREFIX}\n$encoded")
             val uri: Uri = androidx.core.content.FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -71,7 +66,7 @@ actual object PortableBackup {
     internal fun decryptAndRestore(raw: String, passphrase: String) {
         runCatching {
             val lines = raw.trim().split("\n", limit = 2)
-            require(lines.firstOrNull() == PREFIX) { "This is not a Todo.Txt backup" }
+            require(lines.firstOrNull() == PortableBackupFormat.PREFIX) { "This is not a Todo.Txt backup" }
             val parts = lines.getOrNull(1)?.split(".") ?: error("Backup is incomplete")
             require(parts.size == 3) { "Backup is incomplete" }
             val salt = Base64.decode(parts[0], Base64.DEFAULT)
@@ -88,7 +83,7 @@ actual object PortableBackup {
     }
 
     private fun deriveKey(passphrase: String, salt: ByteArray): SecretKeySpec {
-        val spec = PBEKeySpec(passphrase.toCharArray(), salt, ITERATIONS, KEY_BITS)
+        val spec = PBEKeySpec(passphrase.toCharArray(), salt, PortableBackupFormat.ITERATIONS, PortableBackupFormat.KEY_BITS)
         val bytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
         return SecretKeySpec(bytes, "AES")
     }
