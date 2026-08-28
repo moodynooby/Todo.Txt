@@ -71,9 +71,13 @@ export const useAiGroq = (apiKey: string) => {
 				return data.choices?.[0]?.message?.content ?? null;
 			} catch (err) {
 				if (!mountedRef.current || controller.signal.aborted) return null;
-				console.error("Groq API Error:", err);
 				const errorMessage = err instanceof Error ? err.message : String(err);
-				setError(errorMessage);
+				if (import.meta.env.DEV) {
+					console.error("Groq API Error:", err);
+					setError(errorMessage);
+				} else {
+					setError("Failed to generate content. Please try again later.");
+				}
 				return null;
 			} finally {
 				if (mountedRef.current && !controller.signal.aborted) {
