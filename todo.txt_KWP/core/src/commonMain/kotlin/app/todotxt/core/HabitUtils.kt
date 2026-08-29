@@ -1,5 +1,7 @@
 package app.todotxt.core
 
+import kotlinx.datetime.LocalDate
+
 /** Field Notes Ritual: lightweight, local-date helpers for daily habit rhythm. */
 object HabitUtils {
 
@@ -98,35 +100,15 @@ object HabitUtils {
     }
 }
 
-/** Days between two ISO date strings (a <= b); works in pure string math. */
-internal fun daysBetween(a: String, b: String): Int {
-    fun julian(date: String): Int {
-        val parts = date.split("-")
-        val year = parts[0].toInt()
-        val month = parts[1].toInt()
-        val day = parts[2].toInt()
-        // Rata Die day number (simplified)
-        val y = year - if (month <= 2) 1 else 0
-        val m = (month + 9) % 12
-        val c = y / 100
-        val yy = y % 100
-        return 365 * y + yy / 4 - c / 4 + c * 3652425 / 10000 +
-            (m * 979 + 29) / 30 + day
-    }
-    return julian(b) - julian(a)
-}
+/** Days between two ISO date strings (a <= b) via kotlinx-datetime. */
+internal fun daysBetween(a: String, b: String): Int = try {
+    val da = LocalDate.parse(a)
+    val db = LocalDate.parse(b)
+    (db.toEpochDays() - da.toEpochDays()).toInt()
+} catch (_: Exception) { 0 }
 
-/** 0 = Monday .. 6 = Sunday, derived from the ISO date string. */
-internal fun dayOfWeek(isoDate: String): Int {
-    val parts = isoDate.split("-")
-    val year = parts[0].toInt()
-    val month = parts[1].toInt()
-    val day = parts[2].toInt()
-    val m = if (month <= 2) month + 12 else month
-    val y = if (month <= 2) year - 1 else year
-    val k = y % 100
-    val j = y / 100
-    // Zeller's congruence gives 0=Saturday..6=Friday; shift to Mon..Sun
-    val zeller = (day + (26 * (m + 1)) / 10 + k + k / 4 + j / 4 + 5 * j) % 7
-    return (zeller + 5) % 7
-}
+/** 0 = Monday .. 6 = Sunday, derived from the ISO date string via kotlinx-datetime. */
+internal fun dayOfWeek(isoDate: String): Int = try {
+    // LocalDate.dayOfWeek: MONDAY=1..SUNDAY=7 → map to 0..6 Mon..Sun
+    (LocalDate.parse(isoDate).dayOfWeek.ordinal)
+} catch (_: Exception) { 0 }

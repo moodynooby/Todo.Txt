@@ -1,5 +1,9 @@
 package app.todotxt.core
 
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
+
 /**
  * Field Notes Ritual scheduling parser — Kotlin Multiplatform port of
  * `src/utils/advancedParser.ts` (`parseRelativeDateExpression`,
@@ -155,44 +159,15 @@ object SchedulingParser {
         return "${hh.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}"
     }
 
-    /* ---------- Calendar arithmetic (pure string math on YYYY-MM-DD) ---------- */
+    /* ---------- Calendar arithmetic (delegated to kotlinx-datetime) ---------- */
 
-    /** Add whole months to a `YYYY-MM-DD` string, clamping the day. */
-    internal fun addMonthsString(base: String, months: Int): String {
-        val parts = base.split("-")
-        if (parts.size != 3) return base
-        val year = parts[0].toIntOrNull() ?: return base
-        val month = parts[1].toIntOrNull() ?: return base
-        val day = parts[2].toIntOrNull() ?: return base
-        var y = year
-        var m = month + months
-        while (m > 12) { m -= 12; y += 1 }
-        while (m < 1) { m += 12; y -= 1 }
-        val maxDay = daysInMonth(y, m)
-        return "${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-" +
-            "${day.coerceAtMost(maxDay).toString().padStart(2, '0')}"
-    }
+    /** Add whole months to a `YYYY-MM-DD` string, clamping the day via DatePeriod. */
+    internal fun addMonthsString(base: String, months: Int): String = try {
+        LocalDate.parse(base).plus(DatePeriod(months = months)).toString()
+    } catch (_: Exception) { base }
 
-    /** Add whole years to a `YYYY-MM-DD` string, clamping Feb-29. */
-    internal fun addYearsString(base: String, years: Int): String {
-        val parts = base.split("-")
-        if (parts.size != 3) return base
-        val year = parts[0].toIntOrNull() ?: return base
-        val month = parts[1].toIntOrNull() ?: return base
-        val day = parts[2].toIntOrNull() ?: return base
-        val y = year + years
-        val maxDay = if (month == 2 && day == 29 && !isLeapYear(y)) 28 else 29
-        return "${y.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-" +
-            "${day.coerceAtMost(maxDay).toString().padStart(2, '0')}"
-    }
-
-    private fun isLeapYear(year: Int): Boolean =
-        year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
-
-    private fun daysInMonth(year: Int, month: Int): Int = when (month) {
-        1, 3, 5, 7, 8, 10, 12 -> 31
-        4, 6, 9, 11 -> 30
-        2 -> if (isLeapYear(year)) 29 else 28
-        else -> 30
-    }
+    /** Add whole years to a `YYYY-MM-DD` string, clamping Feb-29 via DatePeriod. */
+    internal fun addYearsString(base: String, years: Int): String = try {
+        LocalDate.parse(base).plus(DatePeriod(years = years)).toString()
+    } catch (_: Exception) { base }
 }
