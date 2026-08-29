@@ -1,11 +1,30 @@
 {
-	"name": "todo.txt-kmp",
+	"name": "todo.txt-monorepo",
 	"version": "1.0.1",
-	"description": "Todo.Txt Kotlin Multiplatform application",
+	"description": "Todo.Txt monorepo: KMP/Compose Multiplatform app + React legacy app",
 	"private": true,
 	"type": "module",
+	"packageManager": "pnpm@9.15.0",
 	"scripts": {
-		"build": "node scripts/build-kmp-web.mjs",
-		"build:kmp": "node scripts/build-kmp-web.mjs"
+		"build": "pnpm run build:kmp",
+		"build:kmp": "node scripts/build-kmp-web.mjs",
+		"build:react": "pnpm --filter todo.txt-legacy-react run build",
+		"build:all": "pnpm -r run build",
+		"dev": "pnpm run dev:wasm",
+		"dev:wasm": "bash -c 'cd todo.txt_KWP && ./gradlew :app:wasmJsBrowserDevelopmentRun --build-cache --console=plain'",
+		"dev:wasm:prod": "bash -c 'cd todo.txt_KWP && ./gradlew :app:wasmJsBrowserProductionRun --build-cache --console=plain'",
+		"dev:desktop": "bash -c 'cd todo.txt_KWP && ./gradlew :app:hotRunDesktop --build-cache --console=plain'",
+		"dev:desktop:hot": "bash -c 'cd todo.txt_KWP && ./gradlew :app:hotRunDesktop --build-cache --console=plain'",
+		"dev:android": "bash -c 'cd todo.txt_KWP && ./gradlew :app:installDebug --build-cache --console=plain'",
+		"dev:react": "pnpm --filter todo.txt-legacy-react run dev",
+		"test:all": "pnpm -r run test",
+		"lint:all": "pnpm -r run lint",
+		"typecheck:all": "pnpm -r run typecheck",
+		"check:all": "pnpm -r run check",
+		"format:all": "pnpm -r run format"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"typescript": "catalog:"
 	}
 }

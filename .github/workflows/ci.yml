@@ -49,20 +49,37 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build production KMP/Wasm web distribution
-        run: pnpm build
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -XX:+UseStringDeduplication -Dkotlin.daemon.jvmargs=-Xmx2g -Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=false -Dorg.gradle.configureondemand=true"
+        run: pnpm build -- --build-cache --no-daemon --max-workers=2
 
       - name: Run KMP core tests
-        working-directory: native
-        run: ./gradlew :core:jvmTest --no-daemon --max-workers=1 --console=plain
+        working-directory: todo.txt_KWP
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -Dorg.gradle.workers.max=2"
+        run: ./gradlew :core:jvmTest --no-daemon --max-workers=2 --build-cache --console=plain
 
       - name: Compile KMP desktop target
-        working-directory: native
-        run: ./gradlew :app:compileKotlinDesktop --no-daemon --max-workers=1 --console=plain
+        working-directory: todo.txt_KWP
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -Dorg.gradle.workers.max=2"
+        run: ./gradlew :app:compileKotlinDesktop --no-daemon --max-workers=2 --build-cache --console=plain
 
       - name: Compile KMP Wasm target
-        working-directory: native
-        run: ./gradlew :app:compileKotlinWasmJs --no-daemon --max-workers=1 --console=plain
+        working-directory: todo.txt_KWP
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -Dorg.gradle.workers.max=2"
+        run: ./gradlew :app:compileKotlinWasmJs --no-daemon --max-workers=2 --build-cache --console=plain
 
       - name: Compile Android target
-        working-directory: native
-        run: ./gradlew :app:compileDebugKotlinAndroid --no-daemon --max-workers=1 --console=plain
+        working-directory: todo.txt_KWP
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -Dorg.gradle.workers.max=2"
+        run: ./gradlew :app:compileDebugKotlinAndroid --no-daemon --max-workers=2 --build-cache --console=plain
+
+      - name: Free disk space
+        if: always()
+        run: |
+          rm -rf todo.txt_KWP/.gradle/caches/*/transforms 2>/dev/null || true
+          rm -rf ~/.gradle/caches/*/transforms 2>/dev/null || true
+          df -h

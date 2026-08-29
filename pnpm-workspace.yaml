@@ -1,0 +1,15 @@
+# pnpm workspace — Todo.Txt monorepo
+# KMP (todo.txt_KWP) uses Gradle for Kotlin deps; its package.json only holds
+# shared JS tooling (Biome, TypeScript) so `pnpm -r` can lint/typecheck everything.
+
+packages:
+  - "todo.txt_REACT"
+  - "todo.txt_KWP"
+
+catalog:
+  "@biomejs/biome": "2.4.15"
+  "typescript": "^7.0.2"
+  "vitest": "^4.1.11"
+  "jsdom": "^30.0.1"
+  "@types/react": "^19.2.18"
+  "@types/react-dom": "^19.2.4"

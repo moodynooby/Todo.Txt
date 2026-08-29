@@ -1,0 +1,16 @@
+{
+	"name": "todo.txt-kmp-tooling",
+	"version": "1.0.1",
+	"private": true,
+	"description": "Shared JS tooling for KMP project (Biome, TypeScript) — Kotlin deps stay in Gradle",
+	"type": "module",
+	"scripts": {
+		"lint": "biome check .",
+		"format": "biome check --write .",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"typescript": "catalog:"
+	}
+}

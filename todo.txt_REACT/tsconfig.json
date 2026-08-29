@@ -1,0 +1,17 @@
+{
+	"extends": "../tsconfig.base.json",
+	"compilerOptions": {
+		"incremental": true,
+		"tsBuildInfoFile": ".tsbuildinfo",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"allowImportingTsExtensions": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedSideEffectImports": true,
+		"types": ["vite/client"]
+	},
+	"include": ["src", "vite.config.js"]
+}

@@ -50,24 +50,26 @@ jobs:
 
       - name: Package MSI installer
         shell: cmd
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -Dorg.gradle.workers.max=2"
         run: |
-          cd native
+          cd todo.txt_KWP
           rem setup-java provides the JDK 21 used by the native Gradle build
           for /f "delims=" %%i in ('where java') do set JAVA_BIN=%%i
-          call gradlew.bat :app:packageReleaseDistributionForCurrentOS --no-daemon
+          call gradlew.bat :app:packageReleaseDistributionForCurrentOS --no-daemon --max-workers=2 --build-cache
 
       - name: Collect artifacts
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
           Write-Output (Get-Location)
-          Get-ChildItem -Recurse -Path native/app/build/compose/binaries -Filter *.msi -ErrorAction SilentlyContinue | ForEach-Object {
+          Get-ChildItem -Recurse -Path todo.txt_KWP/app/build/compose/binaries -Filter *.msi -ErrorAction SilentlyContinue | ForEach-Object {
             Write-Output "MSI: $($_.FullName)"
             Copy-Item $_.FullName out/
           }
           if ((Get-ChildItem out).Count -eq 0) {
             Write-Output "Available build dirs:"
-            Get-ChildItem -Recurse -Directory -Path native -Filter build -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { Write-Output $_.FullName }
+            Get-ChildItem -Recurse -Directory -Path todo.txt_KWP -Filter build -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { Write-Output $_.FullName }
             Write-Error "No MSI found"
             exit 1
           }
@@ -95,16 +97,18 @@ jobs:
           java-version: 21
 
       - name: Package .deb installer
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -Dorg.gradle.workers.max=2"
         run: |
           # jpackage needs binutils (objcopy) and fakeroot on Linux
           sudo apt-get install -y binutils fakeroot >/dev/null
-          cd native
-          ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon
+          cd todo.txt_KWP
+          ./gradlew :app:packageReleaseDistributionForCurrentOS --no-daemon --max-workers=2 --build-cache
 
       - name: Collect artifacts
         run: |
           mkdir -p out
-          cp native/app/build/compose/binaries/main-release/deb/*.deb out/ 2>/dev/null || { echo "no deb"; exit 1; }
+          cp todo.txt_KWP/app/build/compose/binaries/main-release/deb/*.deb out/ 2>/dev/null || { echo "no deb"; exit 1; }
           ls -la out/
 
       - uses: actions/upload-artifact@v4
@@ -173,9 +177,10 @@ jobs:
         env:
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -Dorg.gradle.workers.max=2"
         run: |
-          cd native
-          ./gradlew :app:assembleRelease --no-daemon \
+          cd todo.txt_KWP
+          ./gradlew :app:assembleRelease --no-daemon --max-workers=2 --build-cache \
             -PfirebaseApiKey="$FIREBASE_API_KEY" \
             -PfirebaseProjectId="$FIREBASE_PROJECT_ID" \
             -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
@@ -186,8 +191,8 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir -p out
-          cp native/app/build/outputs/apk/release/*.apk out/ 2>/dev/null || \
-            cp native/app/build/outputs/apk/debug/*.apk out/
+          cp todo.txt_KWP/app/build/outputs/apk/release/*.apk out/ 2>/dev/null || \
+            cp todo.txt_KWP/app/build/outputs/apk/debug/*.apk out/
           ls -la out/ || { echo "no apk"; exit 1; }
 
       - uses: actions/upload-artifact@v4
@@ -211,6 +216,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: gradle
 
       - uses: pnpm/action-setup@v4
         with:
@@ -219,7 +225,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install Wasm runtime dependency
@@ -229,7 +235,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build KMP/Wasm web app
-        run: pnpm run build
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8 -XX:+UseG1GC -XX:+UseStringDeduplication -Dkotlin.daemon.jvmargs=-Xmx2g -Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=false"
+        run: pnpm run build -- --build-cache --no-daemon --max-workers=2
 
       - name: Zip distribution
         run: zip -r web-dist.zip dist

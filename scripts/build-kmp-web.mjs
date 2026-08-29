@@ -3,7 +3,7 @@ import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const native = resolve(root, "native");
+const native = resolve(root, "todo.txt_KWP");
 const source = resolve(native, "app/build/dist/wasmJs/productionExecutable");
 const destination = resolve(root, "dist");
 
@@ -12,10 +12,7 @@ const result = spawnSync(
 	gradle,
 	[
 		":app:wasmJsBrowserDistribution",
-		"--no-daemon",
-		"--max-workers=1",
-		"-Dkotlin.compiler.execution.strategy=in-process",
-		"-Dkotlin.daemon.jvmargs=-Xmx768m",
+		"--build-cache",
 		"--console=plain",
 	],
 	{ cwd: native, stdio: "inherit", shell: process.platform === "win32" },
