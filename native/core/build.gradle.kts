@@ -27,23 +27,6 @@ kotlin {
         browser()
     }
 
-    // JS target consumed by the TypeScript web app (npm package `@todotxt/core`)
-    js {
-        nodejs {
-            // Node.js target for npm publishing
-        }
-        browser {
-            testTask {
-                useKarma {
-                    useChromeHeadless()
-                }
-            }
-        }
-        // Generate npm package structure
-        useCommonJs()
-        binaries.executable()
-    }
-
     sourceSets {
         val commonMain by getting {
             dependencies {

@@ -1,65 +1,42 @@
 # Agent Guidelines for Todo.Txt
 
-This repo ships **three surfaces** on `main`, all sharing one core:
-
-1. **Native app (`native/`)** — the frontrunner. Kotlin Compose Multiplatform (Android + Desktop JVM; no iOS/macOS). Compose UI, seven Glance widgets fed by the shared core projection, account-based Firebase sync speaking the web wire protocol (`sync/AccountSyncManager.kt`, per-document LWW against `users/{uid}/{collection}/{id}`), notification actions (Mark Done / Snooze), multi-timer. Kotlin 2.1.21, CMP 1.7.3, AGP 8.7.3.
-2. **Web app** (repo root — `src/`, `package.json`) — browser/PWA; also embeddable in the Tauri shell below. React 19 + Vite + TypeScript, Mantine 9 UI, TipTap 3 editor (Markdown ext), Excalidraw drawing, Firebase Auth + Firestore sync, GROQ AI via plain `fetch` (`src/hooks/useAiGroq.ts`), PWA via vite-plugin-pwa.
-3. **Tauri shell (`src-tauri/`)** — optional Rust wrapper around the same web UI for desktop + an Android build (`tauri android`), with its own RemoteViews widget stack (Todo/Momentum/Streaks/Heatmap/Week-Grid) fed by the shared `WidgetData` JSON contract. Not built by default; no `@tauri-apps/*` npm deps are installed (add them back only when building this target).
-
-**Shared core (`native/core/`)**: a KMP module with JVM + JS/IR targets — todo.txt parsing (`TodoParser`), habit merge (`HabitMerge`), streaks/heatmap math (`HabitUtils`), scheduling + dependency-metadata grammar (`SchedulingParser`, `TaskMetadataParser`), and the shared widget projection (`WidgetData`, consumed by BOTH Android widget stacks: native Glance widgets and the Tauri shell's RemoteViews providers). The web consumes all of this through the typed bridge `src/lib/core.ts` (the only file allowed to import `@todotxt/core`; it converts JSON-string results into web types and maps hex ↔ Kotlin enum colors). The bundle IS committed to git (Netlify has no Gradle toolchain and never regenerates it): after changing core code run `cd native && ./rebuild-npm-package.sh`, then `pnpm install` at the root (pnpm copies `file:` deps into its store) and commit the regenerated `native/core/npm-package/` files.
-
-**Widgets**: seven Glance widgets ship in the native app (Todo, Habits list, Momentum, Heatmap, Quick-Check, Streaks, Week-Grid), all fed by `WidgetData.project(...)` — never compute streaks/rates/grid flags inline in a composable. All receivers are registered in `AndroidManifest.xml`; refresh goes through `WidgetRefresher` only (flow observer re-renders on data change). The Tauri shell's RemoteViews providers read the same JSON contract from `widget_data.json`.
-
-**Sync**: habit merging everywhere (native account sync, web sync view, JS exports) goes through `core/HabitMerge.kt`. Completed dates are always unioned — never drop the loser side's dates when picking the newer record.
+The active product is the Kotlin Multiplatform / Compose Multiplatform application under `native/`. It targets Android, desktop JVM, and Kotlin/Wasm in the browser. The root build and CI must remain independent of any compatibility or historical web implementation.
 
 ## Commands
 
 | Action | Command |
-|--------|---------|
-| native typecheck + build (both targets) | `cd native && ./gradlew :app:compileKotlinDesktop :app:compileDebugKotlinAndroid --no-daemon --console=plain` |
-| native core tests | `cd native && ./gradlew :core:jvmTest --no-daemon` |
-| rebuild shared core JS bundle | `cd native && ./rebuild-npm-package.sh` — then COMMIT `native/core/npm-package/` (Netlify cannot rebuild it) |
-| web dev server | `cd . && npm run dev` (port 5173) |
-| web build | `cd . && npm run build` |
-| web preview | `cd . && npm run preview` (port 4173) |
-| web lint + fix | `cd . && npm run lint` (biome check --write — rewrites files) |
-| web format | `cd . && npm run format` |
-| web typecheck | `cd . && npm run typecheck` (tsc --noEmit) |
-| web full check | `cd . && npm run check` (lint + typecheck) — run before finishing |
+|---|---|
+| Active production browser build | `pnpm install --frozen-lockfile && pnpm run build` |
+| Native core tests | `cd native && ./gradlew :core:jvmTest --no-daemon --max-workers=1 --console=plain` |
+| Native desktop tests and compile | `cd native && ./gradlew :app:desktopTest :app:compileKotlinDesktop --no-daemon --max-workers=1 --console=plain` |
+| Native Wasm compile | `cd native && ./gradlew :app:compileKotlinWasmJs --no-daemon --max-workers=1 --console=plain` |
+| Android compile | `cd native && ./gradlew :app:compileDebugKotlinAndroid --no-daemon --max-workers=1 --console=plain` |
+| Desktop run | `cd native && ./gradlew :app:run -DmainClass=app.todotxt.MainKt` |
 
-## Setup & gotchas
+## Setup and build rules
 
-- **Use pnpm** for installs. `pnpm-workspace.yaml` gates postinstall scripts: new deps with build scripts must be added to `allowBuilds` there (currently `@firebase/util`, `protobufjs`, `@tauri-apps/cli`).
-- Copy `.env.example` → `.env` (gitignored) with `VITE_FIREBASE_*` values or the app runs local-only (no sign-in/sync); it still works via localStorage backups.
-- **Move files with `git mv`**, never plain `mv`.
-- Firestore offline persistence is enabled via `initializeFirestore(app, { cacheSizeBytes })` (src/lib/firebase.ts). Do NOT switch to `enableIndexedDbPersistence()` — deprecated.
-- Biome: tabs, double quotes, organize-imports on write. TypeScript is strict with `noUnusedLocals`/`noUnusedParameters` — typecheck fails on unused code.
-- Hosted on Netlify (no CI in repo).
-- Native Gradle builds self-select JDK 21 via `native/gradle/gradle-daemon-jvm.properties` (daemon JVM criteria) — no `JAVA_HOME` override even on hosts whose default JVM is newer; a JDK 21 just has to be discoverable (CI runners have one preinstalled).
+Use JDK 21, Node.js 20 or newer, and pnpm. Linux Wasm builds require `libatomic1`; Android builds require the configured API 37 SDK and build tools. Native Gradle builds use the repository’s JDK discovery settings and one worker for predictable memory use.
+
+The root package contains only the KMP/Wasm build wrapper. The active browser distribution is generated by `scripts/build-kmp-web.mjs` from `native/app/src/wasmJsMain/resources/index.html` and copied to `dist/`. Netlify deploys this output directly. Do not add a second root JavaScript application, bundler, or dependency tree.
+
+Generated Gradle outputs, Wasm stores, `node_modules`, and `dist/` are not committed. Keep application assets and browser behavior in the KMP source sets rather than recreating them in root JavaScript files.
 
 ## Architecture
 
-- Entry: `src/index.tsx` → `src/context/MantineProvider.tsx` → `src/App.tsx` (provider tree + view switch: todo / notes / habits / excalidraw / sync). Path alias `@/` → `src/`.
-- **Core bridge**: parsing, habit stats, scheduling phrases, dependency metadata, and habit merging all come from `@todotxt/core` via `src/lib/core.ts`. Never reimplement token extraction, streak math, or the highlighter's regexes — consume parser output (the editor chips in `taskExtensions.ts` locate spans by literal search for parser-extracted tokens only).
-- **Sync**: `useSyncedDocument` (src/lib/useSyncedDocument.ts) is the ONLY sync API. To sync a new feature: add a doc path in `src/lib/syncPaths.ts`, a `SyncCodec` in `src/lib/syncAdapters.ts` (wire shape + decode/afterRead rules), and a `useSyncedX` adapter (mounted by `SyncFeatures`). Startup reconciliation in `SyncContext.connect()` runs through the same codecs (`normalizeFieldValue`) — there is exactly one set of normalization rules per document. Never import Firestore / build `doc(db, ...)` paths in feature code. Documents live at `users/{uid}/{collection}/{id}`; `updatedAt` (server timestamp) drives conflict resolution; writes are debounced (1s) and batched; features buffer to localStorage for offline start.
-- Timers sync only idle snapshots: `beforeWrite` drops running timers, `TIMERS_CODEC.afterRead` force-resets remote ones to idle (per-device runtime state).
-- GROQ API key is user-entered in-app (AI tools dialog) and synced at `settings/groq` — not an env var.
-- Firestore security rules (`firestore.rules`): each user may only read/write their own `users/{uid}/**`.
+The shared application entrypoint is `native/app/src/commonMain/kotlin/app/todotxt/AppRoot.kt`, with explicit platform adapters in `androidMain`, `desktopMain`, and `wasmJsMain`. Common code owns UI, domain behavior, persistence contracts, sync, timers, Notes, Draw, AI, and parity rules. Platform source sets provide only capabilities that cannot be shared, such as file dialogs, Web Crypto, notifications, Android widgets, and desktop tray/window integration.
 
-**Native UI**: shared atoms live in `native/.../ui/Common.kt` — every page header is a `PageHeader`, searches use `SearchField`, color picking uses `ColorSwatchRow`, destructive confirms use `ConfirmDialog`. Full-app snapshots (cloud sync + local/portable backups) are one class, `persistence/BackupManager.kt`'s `FullSnapshot` (constructed only through `BackupManager.capture`), with dual timestamp fields kept for wire compatibility.
+The `native/core` module is the source of truth for Todo.Txt grammar, habit merge, streak and heatmap math, scheduling, dependency metadata, and shared projections. It targets JVM and Kotlin/Wasm and must not acquire UI or platform dependencies.
 
-**PWA chunking**: `vite.config.js` pins `@todotxt/core` into its own chunk via `manualChunks`; index must stay under workbox's 2 MiB per-file precache limit — check `npm run build` output if you add heavy imports to the main chunk.
+Native widgets consume `WidgetData.project(...)`; do not duplicate streak, rate, or heatmap calculations inside composables or receivers. Sync implementations must preserve the established wire contracts and conflict-resolution rules. Timers synchronize idle snapshots only; running timer state is device-local.
 
-## Design system
+## UI and accessibility
 
-Read `DESIGN.md` before visual changes. Theme is Material 3 Expressive: semantic tokens in `src/theme/m3Theme.ts` + CSS vars in `src/styles/App.css`. Use shared `.app-*` classes and Mantine theme colors (`var(--mantine-color-evergreen-7)` etc.) — never inline hex. Update theme tokens before styling a workspace.
+Read `DESIGN.md` before active visual changes. Use Material 3 semantic colors, runtime contrast helpers, shared page headers, keyboard-reachable controls, content descriptions for icon-only actions, and visible focus indicators. Never hard-code black or white text against arbitrary user-selected backgrounds.
 
-## Refactor status (post-audit)
+## Verification
 
-The audit follow-ups are **COMPLETE** — do not redo any of this:
-1. Web parsing/streaks route through `@todotxt/core` via `src/lib/core.ts`; duplicates `src/utils/todoParser.ts` / `advancedParser.ts` / `habitUtils.ts` (+ tests) deleted (~630 LOC); the highlighter consumes parser output tokens instead of its own regexes.
-2. Web sync normalization is unified: per-document `SyncCodec`s + `normalizeFieldValue` in `src/lib/syncAdapters.ts`, and `SyncContext.connect()` startup reconciliation uses those same codecs.
-3. Native UI atoms live in `native/.../ui/Common.kt` (`PageHeader`, `SearchField`, `ColorSwatchRow`, `ConfirmDialog`); the former `SyncSnapshot`/`BackupSnapshot` merged into one `persistence/BackupManager.kt`'s `FullSnapshot` (constructed only via `BackupManager.capture`, dual timestamps kept for wire compatibility).
-4. Remaining native dead code removed: platform `Fullscreen` expect/actual (+ `AppRoot` call), `NativeActionIcons` object, `lastUsedVersion` from `AppSettings`, desktop tray no-ops in `Main.kt`.
+Before completing active changes, run the relevant common tests and compile desktop, Wasm, and Android targets. For production browser changes, run `pnpm run build` and verify `dist/index.html`, `dist/app.js`, and the generated Wasm assets. Run `git diff --check` and ensure no generated output or obsolete compatibility configuration has entered the repository.
 
-Doc style: write what code does, not how; explain non-obvious decisions; never restate code verbatim.
+## Documentation style
+
+Document what the active code does and explain non-obvious decisions. Keep repository documentation focused on the KMP product and avoid retaining historical implementation instructions in active root files.

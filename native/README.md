@@ -1,76 +1,43 @@
-# Todo.Txt — Kotlin Native Experiment
+# Todo.Txt — Kotlin Multiplatform application
 
-Experimental native build of [Todo.Txt](https://github.com/moodynooby/Todo.Txt) on the
-`native/kotlin-compose` branch. **Main is untouched** — this directory is a completely
-separate Compose Multiplatform project that never touches the web app's pipeline.
+This directory contains the active Todo.Txt product built with Kotlin Multiplatform and Compose Multiplatform. It targets Android, desktop JVM, and Kotlin/Wasm in the browser.
 
-## What this is
+## Targets
 
-A Kotlin 2.1.21 + Compose Multiplatform 1.7.3 port of the web app, targeting:
+| Target | Source set | Main output |
+|---|---|---|
+| Android | `app/src/androidMain` | Debug/release APK and Android widgets |
+| Desktop JVM | `app/src/desktopMain` | Compose desktop application and native distributions |
+| Browser/Wasm | `app/src/wasmJsMain` | Production browser distribution copied to the repository `dist/` directory |
 
-- **Android** — `app/src/androidMain`, Gradle task `assembleDebug` → `app-debug.apk`
-- **Desktop (Windows / Linux / macOS)** — `app/src/desktopMain`, packaged with jpackage
-  (`packageDeb` / `packageMsi` / `packageDmg`)
+The shared core in `core/` is consumed directly by the active KMP app and targets JVM and Wasm.
 
-The goal is full 1:1 feature parity with the web app while answering one question:
-*do the native advantages (local file, OS reminders, widgets, instant start) feel as
-good in practice as on paper?*
-
-## Status
-
-| Area | State |
-| --- | --- |
-| Domain layer (`Task`, `Habit`, `Note`, settings, parser, habit math) | Ported + unit tested |
-| Field Notes Ritual M3 Expressive theme | Ported to `FieldNotesTheme` |
-| Workspaces: Todos, Habits, Notes, Draw, Timer, AI, Sync | Implemented |
-| AI tools (Groq) | Implemented (key stored locally) |
-| Persistence | `expect/actual`: files on disk (desktop), DataStore (Android) |
-| Notifications | Android habit/due reminders with Mark Done + Snooze actions |
-| Widgets | Android Glance widgets: habit momentum, heatmap, quick-check toggle |
-| P2P Sync | QR-based bidirectional CRDT sync (LWW Map) — works Android↔Desktop↔Web |
-| Shared core | JVM + JS/IR targets — same logic across native and web |
-| Tests | `commonTest` ports the web app's parser + habit utility suites — all green |
-
-## Build
+## Build and test
 
 ```bash
 cd native
-./gradlew :app:assembleDebug          # Android APK
-./gradlew :app:compileKotlinDesktop   # Desktop compile check
-./gradlew :app:packageDeb             # Linux .deb
-./gradlew :app:test                   # Domain + habit utility tests
+
+# Core tests and platform checks
+./gradlew :core:jvmTest --no-daemon --max-workers=1 --console=plain
+./gradlew :app:desktopTest --no-daemon --max-workers=1 --console=plain
+./gradlew :app:compileKotlinDesktop --no-daemon --max-workers=1 --console=plain
+./gradlew :app:compileKotlinWasmJs --no-daemon --max-workers=1 --console=plain
+./gradlew :app:compileDebugKotlinAndroid --no-daemon --max-workers=1 --console=plain
+
+# Android APK
+./gradlew :app:assembleDebug
+
+# Desktop distribution
+./gradlew :app:packageDeb
 ```
 
-Requires JDK 21. `gradle/gradle-daemon-jvm.properties` pins the daemon JVM
-criteria to 21, so any invocation launches Gradle on a detected JDK 21 even if
-the shell default is newer (e.g. Temurin 25, whose version string crashes
-Kotlin 2.1.x's version parser) — no `JAVA_HOME` override needed.
+From the repository root, `pnpm run build` invokes the production KMP/Wasm distribution and copies it to `dist/`. It requires JDK 21, Node.js, pnpm, and `libatomic1` on Linux. Android builds additionally require the configured Android SDK platform and build tools.
 
-## What is deliberately out of scope
+## Architecture
 
-- **Rich notes editor** (Tiptap-equivalent): the Notes workspace uses a multi-line
-  `TextField` for now; full rich-text with TipTap parity is planned
-- **Excalidraw-equivalent drawing**: the Draw workspace keeps strokes in memory;
-  full scene persistence and vector editing are the next iteration
-- **iOS / macOS**: deliberately not targeted — Android + Desktop (Windows/Linux) only
+The active application is organized around `app/src/commonMain`, with explicit platform implementations in `androidMain`, `desktopMain`, and `wasmJsMain`. The common layer owns the UI, domain behavior, persistence contracts, sync, timers, Notes, Draw, AI, and shared parity rules. Platform source sets provide only capabilities that cannot be shared, such as file dialogs, Web Crypto, notifications, Android widgets, and desktop tray/window integration.
 
-## Architecture map
-
-```
-native/app/src/commonMain/kotlin/app/todotxt/
-├── crdt/          LwwMap — shared P2P sync merge logic
-├── domain/        Task, Habit, Note types + TodoParser, HabitUtils, IdUtils
-├── keyboard/      expect/actual keyboard shortcuts (desktop only)
-├── persistence/   expect/actual Storage + repository (multi-timer, undo stack)
-├── service/       AlarmPermissionManager, DueReminderManager, P2pSyncManager
-├── theme/         FieldNotesTheme (M3 Expressive)
-├── ui/            AppRoot + workspace pages (todo, habits, notes, timer, draw, ai, sync)
-└── widgets/       (androidMain) Glance habit widgets + toggle callback
-```
-
-The `domain` layer mirrors `src/types/` and `src/utils/` from the web repo one-to-one,
-so the web vitest suites could be re-targeted here with minimal translation.
 
 ## License
 
-Same as the parent repo.
+Same as the parent repository.

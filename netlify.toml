@@ -6,9 +6,7 @@
   NODE_VERSION = "20"
   JAVA_VERSION = "21"
 
-# The hosted web app is now the Compose Multiplatform/Kotlin/Wasm build. The
-# former Vite/React implementation remains available locally through
-# `pnpm run build:legacy` while browser parity is completed.
+# The hosted web app is the active Compose Multiplatform/Kotlin/Wasm build.
 # Build strictly with pnpm because the repository uses a pnpm lockfile.
 
 # SPA: every path falls back to index.html (the app has no URL-based router,

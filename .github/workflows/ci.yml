@@ -45,20 +45,8 @@ jobs:
       - name: Install Android API 37 toolchain
         run: yes | sdkmanager "platforms;android-37.0" "build-tools;36.1.0"
 
-      - name: Install JavaScript dependencies
+      - name: Install active KMP root dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Check web formatting and lint
-        run: pnpm exec biome check src scripts package.json
-
-      - name: Run web tests
-        run: pnpm test
-
-      - name: Typecheck web sources
-        run: pnpm typecheck
-
-      - name: Build legacy web rollback
-        run: pnpm run build:legacy
 
       - name: Build production KMP/Wasm web distribution
         run: pnpm build
