@@ -413,59 +413,15 @@ private fun EditNoteDialog(
     )
 }
 
-private fun AnnotatedString.Builder.appendInlineMarkdown(
-    line: String,
-    foreground: Color,
-) {
-    val pattern = Regex("""(\*\*[^*]+\*\*|\*[^*]+\*)""")
-    var cursor = 0
-    pattern.findAll(line).forEach { match ->
-        append(line.substring(cursor, match.range.first))
-        val value = match.value
-        val marked = value.removePrefix("**").removeSuffix("**")
-            .removePrefix("*").removeSuffix("*")
-        val style = if (value.startsWith("**")) {
-            SpanStyle(fontWeight = FontWeight.Bold, color = foreground)
-        } else {
-            SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = foreground)
-        }
-        withStyle(style) { append(marked) }
-        cursor = match.range.last + 1
-    }
-    append(line.substring(cursor))
-}
-
 /** Compact formatting actions shared by KMP note editors. */
 @Composable
 private fun MarkdownToolbar(
     content: String,
     onContentChange: (String) -> Unit,
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        listOf(
-            "B" to "**text**",
-            "I" to "*text*",
-            "H1" to "# ",
-            "H2" to "## ",
-            "•" to "- ",
-            "☑" to "- [ ] ",
-        ).forEach { (label, prefix) ->
-            TextButton(
-                onClick = { onContentChange(insertMarkdown(content, prefix)) },
-                modifier = Modifier.size(42.dp),
-            ) { Text(label) }
-        }
-    }
-}
+) = app.todotxt.ui.components.MarkdownToolbar(content, onContentChange)
 
-private fun insertMarkdown(content: String, prefix: String): String {
-    val lineStart = content.lastIndexOf('\n').let { if (it < 0) 0 else it + 1 }
-    val selectedLine = content.substring(lineStart)
-    return when (prefix) {
-        "**text**", "*text*" -> content + if (content.isBlank()) prefix else " $prefix"
-        else -> content.substring(0, lineStart) + prefix + selectedLine
-    }
-}
+private fun insertMarkdown(content: String, prefix: String): String =
+    app.todotxt.ui.components.insertMarkdown(content, prefix)
 
 /** Color picker: the six web note colors, matching ColorDots.tsx. */
 @Composable
@@ -518,32 +474,5 @@ private fun List<Note>.renderNotesJson(): String {
 private fun String.escapeJson(): String =
     replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
 
-private fun renderMarkdown(text: String, foreground: Color): AnnotatedString {
-    return buildAnnotatedString {
-        val lines = text.split("\n")
-        lines.forEachIndexed { index, line ->
-            when {
-                line.startsWith("# ") -> {
-                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = foreground)) {
-                        append(line)
-                    }
-                }
-                line.startsWith("## ") -> {
-                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                        append(line)
-                    }
-                }
-                line.startsWith("- ") || line.startsWith("* ") -> {
-                    withStyle(SpanStyle(color = foreground)) {
-                        append("• ")
-                    }
-                    append(line.substring(2))
-                }
-                else -> {
-                    appendInlineMarkdown(line, foreground)
-                }
-            }
-            if (index < lines.size - 1) append("\n")
-        }
-    }
-}
+private fun renderMarkdown(text: String, foreground: Color): AnnotatedString =
+    app.todotxt.ui.components.renderMarkdown(text, foreground)
