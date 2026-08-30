@@ -44,6 +44,8 @@ ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negoti
 ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor" }
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 zxing = { module = "com.google.zxing:core", version = "3.5.3" }
+reorderable = { module = "sh.calvin.reorderable:reorderable", version = "2.5.1" }
+
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

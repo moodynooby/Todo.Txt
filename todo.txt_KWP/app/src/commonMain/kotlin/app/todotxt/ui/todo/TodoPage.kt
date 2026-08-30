@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.reorderable
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -401,22 +404,27 @@ private fun ColumnScope.TodoList(
         Storage.setContent(reordered.joinToString("\n"))
     }
 
+    val reorderState = rememberReorderableLazyListState(
+        onMove = { from, to -> moveLine(from.index, to.index) },
+    )
     LazyColumn(
-        modifier = Modifier.weight(1f).fillMaxWidth(),
+        state = reorderState.listState,
+        modifier = Modifier.weight(1f).fillMaxWidth().reorderable(reorderState),
         contentPadding = PaddingValues(bottom = 12.dp),
     ) {
-        itemsIndexed(tasks) { index, task ->
-            // UX upgrade: swipe gestures as a native affordance — drag right
-            // to complete, drag left to reopen, each reversible via Undo.
-            SwipeRow(
-                complete = task.completed,
-                content = { rowModifier ->
-                    TaskRow(
-                        task = task,
-                        index = index,
-                        isSelected = task.id in selectedIds,
-                        onMove = ::moveLine,
-                        modifier = rowModifier,
+        itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
+            ReorderableItem(reorderState, key = task.id) { isDragging ->
+                // UX upgrade: swipe gestures as a native affordance — drag right
+                // to complete, drag left to reopen, each reversible via Undo.
+                SwipeRow(
+                    complete = task.completed,
+                    content = { rowModifier ->
+                        TaskRow(
+                            task = task,
+                            index = index,
+                            isDragging = isDragging,
+                            modifier = rowModifier,
+                        onToggle = {
                         onToggle = {
                     // setTaskCompleted resolves the line by raw text, so it
                     // stays correct after reorders, inserts, and deletes.
@@ -450,10 +458,12 @@ private fun ColumnScope.TodoList(
                             description = "Task reopened (swipe)",
                         )
                         val updated = TodoParser.setTaskCompleted(content, task, completed = false)
-                        Storage.setContent(updated)
-                    }
-                },
-            )
+                            Storage.setContent(updated)
+                        }
+                    },
+                    )
+                }
+            }
         }
     }
 }
@@ -464,7 +474,7 @@ private fun TaskRow(
     task: app.todotxt.domain.Task,
     index: Int,
     isSelected: Boolean,
-    onMove: (Int, Int) -> Unit = { _, _ -> },
+    isDragging: Boolean = false,
     modifier: Modifier = Modifier,
     onToggle: () -> Unit,
     onSelect: (Int) -> Unit,
@@ -493,14 +503,17 @@ private fun TaskRow(
                 .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Drag handle: grab to reorder this line in the raw document.
+            // Drag handle: long-press to reorder this line in the raw document.
             Text(
                 text = "⋮⋮",
                 modifier = Modifier
                     .padding(end = 6.dp)
                     .width(18.dp)
-                    .reorderableItem(index, onMove),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    .draggableHandle(
+                        onDragStarted = {},
+                        onDragStopped = {},
+                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isDragging) 0.5f else 1f),
             )
             Checkbox(
                 checked = isSelected || task.completed,
