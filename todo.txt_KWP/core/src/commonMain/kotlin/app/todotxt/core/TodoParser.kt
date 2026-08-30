@@ -1,11 +1,19 @@
 package app.todotxt.core
 
-/** Common date helpers, resolved per platform (JVM uses java.time, JS uses the
- * browser `Date` API). Kept deliberately minimal so the parser core stays
- * framework-agnostic. */
-expect fun todayString(): String
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
-expect fun addDaysString(base: String, days: Int): String
+/** Today's date as a `YYYY-MM-DD` string in the system default timezone. */
+fun todayString(): String =
+    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+
+/** Add [days] to a `YYYY-MM-DD` date string and return the result. */
+fun addDaysString(base: String, days: Int): String =
+    LocalDate.parse(base).plus(days, DateTimeUnit.DAY).toString()
 
 /**
  * Field Notes Ritual todo.txt parser.
