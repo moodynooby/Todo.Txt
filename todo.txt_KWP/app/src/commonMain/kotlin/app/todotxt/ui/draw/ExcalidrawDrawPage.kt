@@ -1,10 +1,8 @@
 package app.todotxt.ui.draw
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,44 +34,31 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.todotxt.persistence.Storage
 import app.todotxt.ui.PageHeader
-import kotlinx.serialization.json.JsonObject
-import kotlin.math.abs
-import kotlin.math.min
+import io.ak1.drawbox.DrawBox
+import io.ak1.drawbox.domain.model.Mode
+import io.ak1.drawbox.presentation.viewmodel.rememberDrawBoxController
 
 /**
  * Drawing workspace over the SHARED `.excalidraw` v2 format — the same
  * scenes the web's Excalidraw editor produces, synced at `excalidraw/main`.
  *
- * Renders the portable subset (rectangle, ellipse, diamond, line, arrow,
- * freedraw, text) with smooth Skia strokes; unmodelled elements and fields
- * are preserved untouched on save, so nothing the web draws is lost.
- * Rendering is hand-drawn-approximate (no rough.js sketchiness) — geometry,
- * colors and stroke weights follow the spec.
+ * Uses [DrawBox] (KMP drawing SDK) for the canvas, with a
+ * [DrawBoxExcalidrawAdapter] to round-trip through the Excalidraw JSON format.
+ * All unknown fields (images, frames, bindings, customData) are preserved
+ * via the base scene carry-over pattern.
  */
 enum class ExTool { SELECT, RECTANGLE, ELLIPSE, DIAMOND, LINE, ARROW, PEN, TEXT }
 
@@ -84,30 +69,48 @@ private val EX_PALETTE = listOf(
 @Composable
 fun ExcalidrawDrawPage() {
     val sceneJson by Storage.excalidrawScene.collectAsState()
-    val scene = ExcalidrawScene.parse(sceneJson)
+    val scene = remember(sceneJson) { ExcalidrawScene.parse(sceneJson) }
 
-    val history = remember { mutableStateListOf<ExcalidrawScene>() }
-    val redoStack = remember { mutableStateListOf<ExcalidrawScene>() }
-    val pending = remember { mutableStateOf<JsonObject?>(null) }
-    val selectedId = remember { mutableStateOf<String?>(null) }
+    // DrawBox controller — owns the canvas state, undo/redo, mode, etc.
+    val controller = rememberDrawBoxController()
+    val state by controller.state.collectAsState()
+    val canUndo by controller.canUndo.collectAsState()
+    val canRedo by controller.canRedo.collectAsState()
+
+    // Load the Excalidraw scene into DrawBox on first composition or scene change.
+    LaunchedEffect(sceneJson) {
+        if (sceneJson != null) {
+            val drawBoxState = toDrawBox(scene)
+            controller.importPath(
+                io.ak1.drawbox.domain.model.DrawingSerializer.serialize(
+                    io.ak1.drawbox.domain.model.PayLoad(
+                        bgColor = drawBoxState.bgColor,
+                        elements = drawBoxState.elements,
+                    ),
+                ),
+            )
+        }
+    }
+
+    // Persist DrawBox state back to Storage whenever it changes.
+    LaunchedEffect(state.elements) {
+        if (state.elements.isNotEmpty() || sceneJson != null) {
+            val excalidrawScene = toExcalidraw(state, scene)
+            Storage.updateExcalidrawScene(excalidrawScene.serialize())
+        }
+    }
 
     val color = remember { mutableStateOf(EX_PALETTE.first()) }
-    val thickness = remember { mutableStateOf(2f) }
+    val thickness = remember { mutableStateOf(10f) }
     val tool = remember { mutableStateOf(ExTool.PEN) }
     var toolMenuOpen by remember { mutableStateOf(false) }
-    val textMeasurer = rememberTextMeasurer()
     var textDialogPoint by remember { mutableStateOf<Pair<Float, Float>?>(null) }
     var textDraft by remember { mutableStateOf("") }
-
-    fun commit(next: ExcalidrawScene) {
-        history.add(scene)
-        redoStack.clear()
-        Storage.updateExcalidrawScene(next.serialize())
-    }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         PageHeader("Draw", modifier = Modifier.padding(bottom = 8.dp))
 
+        // ── Toolbar row: tool selector, undo/redo, delete, clear ──
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -127,7 +130,18 @@ fun ExcalidrawDrawPage() {
                             text = { Text(target.name.lowercase().replaceFirstChar { it.uppercase() }) },
                             onClick = {
                                 tool.value = target
-                                selectedId.value = null
+                                // Map ExTool → DrawBox Mode
+                                val mode = when (target) {
+                                    ExTool.SELECT -> Mode.SELECT
+                                    ExTool.RECTANGLE -> Mode.RECTANGLE
+                                    ExTool.ELLIPSE -> Mode.CIRCLE
+                                    ExTool.DIAMOND -> Mode.RECTANGLE // diamond mapped via adapter
+                                    ExTool.LINE -> Mode.LINE
+                                    ExTool.ARROW -> Mode.ARROW
+                                    ExTool.PEN -> Mode.PEN
+                                    ExTool.TEXT -> Mode.TEXT
+                                }
+                                controller.setMode(mode)
                                 toolMenuOpen = false
                             },
                         )
@@ -135,45 +149,23 @@ fun ExcalidrawDrawPage() {
                 }
             }
             IconButton(
-                onClick = {
-                    val previous = history.removeLastOrNull() ?: return@IconButton
-                    redoStack.add(scene)
-                    Storage.updateExcalidrawScene(previous.serialize())
-                },
-                enabled = history.isNotEmpty(),
+                onClick = { controller.undo() },
+                enabled = canUndo,
             ) { Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo") }
             IconButton(
-                onClick = {
-                    val next = redoStack.removeLastOrNull() ?: return@IconButton
-                    history.add(scene)
-                    Storage.updateExcalidrawScene(next.serialize())
-                },
-                enabled = redoStack.isNotEmpty(),
+                onClick = { controller.redo() },
+                enabled = canRedo,
             ) { Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = "Redo") }
             IconButton(
-                onClick = {
-                    val id = selectedId.value ?: return@IconButton
-                    val next = scene.withElements(
-                        scene.elements.map { el ->
-                            if (ExEl.id(el) == id) ExFactory.deleted(el) else el
-                        },
-                    )
-                    selectedId.value = null
-                    commit(next)
-                },
-                enabled = selectedId.value != null,
+                onClick = { controller.deleteSelected() },
+                enabled = state.selectedIds.isNotEmpty(),
             ) { Icon(Icons.Filled.Delete, contentDescription = "Delete selected") }
             IconButton(
-                onClick = {
-                    val next = scene.withElements(
-                        scene.visibleElements.map { el -> ExFactory.deleted(el) },
-                    )
-                    selectedId.value = null
-                    commit(next)
-                },
+                onClick = { controller.reset() },
             ) { Icon(Icons.Filled.Clear, contentDescription = "Clear drawing") }
         }
 
+        // ── Color palette + stroke width slider ──
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -194,7 +186,10 @@ fun ExcalidrawDrawPage() {
                             else Color.Transparent,
                             CircleShape,
                         )
-                        .clickable { color.value = paletteColor },
+                        .clickable {
+                            color.value = paletteColor
+                            controller.setColor(parseExColor(paletteColor))
+                        },
                 )
             }
             Text(
@@ -204,155 +199,32 @@ fun ExcalidrawDrawPage() {
             )
             Slider(
                 value = thickness.value,
-                onValueChange = { thickness.value = it },
-                valueRange = 1f..4f,
-                steps = 2,
+                onValueChange = {
+                    thickness.value = it
+                    controller.setStrokeWidth(it)
+                },
+                valueRange = 1f..20f,
+                steps = 18,
                 modifier = Modifier.width(160.dp),
             )
         }
 
+        // ── DrawBox canvas ──
         Box(
             Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .border(1.dp, MaterialTheme.colorScheme.outline)
-                .pointerInput(tool.value, color.value, thickness.value, scene.serialize()) {
-                    awaitPointerEventScope {
-                        fun toScene(pos: Offset): Pair<Float, Float> {
-                            val bounds = ExBounds.of(scene.visibleElements)
-                            val (scale, offsetX, offsetY) =
-                                viewTransform(size.width.toFloat(), size.height.toFloat(), bounds)
-                            return ((pos.x - offsetX) / scale) to
-                                ((pos.y - offsetY) / scale)
-                        }
-
-                        while (true) {
-                            val down = awaitFirstDown(requireUnconsumed = false)
-                            val start = toScene(down.position)
-
-                            when (tool.value) {
-                                ExTool.SELECT -> {
-                                    val hit = scene.visibleElements.lastOrNull {
-                                        hitTest(it, start.first, start.second)
-                                    }
-                                    selectedId.value = hit?.let { ExEl.id(it) }
-                                    if (hit != null) {
-                                        var moved = false
-                                        var movedScene = scene
-                                        val id = ExEl.id(hit)
-                                        while (true) {
-                                            val event = awaitPointerEvent()
-                                            if (event.type == PointerEventType.Release) break
-                                            if (event.type == PointerEventType.Move) {
-                                                moved = true
-                                                val now = toScene(event.changes.first().position)
-                                                val next = movedScene.withElements(
-                                                    movedScene.elements.map { el ->
-                                                        if (ExEl.id(el) == id) {
-                                                            ExFactory.translate(
-                                                                el,
-                                                                now.first - start.first,
-                                                                now.second - start.second,
-                                                            )
-                                                        } else el
-                                                    },
-                                                )
-                                                movedScene = next
-                                                Storage.updateExcalidrawScene(next.serialize())
-                                            }
-                                        }
-                                        if (moved) commit(movedScene)
-                                    }
-                                }
-
-                                ExTool.TEXT -> textDialogPoint = start
-
-                                else -> {
-                                    val type = when (tool.value) {
-                                        ExTool.RECTANGLE -> "rectangle"
-                                        ExTool.ELLIPSE -> "ellipse"
-                                        ExTool.DIAMOND -> "diamond"
-                                        ExTool.LINE -> "line"
-                                        ExTool.ARROW -> "arrow"
-                                        else -> "freedraw"
-                                    }
-                                    val isShape =
-                                        type in setOf("rectangle", "ellipse", "diamond")
-                                    val initial = if (isShape) {
-                                        ExFactory.shape(
-                                            type, start.first, start.second,
-                                            1f, 1f, color.value, thickness.value,
-                                        )
-                                    } else {
-                                        ExFactory.linear(
-                                            type, listOf(start, start),
-                                            color.value, thickness.value,
-                                        )
-                                    }
-                                    pending.value = initial
-                                    while (true) {
-                                        val event = awaitPointerEvent()
-                                        if (event.type == PointerEventType.Release ||
-                                            event.type == PointerEventType.Exit
-                                        ) break
-                                        if (event.type == PointerEventType.Move) {
-                                            val now =
-                                                toScene(event.changes.first().position)
-                                            pending.value = if (isShape) {
-                                                ExFactory.shape(
-                                                    type,
-                                                    min(start.first, now.first),
-                                                    min(start.second, now.second),
-                                                    abs(now.first - start.first),
-                                                    abs(now.second - start.second),
-                                                    color.value,
-                                                    thickness.value,
-                                                )
-                                            } else {
-                                                val points =
-                                                    absolutePoints(initial)
-                                                        .toMutableList()
-                                                while (points.size < 2) points.add(start)
-                                                points[points.size - 1] = now
-                                                ExFactory.linear(
-                                                    type, points,
-                                                    color.value, thickness.value,
-                                                )
-                                            }
-                                        }
-                                    }
-                                    val finished = pending.value ?: continue
-                                    pending.value = null
-                                    // A tap with a shape tool (no drag) draws nothing.
-                                    if (isShape && ExEl.width(finished) < 2f &&
-                                        ExEl.height(finished) < 2f
-                                    ) continue
-                                    commit(scene.withElements(scene.elements + finished))
-                                }
-                            }
-                        }
-                    }
-                },
+                .border(1.dp, MaterialTheme.colorScheme.outline),
         ) {
-            val fallbackColor = MaterialTheme.colorScheme.onSurface
-            val selectionAccent = MaterialTheme.colorScheme.primary
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val bounds = ExBounds.of(scene.visibleElements)
-                val (scale, offsetX, offsetY) =
-                    viewTransform(size.width, size.height, bounds)
-                for (el in scene.visibleElements) {
-                    drawElement(el, scale, offsetX, offsetY, textMeasurer, fallbackColor)
-                }
-                pending.value?.let { drawElement(it, scale, offsetX, offsetY, textMeasurer, fallbackColor) }
-                selectedId.value?.let { id ->
-                    scene.visibleElements
-                        .firstOrNull { ExEl.id(it) == id }
-                        ?.let { drawSelection(it, scale, offsetX, offsetY, selectionAccent) }
-                }
-            }
+            DrawBox(
+                state = state,
+                onIntent = controller::onIntent,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 
+    // ── Text input dialog (for TEXT mode taps) ──
     if (textDialogPoint != null) {
         AlertDialog(
             onDismissRequest = { textDialogPoint = null },
@@ -367,11 +239,12 @@ fun ExcalidrawDrawPage() {
                 TextButton(onClick = {
                     val point = textDialogPoint
                     if (point != null && textDraft.isNotBlank()) {
-                        val el = ExFactory.text(
-                            point.first, point.second, textDraft,
-                            color.value,
+                        controller.insertText(
+                            text = textDraft,
+                            position = androidx.compose.ui.geometry.Offset(point.first, point.second),
+                            fontSize = 20f,
+                            color = parseExColor(color.value),
                         )
-                        commit(scene.withElements(scene.elements + el))
                     }
                     textDraft = ""
                     textDialogPoint = null
@@ -384,21 +257,7 @@ fun ExcalidrawDrawPage() {
     }
 }
 
-/** View transform: fit the scene bounds into the viewport, centered. */
-private fun viewTransform(
-    viewW: Float,
-    viewH: Float,
-    bounds: ExBounds?,
-): Triple<Float, Float, Float> {
-    if (bounds == null) return Triple(1f, 0f, 0f)
-    val bw = (bounds.maxX - bounds.minX).coerceAtLeast(1f)
-    val bh = (bounds.maxY - bounds.minY).coerceAtLeast(1f)
-    val scale = min(viewW / bw, viewH / bh)
-    val offsetX = (viewW - bw * scale) / 2f - bounds.minX * scale
-    val offsetY = (viewH - bh * scale) / 2f - bounds.minY * scale
-    return Triple(scale, offsetX, offsetY)
-}
-
+/** Parse hex color string to Compose Color (shared utility). */
 internal fun parseExColor(hex: String, fallback: Color = Color.Black): Color = runCatching {
     val value = hex.removePrefix("#")
     val argb = when (value.length) {
@@ -408,112 +267,3 @@ internal fun parseExColor(hex: String, fallback: Color = Color.Black): Color = r
     }
     Color(argb.toInt())
 }.getOrElse { fallback }
-
-private fun DrawScope.drawElement(
-    el: JsonObject,
-    scale: Float,
-    offsetX: Float,
-    offsetY: Float,
-    textMeasurer: androidx.compose.ui.text.TextMeasurer,
-    fallbackColor: Color,
-) {
-    if (!ExEl.isRenderable(el)) return
-    val sx = { x: Float -> x * scale + offsetX }
-    val sy = { y: Float -> y * scale + offsetY }
-    val stroke = Stroke(ExEl.strokeWidth(el) * scale, cap = StrokeCap.Round)
-    val strokeColor = parseExColor(ExEl.strokeColor(el), fallbackColor).copy(
-        alpha = ExEl.opacity(el) / 100f,
-    )
-    val fill = ExEl.backgroundColor(el)
-    val fillPaint = if (fill != "transparent" && fill.isNotBlank()) {
-        parseExColor(fill, fallbackColor).copy(alpha = ExEl.opacity(el) / 100f)
-    } else null
-
-    fun pathOf(points: List<Pair<Float, Float>>): Path = Path().apply {
-        points.forEachIndexed { index, (x, y) ->
-            if (index == 0) moveTo(sx(x), sy(y)) else lineTo(sx(x), sy(y))
-        }
-    }
-
-    when (ExEl.type(el)) {
-        "rectangle" -> {
-            fillPaint?.let {
-                drawRect(
-                    it,
-                    Offset(sx(ExEl.x(el)), sy(ExEl.y(el))),
-                    Size(ExEl.width(el) * scale, ExEl.height(el) * scale),
-                )
-            }
-            drawRect(
-                strokeColor,
-                topLeft = Offset(sx(ExEl.x(el)), sy(ExEl.y(el))),
-                size = Size(ExEl.width(el) * scale, ExEl.height(el) * scale),
-                style = stroke,
-            )
-        }
-        "ellipse" -> {
-            val topLeft = Offset(sx(ExEl.x(el)), sy(ExEl.y(el)))
-            val size = Size(ExEl.width(el) * scale, ExEl.height(el) * scale)
-            fillPaint?.let { drawOval(it, topLeft, size) }
-            drawOval(strokeColor, topLeft, size, style = stroke)
-        }
-        "diamond" -> {
-            val cx = sx(ExEl.x(el) + ExEl.width(el) / 2f)
-            val cy = sy(ExEl.y(el) + ExEl.height(el) / 2f)
-            val left = sx(ExEl.x(el)); val right = sx(ExEl.x(el) + ExEl.width(el))
-            val top = sy(ExEl.y(el)); val bottom = sy(ExEl.y(el) + ExEl.height(el))
-            val path = Path().apply {
-                moveTo(cx, top); lineTo(right, cy); lineTo(cx, bottom); lineTo(left, cy); close()
-            }
-            fillPaint?.let { drawPath(path, it) }
-            drawPath(path, strokeColor, style = stroke)
-        }
-        "line", "arrow", "freedraw" -> {
-            val points = absolutePoints(el)
-            if (points.size > 1) {
-                drawPath(pathOf(points), strokeColor, style = stroke)
-            }
-            if (ExEl.type(el) == "arrow" && points.size >= 2) {
-                val head = arrowHead(points[points.size - 2], points.last(), ExEl.strokeWidth(el))
-                val headPath = Path().apply {
-                    moveTo(sx(points.last().first), sy(points.last().second))
-                    lineTo(sx(head[0].first), sy(head[0].second))
-                    moveTo(sx(points.last().first), sy(points.last().second))
-                    lineTo(sx(head[1].first), sy(head[1].second))
-                }
-                drawPath(headPath, strokeColor, style = stroke)
-            }
-        }
-        "text" -> {
-            val measured = textMeasurer.measure(
-                text = ExEl.text(el),
-                style = TextStyle(
-                    color = strokeColor,
-                    fontSize = (ExEl.fontSize(el) * scale).sp,
-                ),
-            )
-            drawText(measured, topLeft = Offset(sx(ExEl.x(el)), sy(ExEl.y(el))))
-        }
-    }
-}
-
-private fun DrawScope.drawSelection(
-    el: JsonObject,
-    scale: Float,
-    offsetX: Float,
-    offsetY: Float,
-    accent: Color,
-) {
-    drawRect(
-        accent,
-        topLeft = Offset(
-            ExEl.x(el) * scale + offsetX - 4f,
-            ExEl.y(el) * scale + offsetY - 4f,
-        ),
-        size = Size(
-            ExEl.width(el) * scale + 8f,
-            ExEl.height(el) * scale + 8f,
-        ),
-        style = Stroke(2f),
-    )
-}

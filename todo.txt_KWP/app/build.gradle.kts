@@ -54,6 +54,8 @@ kotlin {
                 implementation(libs.ktor.serialization.kotlinx.json)
                 implementation(libs.ktor.client.websockets)
                 implementation(libs.reorderable)
+                implementation(libs.drawbox)
+                implementation(libs.androidx.lifecycle.viewmodel)
 
                 api(project(":core"))
             }

@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.reorderable
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -404,12 +404,13 @@ private fun ColumnScope.TodoList(
         Storage.setContent(reordered.joinToString("\n"))
     }
 
-    val reorderState = rememberReorderableLazyListState(
-        onMove = { from, to -> moveLine(from.index, to.index) },
-    )
+    val lazyListState = rememberLazyListState()
+    val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        moveLine(from.index, to.index)
+    }
     LazyColumn(
-        state = reorderState.listState,
-        modifier = Modifier.weight(1f).fillMaxWidth().reorderable(reorderState),
+        state = lazyListState,
+        modifier = Modifier.weight(1f).fillMaxWidth(),
         contentPadding = PaddingValues(bottom = 12.dp),
     ) {
         itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
@@ -422,47 +423,49 @@ private fun ColumnScope.TodoList(
                         TaskRow(
                             task = task,
                             index = index,
+                            isSelected = task.id in selectedIds,
                             isDragging = isDragging,
+                            showDragHandle = true,
+                            dragHandleModifier = Modifier.draggableHandle(
+                                onDragStarted = {},
+                                onDragStopped = {},
+                            ),
                             modifier = rowModifier,
-                        onToggle = {
-                        onToggle = {
-                    // setTaskCompleted resolves the line by raw text, so it
-                    // stays correct after reorders, inserts, and deletes.
-                    UndoStack.push(
-                        todoContent = content,
-                        description = if (task.completed) "Task unchecked" else "Task completed",
-                    )
-                    val updated = TodoParser.setTaskCompleted(content, task, !task.completed)
-                    Storage.setContent(updated)
-                },
-                        onSelect = onSelect,
-                        onDeselect = onDeselect,
-                        onToggleSelection = onToggleSelection,
-                        onEdit = { onEditTask(task) },
-                    )
-                },
-                onSwipeComplete = {
-                    if (!task.completed) {
-                        UndoStack.push(
-                            todoContent = content,
-                            description = "Task completed (swipe)",
+                            onToggle = {
+                                UndoStack.push(
+                                    todoContent = content,
+                                    description = if (task.completed) "Task unchecked" else "Task completed",
+                                )
+                                val updated = TodoParser.setTaskCompleted(content, task, !task.completed)
+                                Storage.setContent(updated)
+                            },
+                            onSelect = onSelect,
+                            onDeselect = onDeselect,
+                            onToggleSelection = onToggleSelection,
+                            onEdit = { onEditTask(task) },
                         )
-                        val updated = TodoParser.setTaskCompleted(content, task, completed = true)
-                        Storage.setContent(updated)
-                    }
-                },
-                onSwipeUncomplete = {
-                    if (task.completed) {
-                        UndoStack.push(
-                            todoContent = content,
-                            description = "Task reopened (swipe)",
-                        )
-                        val updated = TodoParser.setTaskCompleted(content, task, completed = false)
+                    },
+                    onSwipeComplete = {
+                        if (!task.completed) {
+                            UndoStack.push(
+                                todoContent = content,
+                                description = "Task completed (swipe)",
+                            )
+                            val updated = TodoParser.setTaskCompleted(content, task, completed = true)
                             Storage.setContent(updated)
                         }
                     },
-                    )
-                }
+                    onSwipeUncomplete = {
+                        if (task.completed) {
+                            UndoStack.push(
+                                todoContent = content,
+                                description = "Task reopened (swipe)",
+                            )
+                            val updated = TodoParser.setTaskCompleted(content, task, completed = false)
+                            Storage.setContent(updated)
+                        }
+                    },
+                )
             }
         }
     }
@@ -475,7 +478,9 @@ private fun TaskRow(
     index: Int,
     isSelected: Boolean,
     isDragging: Boolean = false,
+    showDragHandle: Boolean = false,
     modifier: Modifier = Modifier,
+    dragHandleModifier: Modifier = Modifier,
     onToggle: () -> Unit,
     onSelect: (Int) -> Unit,
     onDeselect: () -> Unit,
@@ -504,17 +509,15 @@ private fun TaskRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Drag handle: long-press to reorder this line in the raw document.
-            Text(
-                text = "⋮⋮",
-                modifier = Modifier
-                    .padding(end = 6.dp)
-                    .width(18.dp)
-                    .draggableHandle(
-                        onDragStarted = {},
-                        onDragStopped = {},
-                    ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isDragging) 0.5f else 1f),
-            )
+            if (showDragHandle) {
+                Text(
+                    text = "⋮⋮",
+                    modifier = dragHandleModifier
+                        .padding(end = 6.dp)
+                        .width(18.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isDragging) 0.5f else 1f),
+                )
+            }
             Checkbox(
                 checked = isSelected || task.completed,
                 onCheckedChange = {
